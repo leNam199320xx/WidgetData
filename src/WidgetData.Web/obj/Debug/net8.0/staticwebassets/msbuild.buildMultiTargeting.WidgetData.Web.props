@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="../build/WidgetData.Web.props" />
-</Project>
