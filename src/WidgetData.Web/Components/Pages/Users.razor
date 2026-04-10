@@ -1,0 +1,41 @@
+@page "/users"
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@inject WidgetData.Web.Services.ApiService ApiService
+
+<PageTitle>Users - WidgetData</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Users</MudText>
+
+@if (_users != null)
+{
+    <MudTable Items="_users" Dense="true" Hover="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Email</MudTh>
+            <MudTh>Display Name</MudTh>
+            <MudTh>Roles</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Last Login</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.Email</MudTd>
+            <MudTd>@context.DisplayName</MudTd>
+            <MudTd>@string.Join(", ", context.Roles)</MudTd>
+            <MudTd><MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Error)" Size="Size.Small">@(context.IsActive ? "Active" : "Inactive")</MudChip></MudTd>
+            <MudTd>@(context.LastLoginAt.HasValue ? context.LastLoginAt.Value.ToString("g") : "Never")</MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+else
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+
+@code {
+    IEnumerable<UserDto>? _users;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { _users = await ApiService.GetUsersAsync(); } catch { _users = Array.Empty<UserDto>(); }
+    }
+}

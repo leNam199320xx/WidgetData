@@ -1,0 +1,41 @@
+@page "/schedules"
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@inject WidgetData.Web.Services.ApiService ApiService
+
+<PageTitle>Schedules - WidgetData</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Schedules</MudText>
+
+@if (_schedules != null)
+{
+    <MudTable Items="_schedules" Dense="true" Hover="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Widget</MudTh>
+            <MudTh>Cron</MudTh>
+            <MudTh>Timezone</MudTh>
+            <MudTh>Enabled</MudTh>
+            <MudTh>Last Run</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.WidgetName</MudTd>
+            <MudTd>@context.CronExpression</MudTd>
+            <MudTd>@context.Timezone</MudTd>
+            <MudTd><MudChip T="string" Color="@(context.IsEnabled ? Color.Success : Color.Error)" Size="Size.Small">@(context.IsEnabled ? "Enabled" : "Disabled")</MudChip></MudTd>
+            <MudTd>@(context.LastRunAt.HasValue ? context.LastRunAt.Value.ToString("g") : "Never")</MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+else
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+
+@code {
+    IEnumerable<WidgetScheduleDto>? _schedules;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { _schedules = await ApiService.GetSchedulesAsync(); } catch { _schedules = Array.Empty<WidgetScheduleDto>(); }
+    }
+}

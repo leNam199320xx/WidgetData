@@ -1,0 +1,45 @@
+@page "/widgets"
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@inject WidgetData.Web.Services.ApiService ApiService
+
+<PageTitle>Widgets - WidgetData</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Widgets</MudText>
+
+@if (_widgets != null)
+{
+    <MudTable Items="_widgets" Dense="true" Hover="true" Striped="true">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Widget List</MudText>
+            <MudSpacer />
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Type</MudTh>
+            <MudTh>Data Source</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Last Executed</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.Name</MudTd>
+            <MudTd>@context.WidgetType</MudTd>
+            <MudTd>@context.DataSourceName</MudTd>
+            <MudTd><MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Error)" Size="Size.Small">@(context.IsActive ? "Active" : "Inactive")</MudChip></MudTd>
+            <MudTd>@(context.LastExecutedAt.HasValue ? context.LastExecutedAt.Value.ToString("g") : "Never")</MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+else
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+
+@code {
+    IEnumerable<WidgetDto>? _widgets;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { _widgets = await ApiService.GetWidgetsAsync(); } catch { _widgets = Array.Empty<WidgetDto>(); }
+    }
+}

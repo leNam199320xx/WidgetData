@@ -1,0 +1,75 @@
+@page "/"
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@inject WidgetData.Web.Services.ApiService ApiService
+
+<PageTitle>Dashboard - WidgetData</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Dashboard</MudText>
+
+@if (_stats != null)
+{
+    <MudGrid>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h5">@_stats.TotalWidgets</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Total Widgets</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h5">@_stats.TotalDataSources</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Data Sources</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h5">@_stats.ActiveSchedules</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Active Schedules</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h5">@_stats.SuccessfulExecutions</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Successful Executions</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <MudText Typo="Typo.h5" Class="mt-6 mb-3">Recent Executions</MudText>
+    <MudTable Items="_stats.RecentExecutions" Dense="true" Hover="true">
+        <HeaderContent>
+            <MudTh>Widget</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Started</MudTh>
+            <MudTh>Duration</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.WidgetName</MudTd>
+            <MudTd>@context.Status</MudTd>
+            <MudTd>@context.StartedAt.ToString("g")</MudTd>
+            <MudTd>@(context.ExecutionTimeMs.HasValue ? $"{context.ExecutionTimeMs}ms" : "-")</MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+else
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+
+@code {
+    DashboardStatsDto? _stats;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { _stats = await ApiService.GetDashboardStatsAsync(); } catch { }
+    }
+}
