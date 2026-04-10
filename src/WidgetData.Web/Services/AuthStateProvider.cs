@@ -39,7 +39,11 @@ public class AuthStateProvider : AuthenticationStateProvider
             var json = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(bytes);
             return json?.Select(kvp => new Claim(kvp.Key, kvp.Value.ToString())) ?? Enumerable.Empty<Claim>();
         }
-        catch
+        catch (FormatException)
+        {
+            return Enumerable.Empty<Claim>();
+        }
+        catch (JsonException)
         {
             return Enumerable.Empty<Claim>();
         }

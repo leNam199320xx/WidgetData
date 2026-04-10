@@ -86,7 +86,9 @@ public class AuthController : ControllerBase
 
     private string GenerateToken(ApplicationUser user, IList<string> roles)
     {
-        var secret = _config["JwtSettings:Secret"] ?? "DefaultSecretKey32CharactersLong!";
+        var secret = _config["JwtSettings:Secret"];
+        if (string.IsNullOrWhiteSpace(secret))
+            throw new InvalidOperationException("JwtSettings:Secret is not configured.");
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 

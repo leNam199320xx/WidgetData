@@ -1,8 +1,8 @@
+/home/runner/work/WidgetData/WidgetData/src/WidgetData.Domain/obj/Debug/net8.0/WidgetData.Domain.csproj.AssemblyReference.cache
+/home/runner/work/WidgetData/WidgetData/src/WidgetData.Domain/obj/Debug/net8.0/WidgetData.Domain.GeneratedMSBuildEditorConfig.editorconfig
 /home/runner/work/WidgetData/WidgetData/src/WidgetData.Domain/bin/Debug/net8.0/WidgetData.Domain.deps.json
 /home/runner/work/WidgetData/WidgetData/src/WidgetData.Domain/bin/Debug/net8.0/WidgetData.Domain.dll
 /home/runner/work/WidgetData/WidgetData/src/WidgetData.Domain/bin/Debug/net8.0/WidgetData.Domain.pdb
-/home/runner/work/WidgetData/WidgetData/src/WidgetData.Domain/obj/Debug/net8.0/WidgetData.Domain.csproj.AssemblyReference.cache
-/home/runner/work/WidgetData/WidgetData/src/WidgetData.Domain/obj/Debug/net8.0/WidgetData.Domain.GeneratedMSBuildEditorConfig.editorconfig
 /home/runner/work/WidgetData/WidgetData/src/WidgetData.Domain/obj/Debug/net8.0/WidgetData.Domain.AssemblyInfoInputs.cache
 /home/runner/work/WidgetData/WidgetData/src/WidgetData.Domain/obj/Debug/net8.0/WidgetData.Domain.AssemblyInfo.cs
 /home/runner/work/WidgetData/WidgetData/src/WidgetData.Domain/obj/Debug/net8.0/WidgetData.Domain.csproj.CoreCompileInputs.cache

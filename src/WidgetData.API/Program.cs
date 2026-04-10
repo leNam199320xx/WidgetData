@@ -55,7 +55,14 @@ try
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
-    var jwtSecret = builder.Configuration["JwtSettings:Secret"] ?? "DefaultSecretKey32CharactersLong!";
+    var jwtSecret = builder.Configuration["JwtSettings:Secret"];
+    if (string.IsNullOrWhiteSpace(jwtSecret))
+    {
+        if (!builder.Environment.IsDevelopment())
+            throw new InvalidOperationException("JwtSettings:Secret must be configured in non-development environments.");
+        jwtSecret = "DevOnlySecretKey32CharactersLong!!";
+        Log.Warning("Using development fallback JWT secret. Do not use in production.");
+    }
     builder.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
