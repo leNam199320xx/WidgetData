@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("WidgetData.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f592d40063ce79c952c0778550e847aad55305ec")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+49a4d90c081f3e68763dec1496162ad3dadd5cc6")]
 [assembly: System.Reflection.AssemblyProductAttribute("WidgetData.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("WidgetData.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

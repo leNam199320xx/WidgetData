@@ -60,6 +60,10 @@
         </RowTemplate>
     </MudTable>
 }
+else if (_error != null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
 else
 {
     <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
@@ -67,9 +71,11 @@ else
 
 @code {
     DashboardStatsDto? _stats;
+    string? _error;
 
     protected override async Task OnInitializedAsync()
     {
-        try { _stats = await ApiService.GetDashboardStatsAsync(); } catch { }
+        try { _stats = await ApiService.GetDashboardStatsAsync(); }
+        catch (Exception ex) { _error = $"Failed to load dashboard stats: {ex.Message}"; }
     }
 }

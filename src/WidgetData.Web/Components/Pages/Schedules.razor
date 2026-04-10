@@ -26,6 +26,10 @@
         </RowTemplate>
     </MudTable>
 }
+else if (_error != null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
 else
 {
     <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
@@ -33,9 +37,11 @@ else
 
 @code {
     IEnumerable<WidgetScheduleDto>? _schedules;
+    string? _error;
 
     protected override async Task OnInitializedAsync()
     {
-        try { _schedules = await ApiService.GetSchedulesAsync(); } catch { _schedules = Array.Empty<WidgetScheduleDto>(); }
+        try { _schedules = await ApiService.GetSchedulesAsync() ?? Array.Empty<WidgetScheduleDto>(); }
+        catch (Exception ex) { _error = $"Failed to load schedules: {ex.Message}"; _schedules = Array.Empty<WidgetScheduleDto>(); }
     }
 }

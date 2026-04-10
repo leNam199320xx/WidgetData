@@ -26,6 +26,10 @@
         </RowTemplate>
     </MudTable>
 }
+else if (_error != null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
 else
 {
     <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
@@ -33,9 +37,11 @@ else
 
 @code {
     IEnumerable<DataSourceDto>? _sources;
+    string? _error;
 
     protected override async Task OnInitializedAsync()
     {
-        try { _sources = await ApiService.GetDataSourcesAsync(); } catch { _sources = Array.Empty<DataSourceDto>(); }
+        try { _sources = await ApiService.GetDataSourcesAsync() ?? Array.Empty<DataSourceDto>(); }
+        catch (Exception ex) { _error = $"Failed to load data sources: {ex.Message}"; _sources = Array.Empty<DataSourceDto>(); }
     }
 }

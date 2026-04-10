@@ -26,6 +26,10 @@
         </RowTemplate>
     </MudTable>
 }
+else if (_error != null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
 else
 {
     <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
@@ -33,9 +37,11 @@ else
 
 @code {
     IEnumerable<UserDto>? _users;
+    string? _error;
 
     protected override async Task OnInitializedAsync()
     {
-        try { _users = await ApiService.GetUsersAsync(); } catch { _users = Array.Empty<UserDto>(); }
+        try { _users = await ApiService.GetUsersAsync() ?? Array.Empty<UserDto>(); }
+        catch (Exception ex) { _error = $"Failed to load users: {ex.Message}"; _users = Array.Empty<UserDto>(); }
     }
 }

@@ -30,6 +30,10 @@
         </RowTemplate>
     </MudTable>
 }
+else if (_error != null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
 else
 {
     <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
@@ -37,9 +41,11 @@ else
 
 @code {
     IEnumerable<WidgetDto>? _widgets;
+    string? _error;
 
     protected override async Task OnInitializedAsync()
     {
-        try { _widgets = await ApiService.GetWidgetsAsync(); } catch { _widgets = Array.Empty<WidgetDto>(); }
+        try { _widgets = await ApiService.GetWidgetsAsync() ?? Array.Empty<WidgetDto>(); }
+        catch (Exception ex) { _error = $"Failed to load widgets: {ex.Message}"; _widgets = Array.Empty<WidgetDto>(); }
     }
 }
