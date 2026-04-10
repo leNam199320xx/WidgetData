@@ -130,6 +130,10 @@ Truy cập:
 - [Kiến trúc & Thiết kế](doc/architecture.md) - System architecture
 - [Module & Thư viện](doc/modules.md) - 70% có sẵn!
 
+### 🔌 API & Database
+- [API Reference](doc/api.md) - REST API endpoints, request/response, error codes
+- [Database Schema](doc/database-schema.md) - ERD, bảng, indexes, migrations
+
 ### 🔐 Security & Deployment
 - [Bảo mật](doc/security.md) - Auth, Authorization, Encryption
 - [Cài đặt & Triển khai](doc/deployment.md) - Dev/Docker/Azure

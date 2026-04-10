@@ -197,6 +197,77 @@ BlazorMonaco
 ✅ **Debugging tốt**: F5 debug cả backend lẫn frontend trong Visual Studio  
 ✅ **Ecosystem thống nhất**: NuGet packages, tooling, deployment  
 
+## API Endpoints
+
+### Widget API
+
+| Method | Endpoint | Mô tả | Auth |
+|--------|----------|-------|------|
+| `GET` | `/api/widgets` | Lấy danh sách widgets | ✅ |
+| `GET` | `/api/widgets/{id}` | Lấy chi tiết widget | ✅ |
+| `POST` | `/api/widgets` | Tạo widget mới | Admin/Manager |
+| `PUT` | `/api/widgets/{id}` | Cập nhật widget | Owner/Admin |
+| `DELETE` | `/api/widgets/{id}` | Xóa widget | Admin |
+| `POST` | `/api/widgets/{id}/execute` | Thực thi widget | ✅ |
+| `GET` | `/api/widgets/{id}/data` | Lấy dữ liệu widget | ✅ |
+| `GET` | `/api/widgets/{id}/history` | Lịch sử thực thi | ✅ |
+
+### Data Source API
+
+| Method | Endpoint | Mô tả | Auth |
+|--------|----------|-------|------|
+| `GET` | `/api/datasources` | Danh sách data sources | ✅ |
+| `GET` | `/api/datasources/{id}` | Chi tiết data source | ✅ |
+| `POST` | `/api/datasources` | Tạo data source | Admin/Manager |
+| `PUT` | `/api/datasources/{id}` | Cập nhật data source | Owner/Admin |
+| `DELETE` | `/api/datasources/{id}` | Xóa data source | Admin |
+| `POST` | `/api/datasources/{id}/test` | Test kết nối | ✅ |
+
+### Schedule API
+
+| Method | Endpoint | Mô tả | Auth |
+|--------|----------|-------|------|
+| `GET` | `/api/schedules` | Danh sách schedules | ✅ |
+| `POST` | `/api/schedules` | Tạo schedule | Manager/Admin |
+| `PUT` | `/api/schedules/{id}` | Cập nhật schedule | Owner/Admin |
+| `DELETE` | `/api/schedules/{id}` | Xóa schedule | Admin |
+| `POST` | `/api/schedules/{id}/enable` | Kích hoạt | Manager/Admin |
+| `POST` | `/api/schedules/{id}/disable` | Tắt | Manager/Admin |
+
+### Auth API
+
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| `POST` | `/api/auth/login` | Đăng nhập → JWT token |
+| `POST` | `/api/auth/refresh` | Làm mới JWT token |
+| `POST` | `/api/auth/logout` | Đăng xuất |
+| `POST` | `/api/auth/register` | Đăng ký tài khoản |
+| `POST` | `/api/auth/forgot-password` | Quên mật khẩu |
+
+```csharp
+// Ví dụ request/response
+// POST /api/widgets/{id}/execute
+// Request:
+{
+  "parameters": {
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31"
+  }
+}
+// Response:
+{
+  "widget_id": 123,
+  "execution_id": "exec-456",
+  "status": "success",
+  "data": [...],
+  "row_count": 150,
+  "execution_time_ms": 342,
+  "cached": false
+}
+```
+
+👉 [Chi tiết API Reference](api.md)
+
 ---
 
 [⬅️ Quay lại README](../README.md)

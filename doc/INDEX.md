@@ -10,43 +10,50 @@
 3. [Kiến trúc & Thiết kế](architecture.md) - System architecture và design patterns
 4. [Multi-Tenancy Architecture](multi-tenancy.md) - ⚠️ QUAN TRỌNG: Thiết kế cho nhiều công ty/khách hàng
 
+### API & Database
+5. [API Reference](api.md) - 🆕 REST API endpoints, request/response, error codes
+6. [Database Schema](database-schema.md) - 🆕 ERD, bảng, indexes, migrations
+
 ### Security & Modules
-5. [Bảo mật](security.md) - Authentication, authorization, data protection
-6. [Data Encryption](data-encryption.md) - 🔐 Mã hóa dữ liệu nhạy cảm (AES-256-GCM, TDE, Key Vault)
-7. [Module & Thư viện có sẵn](modules.md) - Libraries và packages đã có sẵn
+7. [Bảo mật](security.md) - Authentication, authorization, data protection
+8. [Data Encryption](data-encryption.md) - 🔐 Mã hóa dữ liệu nhạy cảm (AES-256-GCM, TDE, Key Vault)
+9. [Module & Thư viện có sẵn](modules.md) - Libraries và packages đã có sẵn
 
 ### Deployment & Operations
-8. [Cài đặt & Triển khai](deployment.md) - Development, Docker, IIS, Azure
-9. [Performance & Scalability](performance.md) - Optimization và scaling strategies
-10. [Monitoring & Observability](monitoring.md) - Logging, metrics, health checks
-11. [Testing](testing.md) - Unit, integration, performance testing
-12. [Backup & Disaster Recovery](backup.md) - High availability và recovery procedures
+10. [Cài đặt & Triển khai](deployment.md) - Development, Docker, IIS, Azure
+11. [Performance & Scalability](performance.md) - Optimization và scaling strategies
+12. [Monitoring & Observability](monitoring.md) - Logging, metrics, health checks
+13. [Testing](testing.md) - Unit, integration, performance testing
+14. [Backup & Disaster Recovery](backup.md) - High availability và recovery procedures
 
 ### Integration & Extensibility
-13. [Tích hợp & Mở rộng](integration.md) - Webhooks, plugins, third-party integrations
-14. [Mobile & Responsive](mobile.md) - PWA, responsive design, offline mode
+15. [Tích hợp & Mở rộng](integration.md) - Webhooks, plugins, third-party integrations
+16. [Mobile & Responsive](mobile.md) - PWA, responsive design, offline mode
 
 ### UI/UX Design
-15. [Screens & Mockups](screens.md) - Mô tả chi tiết 15 màn hình chính
+17. [Screens & Mockups](screens.md) - Mô tả chi tiết 15 màn hình chính
 
 ### Support & Planning
-16. [Roadmap](roadmap.md) - Version releases và tính năng tương lai
-17. [Troubleshooting & FAQ](troubleshooting.md) - Common issues và giải pháp
+18. [Roadmap](roadmap.md) - Version releases và tính năng tương lai
+19. [Troubleshooting & FAQ](troubleshooting.md) - Common issues và giải pháp
 
 ## 🚀 Quick Links
 
 - [Bắt đầu nhanh](deployment.md#development-setup)
 - [Ví dụ Widget](multi-step-processing.md#ví-dụ-cấu-hình-multi-step-widget)
-- [API Documentation](architecture.md#api-endpoints)
+- [API Reference](api.md)
+- [Database Schema](database-schema.md)
 - [Deployment Guide](deployment.md)
 
 ## 📚 Tài liệu hoàn chỉnh
 
-Tất cả 17 files đã được tạo với nội dung chi tiết:
+Tất cả 19 files đã được tạo với nội dung chi tiết:
+- ✅ `api.md` - 🆕 REST API reference đầy đủ
 - ✅ `architecture.md` - System design & tech stack
 - ✅ `backup.md` - Database backup & disaster recovery
 - ✅ `branching-variables.md` - Conditional logic & variables
-- ✅ `data-encryption.md` - 🔐 Field-level encryption, TDE, Key Vault (NEW!)
+- ✅ `data-encryption.md` - 🔐 Field-level encryption, TDE, Key Vault
+- ✅ `database-schema.md` - 🆕 ERD, schema, migrations
 - ✅ `deployment.md` - Dev, Docker, IIS, Azure deployment
 - ✅ `integration.md` - Webhooks, plugins, REST API
 - ✅ `mobile.md` - PWA, responsive design, mobile UI
