@@ -1,0 +1,47 @@
+@page "/datasources"
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@inject WidgetData.Web.Services.ApiService ApiService
+
+<PageTitle>Data Sources - WidgetData</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Data Sources</MudText>
+
+@if (_sources != null)
+{
+    <MudTable Items="_sources" Dense="true" Hover="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Type</MudTh>
+            <MudTh>Host</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Last Tested</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.Name</MudTd>
+            <MudTd>@context.SourceType</MudTd>
+            <MudTd>@(context.Host ?? "-")</MudTd>
+            <MudTd><MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Error)" Size="Size.Small">@(context.IsActive ? "Active" : "Inactive")</MudChip></MudTd>
+            <MudTd>@(context.LastTestedAt.HasValue ? context.LastTestedAt.Value.ToString("g") : "Never")</MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+else if (_error != null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+else
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+
+@code {
+    IEnumerable<DataSourceDto>? _sources;
+    string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { _sources = await ApiService.GetDataSourcesAsync() ?? Array.Empty<DataSourceDto>(); }
+        catch (Exception ex) { _error = $"Failed to load data sources: {ex.Message}"; _sources = Array.Empty<DataSourceDto>(); }
+    }
+}
