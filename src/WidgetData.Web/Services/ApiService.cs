@@ -8,19 +8,29 @@ namespace WidgetData.Web.Services;
 public class ApiService
 {
     private readonly HttpClient _http;
+    private readonly TokenStore _tokenStore;
 
-    public ApiService(HttpClient http)
+    public ApiService(HttpClient http, TokenStore tokenStore)
     {
         _http = http;
+        _tokenStore = tokenStore;
     }
 
     public void SetToken(string token)
     {
+        _tokenStore.Token = token;
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    }
+
+    private void ApplyToken()
+    {
+        if (_tokenStore.Token != null)
+            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _tokenStore.Token);
     }
 
     private async Task<T?> GetAsync<T>(string url)
     {
+        ApplyToken();
         var response = await _http.GetAsync(url);
         if (!response.IsSuccessStatusCode) return default;
         var json = await response.Content.ReadAsStringAsync();
@@ -29,6 +39,7 @@ public class ApiService
 
     private async Task<T?> PostAsync<T>(string url, object data)
     {
+        ApplyToken();
         var json = JsonSerializer.Serialize(data);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
         var response = await _http.PostAsync(url, content);

@@ -1,5 +1,22 @@
 # Screens & UI Design
 
+## 📸 Demo Screenshots (Thực tế)
+
+Các màn hình được capture từ demo chạy thực tế với dữ liệu mẫu:
+
+| Màn hình | Screenshot |
+|----------|-----------|
+| Login | ![Login](screenshots/01_login.png) |
+| Dashboard | ![Dashboard](screenshots/02_dashboard.png) |
+| Widgets | ![Widgets](screenshots/03_widgets.png) |
+| Data Sources | ![Data Sources](screenshots/04_datasources.png) |
+| Schedules | ![Schedules](screenshots/05_schedules.png) |
+| Users | ![Users](screenshots/06_users.png) |
+| Settings | ![Settings](screenshots/07_settings.png) |
+| API Docs (Scalar) | ![API Docs](screenshots/08_api_docs.png) |
+
+---
+
 ## 📋 Tổng quan
 
 Widget Data có **15 màn hình chính** được tổ chức thành 5 nhóm:

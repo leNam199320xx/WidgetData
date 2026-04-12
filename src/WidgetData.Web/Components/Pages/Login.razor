@@ -1,0 +1,80 @@
+@page "/login"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@inject WidgetData.Web.Services.ApiService ApiService
+@inject WidgetData.Web.Services.AuthStateProvider AuthStateProvider
+@inject NavigationManager Nav
+
+<PageTitle>Login - WidgetData</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-16">
+    <MudCard>
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h5" Align="Align.Center">Sign In</MudText>
+                <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Secondary">WidgetData Platform</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            @if (_error != null)
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+            }
+            <MudTextField @bind-Value="_email" Label="Email" Variant="Variant.Outlined" InputType="InputType.Email"
+                          Class="mb-3" Disabled="_loading" />
+            <MudTextField @bind-Value="_password" Label="Password" Variant="Variant.Outlined"
+                          InputType="@(_showPassword ? InputType.Text : InputType.Password)"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@(_showPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
+                          OnAdornmentClick="() => _showPassword = !_showPassword"
+                          Class="mb-4" Disabled="_loading" />
+        </MudCardContent>
+        <MudCardActions Class="px-4 pb-4">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true"
+                       OnClick="HandleLogin" Disabled="_loading">
+                @if (_loading)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                }
+                Sign In
+            </MudButton>
+        </MudCardActions>
+    </MudCard>
+</MudContainer>
+
+@code {
+    string _email = "admin@widgetdata.com";
+    string _password = "Admin@123!";
+    string? _error;
+    bool _loading;
+    bool _showPassword;
+
+    async Task HandleLogin()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            var result = await ApiService.LoginAsync(new LoginDto { Email = _email, Password = _password });
+            if (result?.Token != null)
+            {
+                ApiService.SetToken(result.Token);
+                AuthStateProvider.SetUser(result.Token);
+                Nav.NavigateTo("/");
+            }
+            else
+            {
+                _error = "Invalid credentials. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = $"Login failed: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}
