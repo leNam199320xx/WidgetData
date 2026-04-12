@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using WidgetData.Application.Interfaces;
+using WidgetData.Domain.Entities;
 using WidgetData.Domain.Interfaces;
 using WidgetData.Infrastructure.Data;
 using WidgetData.Infrastructure.Repositories;
@@ -26,7 +28,12 @@ public static class DependencyInjection
         services.AddScoped<IScheduleService, ScheduleService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<IWidgetGroupService, WidgetGroupService>();
+        services.AddScoped<IPermissionService, PermissionService>();
+        services.AddScoped<IExportService, ExportService>();
+        services.AddScoped<IDeliveryService, DeliveryService>();
 
+        services.AddHttpClient();
         services.AddScoped<DataSeeder>();
 
         return services;

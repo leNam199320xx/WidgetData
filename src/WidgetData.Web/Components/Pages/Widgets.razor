@@ -5,6 +5,7 @@
 @using WidgetData.Domain.Enums
 @inject WidgetData.Web.Services.ApiService ApiService
 @inject ISnackbar Snackbar
+@inject NavigationManager Nav
 
 <PageTitle>Widgets - WidgetData</PageTitle>
 
@@ -17,7 +18,16 @@
         <MudText Typo="Typo.h6" Class="mb-3">@(_editingId == null ? "Add Widget" : "Edit Widget")</MudText>
         <MudGrid>
             <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_form.Name" Label="Name" Required="true" Variant="Variant.Outlined" />
+                <MudTextField @bind-Value="_form.Name" Label="Name" Required="true" Variant="Variant.Outlined"
+                              HelperText="Tên kỹ thuật, dùng trong hệ thống" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_form.FriendlyLabel" Label="Tên hiển thị (dễ đọc)" Variant="Variant.Outlined"
+                              HelperText='VD: "Báo cáo doanh thu tháng"' />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_form.HelpText" Label="Mô tả ngắn gọn" Variant="Variant.Outlined"
+                              HelperText="Giải thích widget này dùng để làm gì" />
             </MudItem>
             <MudItem xs="6" sm="3">
                 <MudSelect @bind-Value="_form.WidgetType" Label="Widget Type" Variant="Variant.Outlined">
@@ -108,7 +118,15 @@
             <MudTh>Actions</MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd>@context.Name</MudTd>
+            <MudTd>
+                @(context.FriendlyLabel ?? context.Name)
+                @if (!string.IsNullOrEmpty(context.HelpText))
+                {
+                    <MudTooltip Text="@context.HelpText">
+                        <MudIcon Icon="@Icons.Material.Filled.HelpOutline" Size="Size.Small" Color="Color.Secondary" Class="ml-1" />
+                    </MudTooltip>
+                }
+            </MudTd>
             <MudTd>@context.WidgetType</MudTd>
             <MudTd>@context.DataSourceName</MudTd>
             <MudTd><MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Error)" Size="Size.Small">@(context.IsActive ? "Active" : "Inactive")</MudChip></MudTd>
@@ -116,11 +134,13 @@
             <MudTd>@(context.LastRowCount.HasValue ? context.LastRowCount.ToString() : "-")</MudTd>
             <MudTd>
                 <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Success" Size="Size.Small"
-                               OnClick="() => ExecuteWidget(context)" />
+                               OnClick="() => ExecuteWidget(context)" Title="Chạy ngay" />
                 <MudIconButton Icon="@Icons.Material.Filled.History" Color="Color.Info" Size="Size.Small"
-                               OnClick="() => ViewHistory(context)" />
+                               OnClick="() => ViewHistory(context)" Title="Lịch sử" />
+                <MudIconButton Icon="@Icons.Material.Filled.Tune" Color="Color.Secondary" Size="Size.Small"
+                               OnClick="@(() => Nav.NavigateTo($"/widgets/configure/{context.Id}"))" Title="Cấu hình chi tiết" />
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" Size="Size.Small"
-                               OnClick="() => OpenEditForm(context)" />
+                               OnClick="() => OpenEditForm(context)" Title="Sửa nhanh" />
                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
                                OnClick="() => _deletingItem = context" />
             </MudTd>
@@ -208,7 +228,8 @@ else
         _editingId = w.Id;
         _form = new CreateWidgetDto
         {
-            Name = w.Name, WidgetType = w.WidgetType, Description = w.Description,
+            Name = w.Name, FriendlyLabel = w.FriendlyLabel, HelpText = w.HelpText,
+            WidgetType = w.WidgetType, Description = w.Description,
             DataSourceId = w.DataSourceId, Configuration = w.Configuration,
             ChartConfig = w.ChartConfig, CacheEnabled = w.CacheEnabled, CacheTtlMinutes = w.CacheTtlMinutes
         };

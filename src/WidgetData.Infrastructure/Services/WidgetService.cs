@@ -1,8 +1,10 @@
+using Microsoft.EntityFrameworkCore;
 using WidgetData.Application.DTOs;
 using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
 using WidgetData.Domain.Interfaces;
+using WidgetData.Infrastructure.Data;
 
 namespace WidgetData.Infrastructure.Services;
 
@@ -10,23 +12,30 @@ public class WidgetService : IWidgetService
 {
     private readonly IWidgetRepository _widgetRepo;
     private readonly IExecutionRepository _executionRepo;
+    private readonly ApplicationDbContext _context;
 
-    public WidgetService(IWidgetRepository widgetRepo, IExecutionRepository executionRepo)
+    public WidgetService(IWidgetRepository widgetRepo, IExecutionRepository executionRepo, ApplicationDbContext context)
     {
         _widgetRepo = widgetRepo;
         _executionRepo = executionRepo;
+        _context = context;
     }
 
     public async Task<IEnumerable<WidgetDto>> GetAllAsync()
     {
         var widgets = await _widgetRepo.GetAllAsync();
-        return widgets.Select(MapToDto);
+        var dtos = widgets.Select(MapToDto).ToList();
+        await EnrichGroupIdsAsync(dtos);
+        return dtos;
     }
 
     public async Task<WidgetDto?> GetByIdAsync(int id)
     {
         var widget = await _widgetRepo.GetByIdAsync(id);
-        return widget == null ? null : MapToDto(widget);
+        if (widget == null) return null;
+        var dto = MapToDto(widget);
+        await EnrichGroupIdsAsync(new List<WidgetDto> { dto });
+        return dto;
     }
 
     public async Task<WidgetDto> CreateAsync(CreateWidgetDto dto, string userId)
@@ -34,6 +43,8 @@ public class WidgetService : IWidgetService
         var widget = new Widget
         {
             Name = dto.Name,
+            FriendlyLabel = dto.FriendlyLabel,
+            HelpText = dto.HelpText,
             WidgetType = dto.WidgetType,
             Description = dto.Description,
             DataSourceId = dto.DataSourceId,
@@ -44,14 +55,25 @@ public class WidgetService : IWidgetService
             CreatedBy = userId
         };
         var created = await _widgetRepo.CreateAsync(widget);
-        return MapToDto(created);
+
+        var distinctGroupIds = dto.GroupIds.Distinct().ToList();
+        foreach (var groupId in distinctGroupIds)
+            _context.WidgetGroupMembers.Add(new WidgetGroupMember { WidgetGroupId = groupId, WidgetId = created.Id });
+        if (distinctGroupIds.Any()) await _context.SaveChangesAsync();
+
+        var resultDto = MapToDto(created);
+        resultDto.GroupIds = distinctGroupIds;
+        return resultDto;
     }
 
     public async Task<WidgetDto?> UpdateAsync(int id, UpdateWidgetDto dto)
     {
         var widget = await _widgetRepo.GetByIdAsync(id);
         if (widget == null) return null;
+
         widget.Name = dto.Name;
+        widget.FriendlyLabel = dto.FriendlyLabel;
+        widget.HelpText = dto.HelpText;
         widget.WidgetType = dto.WidgetType;
         widget.Description = dto.Description;
         widget.DataSourceId = dto.DataSourceId;
@@ -62,7 +84,20 @@ public class WidgetService : IWidgetService
         widget.IsActive = dto.IsActive;
         widget.UpdatedAt = DateTime.UtcNow;
         var updated = await _widgetRepo.UpdateAsync(widget);
-        return MapToDto(updated);
+
+        // Sync group members via context
+        var existing = await _context.WidgetGroupMembers.Where(m => m.WidgetId == id).ToListAsync();
+        var existingIds = existing.Select(m => m.WidgetGroupId).ToHashSet();
+        var desired = dto.GroupIds.ToHashSet();
+        foreach (var toRemove in existing.Where(m => !desired.Contains(m.WidgetGroupId)))
+            _context.WidgetGroupMembers.Remove(toRemove);
+        foreach (var toAdd in desired.Except(existingIds))
+            _context.WidgetGroupMembers.Add(new WidgetGroupMember { WidgetGroupId = toAdd, WidgetId = id });
+        await _context.SaveChangesAsync();
+
+        var resultDto = MapToDto(updated);
+        await EnrichGroupIdsAsync(new List<WidgetDto> { resultDto });
+        return resultDto;
     }
 
     public async Task<bool> DeleteAsync(int id)
@@ -119,6 +154,8 @@ public class WidgetService : IWidgetService
     {
         Id = w.Id,
         Name = w.Name,
+        FriendlyLabel = w.FriendlyLabel,
+        HelpText = w.HelpText,
         WidgetType = w.WidgetType,
         Description = w.Description,
         DataSourceId = w.DataSourceId,
@@ -133,6 +170,16 @@ public class WidgetService : IWidgetService
         CreatedBy = w.CreatedBy,
         CreatedAt = w.CreatedAt
     };
+
+    private async Task EnrichGroupIdsAsync(List<WidgetDto> dtos)
+    {
+        var ids = dtos.Select(d => d.Id).ToList();
+        var members = await _context.WidgetGroupMembers
+            .Where(m => ids.Contains(m.WidgetId))
+            .ToListAsync();
+        foreach (var dto in dtos)
+            dto.GroupIds = members.Where(m => m.WidgetId == dto.Id).Select(m => m.WidgetGroupId).ToList();
+    }
 
     private static WidgetExecutionDto MapExecutionToDto(WidgetExecution e) => new()
     {

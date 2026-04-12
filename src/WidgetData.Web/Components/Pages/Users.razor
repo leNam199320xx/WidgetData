@@ -9,87 +9,213 @@
 
 <MudText Typo="Typo.h4" Class="mb-4">Users</MudText>
 
-@if (_showForm)
-{
-    <MudPaper Class="pa-4 mb-4" Elevation="3">
-        <MudText Typo="Typo.h6" Class="mb-3">Add User</MudText>
-        <MudGrid>
-            <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_form.Email" Label="Email" Required="true" Variant="Variant.Outlined" InputType="InputType.Email" />
-            </MudItem>
-            <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_form.DisplayName" Label="Display Name" Variant="Variant.Outlined" />
-            </MudItem>
-            <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_form.Password" Label="Password" Required="true" Variant="Variant.Outlined"
-                              InputType="InputType.Password" HelperText="Min 8 chars, uppercase, number, symbol" />
-            </MudItem>
-            <MudItem xs="12">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveUser" Disabled="_saving" Class="mr-2">
-                    @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
-                    Create
-                </MudButton>
-                <MudButton Variant="Variant.Outlined" OnClick="() => _showForm = false">Cancel</MudButton>
-            </MudItem>
-        </MudGrid>
-    </MudPaper>
-}
+<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mb-4">
+    <MudTabPanel Text="Danh sách người dùng" Icon="@Icons.Material.Filled.People">
+        @if (_showForm)
+        {
+            <MudPaper Class="pa-4 mb-4" Elevation="3">
+                <MudText Typo="Typo.h6" Class="mb-3">Add User</MudText>
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_form.Email" Label="Email" Required="true" Variant="Variant.Outlined" InputType="InputType.Email" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_form.DisplayName" Label="Display Name" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_form.Password" Label="Password" Required="true" Variant="Variant.Outlined"
+                                      InputType="InputType.Password" HelperText="Min 8 chars, uppercase, number, symbol" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveUser" Disabled="_saving" Class="mr-2">
+                            @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                            Create
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" OnClick="() => _showForm = false">Cancel</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        }
 
-@if (_users != null)
-{
-    <MudTable Items="_users" Dense="true" Hover="true" Striped="true">
-        <ToolBarContent>
-            <MudText Typo="Typo.h6">User List</MudText>
-            <MudSpacer />
-            @if (!_showForm)
-            {
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd"
-                           OnClick="() => { _form = new(); _showForm = true; }">Add User</MudButton>
-            }
-        </ToolBarContent>
-        <HeaderContent>
-            <MudTh>Email</MudTh>
-            <MudTh>Display Name</MudTh>
-            <MudTh>Roles</MudTh>
-            <MudTh>Status</MudTh>
-            <MudTh>Last Login</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd>@context.Email</MudTd>
-            <MudTd>@context.DisplayName</MudTd>
-            <MudTd>
-                @foreach (var role in context.Roles)
+        @if (_users != null)
+        {
+            <MudTable Items="_users" Dense="true" Hover="true" Striped="true">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">User List</MudText>
+                    <MudSpacer />
+                    @if (!_showForm)
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd"
+                                   OnClick="() => { _form = new(); _showForm = true; }">Add User</MudButton>
+                    }
+                </ToolBarContent>
+                <HeaderContent>
+                    <MudTh>Email</MudTh>
+                    <MudTh>Display Name</MudTh>
+                    <MudTh>Roles</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Last Login</MudTh>
+                    <MudTh>Phân quyền</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.Email</MudTd>
+                    <MudTd>@context.DisplayName</MudTd>
+                    <MudTd>
+                        @foreach (var role in context.Roles)
+                        {
+                            <MudChip T="string" Color="Color.Primary" Size="Size.Small" Class="mr-1">@role</MudChip>
+                        }
+                    </MudTd>
+                    <MudTd><MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Error)" Size="Size.Small">@(context.IsActive ? "Active" : "Inactive")</MudChip></MudTd>
+                    <MudTd>@(context.LastLoginAt.HasValue ? context.LastLoginAt.Value.ToString("g") : "Never")</MudTd>
+                    <MudTd>
+                        <MudIconButton Icon="@Icons.Material.Filled.Security" Color="Color.Info" Size="Size.Small"
+                                       OnClick="() => ShowPermissions(context)" Title="Xem và chỉnh quyền" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else if (_error != null)
+        {
+            <MudAlert Severity="Severity.Error">@_error</MudAlert>
+        }
+        else
+        {
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        }
+    </MudTabPanel>
+
+    <MudTabPanel Text="Phân quyền Widget" Icon="@Icons.Material.Filled.Security">
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+            Phân quyền xem, chạy và chỉnh sửa từng widget cho từng người dùng.
+        </MudText>
+
+        @if (_selectedUserForPerm != null)
+        {
+            <MudPaper Class="pa-4 mb-3" Elevation="2">
+                <MudText Typo="Typo.h6" Class="mb-2">
+                    Quyền của: <strong>@_selectedUserForPerm.Email</strong>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small"
+                                   OnClick="() => { _selectedUserForPerm = null; _userPermissions = null; }" />
+                </MudText>
+
+                @if (_assignForm)
                 {
-                    <MudChip T="string" Color="Color.Primary" Size="Size.Small" Class="mr-1">@role</MudChip>
+                    <MudPaper Class="pa-3 mb-3" Elevation="1">
+                        <MudGrid>
+                            <MudItem xs="12" sm="4">
+                                <MudSelect @bind-Value="_assignWidgetId" Label="Chọn Widget" Variant="Variant.Outlined">
+                                    @if (_widgets != null)
+                                    {
+                                        @foreach (var w in _widgets)
+                                        {
+                                            <MudSelectItem Value="@w.Id">@(w.FriendlyLabel ?? w.Name)</MudSelectItem>
+                                        }
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="4" sm="2">
+                                <MudCheckBox @bind-Value="_assignCanView" Label="Xem" Color="Color.Primary" />
+                            </MudItem>
+                            <MudItem xs="4" sm="2">
+                                <MudCheckBox @bind-Value="_assignCanExecute" Label="Chạy" Color="Color.Warning" />
+                            </MudItem>
+                            <MudItem xs="4" sm="2">
+                                <MudCheckBox @bind-Value="_assignCanEdit" Label="Sửa" Color="Color.Error" />
+                            </MudItem>
+                            <MudItem xs="12" sm="2">
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AssignWidgetPerm"
+                                           Disabled="_assigningPerm" Size="Size.Small">
+                                    @if (_assigningPerm) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" /> }
+                                    Gán quyền
+                                </MudButton>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
                 }
-            </MudTd>
-            <MudTd><MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Error)" Size="Size.Small">@(context.IsActive ? "Active" : "Inactive")</MudChip></MudTd>
-            <MudTd>@(context.LastLoginAt.HasValue ? context.LastLoginAt.Value.ToString("g") : "Never")</MudTd>
-        </RowTemplate>
-    </MudTable>
-}
-else if (_error != null)
-{
-    <MudAlert Severity="Severity.Error">@_error</MudAlert>
-}
-else
-{
-    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
-}
+
+                <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small"
+                           OnClick="() => _assignForm = !_assignForm" Class="mb-3">
+                    Thêm quyền widget
+                </MudButton>
+
+                @if (_userPermissions != null && _userPermissions.Any())
+                {
+                    <MudTable Items="_userPermissions" Dense="true">
+                        <HeaderContent>
+                            <MudTh>Widget / Nhóm</MudTh>
+                            <MudTh>Loại</MudTh>
+                            <MudTh>Xem</MudTh>
+                            <MudTh>Chạy</MudTh>
+                            <MudTh>Sửa</MudTh>
+                            <MudTh>Xóa</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@(context.WidgetName ?? context.GroupName ?? "-")</MudTd>
+                            <MudTd>
+                                <MudChip T="string" Size="Size.Small" Color="@(context.WidgetId.HasValue ? Color.Primary : Color.Secondary)">
+                                    @(context.WidgetId.HasValue ? "Widget" : "Nhóm")
+                                </MudChip>
+                            </MudTd>
+                            <MudTd><MudIcon Icon="@(context.CanView ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)" Color="@(context.CanView ? Color.Success : Color.Error)" Size="Size.Small" /></MudTd>
+                            <MudTd><MudIcon Icon="@(context.CanExecute ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)" Color="@(context.CanExecute ? Color.Success : Color.Error)" Size="Size.Small" /></MudTd>
+                            <MudTd><MudIcon Icon="@(context.CanEdit ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)" Color="@(context.CanEdit ? Color.Success : Color.Error)" Size="Size.Small" /></MudTd>
+                            <MudTd>
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                               OnClick="() => RemovePerm(context)" />
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+                else if (_userPermissions != null)
+                {
+                    <MudText Color="Color.Secondary">Người dùng này chưa có quyền widget cụ thể nào.</MudText>
+                }
+                else
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                }
+            </MudPaper>
+        }
+        else
+        {
+            <MudText Color="Color.Secondary">Chọn một người dùng từ tab "Danh sách" để xem và chỉnh quyền.</MudText>
+        }
+    </MudTabPanel>
+</MudTabs>
 
 @code {
     IEnumerable<UserDto>? _users;
+    IEnumerable<WidgetDto>? _widgets;
     string? _error;
     bool _showForm;
     bool _saving;
     RegisterDto _form = new();
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    UserDto? _selectedUserForPerm;
+    IEnumerable<UserPermissionDto>? _userPermissions;
+    bool _assignForm;
+    bool _assigningPerm;
+    int _assignWidgetId;
+    bool _assignCanView = true;
+    bool _assignCanExecute;
+    bool _assignCanEdit;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(LoadAsync(), LoadWidgetsAsync());
+    }
 
     async Task LoadAsync()
     {
         try { _users = await ApiService.GetUsersAsync() ?? Array.Empty<UserDto>(); }
         catch (Exception ex) { _error = $"Failed to load users: {ex.Message}"; _users = Array.Empty<UserDto>(); }
+    }
+
+    async Task LoadWidgetsAsync()
+    {
+        try { _widgets = await ApiService.GetWidgetsAsync() ?? Array.Empty<WidgetDto>(); }
+        catch { _widgets = Array.Empty<WidgetDto>(); }
     }
 
     async Task SaveUser()
@@ -102,5 +228,45 @@ else
             if (result != null) { _showForm = false; _form = new(); await LoadAsync(); }
         }
         finally { _saving = false; }
+    }
+
+    async Task ShowPermissions(UserDto user)
+    {
+        _selectedUserForPerm = user;
+        _userPermissions = null;
+        _assignForm = false;
+        StateHasChanged();
+        try { _userPermissions = await ApiService.GetUserPermissionsAsync(user.Id) ?? Array.Empty<UserPermissionDto>(); }
+        catch { _userPermissions = Array.Empty<UserPermissionDto>(); }
+    }
+
+    async Task AssignWidgetPerm()
+    {
+        if (_selectedUserForPerm == null || _assignWidgetId == 0) return;
+        _assigningPerm = true;
+        try
+        {
+            var dto = new AssignWidgetPermissionDto
+            {
+                UserId = _selectedUserForPerm.Id,
+                WidgetId = _assignWidgetId,
+                CanView = _assignCanView,
+                CanExecute = _assignCanExecute,
+                CanEdit = _assignCanEdit
+            };
+            var result = await ApiService.AssignWidgetPermissionAsync(dto);
+            Snackbar.Add(result != null ? "Da gan quyen!" : "Gan quyen that bai.", result != null ? Severity.Success : Severity.Error);
+            if (result != null) { _assignForm = false; await ShowPermissions(_selectedUserForPerm); }
+        }
+        finally { _assigningPerm = false; }
+    }
+
+    async Task RemovePerm(UserPermissionDto perm)
+    {
+        bool ok = perm.WidgetId.HasValue
+            ? await ApiService.RemoveWidgetPermissionAsync(perm.Id)
+            : await ApiService.RemoveGroupPermissionAsync(perm.Id);
+        Snackbar.Add(ok ? "Da xoa quyen!" : "Xoa that bai.", ok ? Severity.Success : Severity.Error);
+        if (ok && _selectedUserForPerm != null) await ShowPermissions(_selectedUserForPerm);
     }
 }

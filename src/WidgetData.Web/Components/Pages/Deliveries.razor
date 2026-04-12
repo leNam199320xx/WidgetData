@@ -1,0 +1,133 @@
+@page "/deliveries"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@using WidgetData.Domain.Enums
+@inject WidgetData.Web.Services.ApiService ApiService
+@inject ISnackbar Snackbar
+
+<PageTitle>Lịch sử gửi kết quả - WidgetData</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-2">
+    <MudIcon Icon="@Icons.Material.Filled.Send" Class="mr-2" />
+    Lịch sử gửi kết quả
+</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+    Theo dõi trạng thái các lần gửi dữ liệu đến các điểm đích.
+</MudText>
+
+@if (_widgets != null && _widgets.Any())
+{
+    <MudSelect Value="_selectedWidgetId" T="int" Label="Chọn widget" Variant="Variant.Outlined"
+               Class="mb-4" Style="max-width:400px" ValueChanged="@((int id) => OnWidgetChanged(id))">
+        <MudSelectItem Value="0">-- Tất cả --</MudSelectItem>
+        @foreach (var w in _widgets)
+        {
+            <MudSelectItem Value="@w.Id">@(w.FriendlyLabel ?? w.Name)</MudSelectItem>
+        }
+    </MudSelect>
+}
+
+@if (_executions == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else if (!_executions.Any())
+{
+    <MudAlert Severity="Severity.Info">Chưa có lịch sử gửi nào.</MudAlert>
+}
+else
+{
+    <MudTable Items="_executions" Dense="true" Hover="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Widget</MudTh>
+            <MudTh>Điểm gửi</MudTh>
+            <MudTh>Trạng thái</MudTh>
+            <MudTh>Thời gian</MudTh>
+            <MudTh>Thông báo</MudTh>
+            <MudTh>Người gửi</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@GetWidgetName(context.WidgetId)</MudTd>
+            <MudTd>@context.DeliveryTargetName</MudTd>
+            <MudTd>
+                <MudChip T="string" Color="@GetStatusColor(context.Status)" Size="Size.Small">
+                    @GetStatusLabel(context.Status)
+                </MudChip>
+            </MudTd>
+            <MudTd>@context.ExecutedAt.ToString("dd/MM/yyyy HH:mm:ss")</MudTd>
+            <MudTd>
+                @if (!string.IsNullOrEmpty(context.Message))
+                {
+                    <MudTooltip Text="@context.Message">
+                        <MudText Style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                            @context.Message
+                        </MudText>
+                    </MudTooltip>
+                }
+            </MudTd>
+            <MudTd>@context.TriggeredBy</MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    IEnumerable<WidgetDto>? _widgets;
+    IEnumerable<DeliveryExecutionDto>? _executions;
+    int _selectedWidgetId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _widgets = await ApiService.GetWidgetsAsync() ?? Array.Empty<WidgetDto>();
+        await LoadExecutionsAsync();
+    }
+
+    async Task OnWidgetChanged(int widgetId)
+    {
+        _selectedWidgetId = widgetId;
+        await LoadExecutionsAsync();
+    }
+
+    async Task LoadExecutionsAsync()
+    {
+        _executions = null;
+        StateHasChanged();
+        if (_selectedWidgetId > 0)
+        {
+            _executions = await ApiService.GetDeliveryExecutionsAsync(_selectedWidgetId) ?? Array.Empty<DeliveryExecutionDto>();
+        }
+        else if (_widgets != null)
+        {
+            var all = new List<DeliveryExecutionDto>();
+            foreach (var w in _widgets)
+            {
+                var execs = await ApiService.GetDeliveryExecutionsAsync(w.Id);
+                if (execs != null) all.AddRange(execs);
+            }
+            _executions = all.OrderByDescending(e => e.ExecutedAt);
+        }
+        else
+        {
+            _executions = Array.Empty<DeliveryExecutionDto>();
+        }
+    }
+
+    string GetWidgetName(int id) => _widgets?.FirstOrDefault(w => w.Id == id)?.FriendlyLabel
+        ?? _widgets?.FirstOrDefault(w => w.Id == id)?.Name ?? $"Widget {id}";
+
+    static Color GetStatusColor(ExecutionStatus s) => s switch
+    {
+        ExecutionStatus.Success => Color.Success,
+        ExecutionStatus.Failed => Color.Error,
+        ExecutionStatus.Running => Color.Info,
+        _ => Color.Default
+    };
+
+    static string GetStatusLabel(ExecutionStatus s) => s switch
+    {
+        ExecutionStatus.Success => "✅ Thành công",
+        ExecutionStatus.Failed => "❌ Thất bại",
+        ExecutionStatus.Running => "⏳ Đang chạy",
+        _ => s.ToString()
+    };
+}

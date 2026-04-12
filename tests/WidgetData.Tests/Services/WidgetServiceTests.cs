@@ -1,7 +1,9 @@
+using Microsoft.EntityFrameworkCore;
 using Moq;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
 using WidgetData.Domain.Interfaces;
+using WidgetData.Infrastructure.Data;
 using WidgetData.Infrastructure.Services;
 using WidgetData.Tests.TestData;
 
@@ -11,13 +13,18 @@ public class WidgetServiceTests
 {
     private readonly Mock<IWidgetRepository> _widgetRepoMock;
     private readonly Mock<IExecutionRepository> _executionRepoMock;
+    private readonly ApplicationDbContext _context;
     private readonly WidgetService _service;
 
     public WidgetServiceTests()
     {
         _widgetRepoMock = new Mock<IWidgetRepository>();
         _executionRepoMock = new Mock<IExecutionRepository>();
-        _service = new WidgetService(_widgetRepoMock.Object, _executionRepoMock.Object);
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        _context = new ApplicationDbContext(options);
+        _service = new WidgetService(_widgetRepoMock.Object, _executionRepoMock.Object, _context);
     }
 
     // ─── GetAllAsync ─────────────────────────────────────────────────────────
