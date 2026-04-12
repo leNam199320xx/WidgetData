@@ -19,6 +19,27 @@ Các màn hình được capture từ demo chạy thực tế với dữ liệu 
 
 ---
 
+## 📸 Chi tiết từng bước / từng tab
+
+### 👥 Users – Các tab
+
+| Tab | Mô tả | Screenshot |
+|-----|-------|-----------|
+| Tab 1: Danh sách người dùng | Bảng user với role, status, last login | ![Users Tab 1](screenshots/08a_users_tab1_list.png) |
+| Tab 2: Phân quyền Widget (chưa chọn user) | Hướng dẫn chọn user | ![Users Tab 2 Empty](screenshots/08b_users_tab2_permissions.png) |
+| Tab 2: Phân quyền Widget (đã chọn user) | Hiện quyền của user, nút thêm quyền | ![Users Tab 2 User](screenshots/08c_users_tab2_permissions_user.png) |
+
+### ⚙️ Widget Configure – Các bước
+
+| Bước | Mô tả | Screenshot |
+|------|-------|-----------|
+| Bước 1: Thông tin | Tên kỹ thuật, tên hiển thị, loại widget, kích hoạt | ![Step 1](screenshots/10a_configure_step1_thongtin.png) |
+| Bước 2: Dữ liệu | Chọn data source, câu truy vấn, cấu hình cache | ![Step 2](screenshots/10b_configure_step2_dulieu.png) |
+| Bước 3: Lịch chạy | Xem lịch cron hiện tại, link tới Schedules | ![Step 3](screenshots/10c_configure_step3_lichchay.png) |
+| Bước 4: Xuất kết quả | Tải xuống CSV/Excel/PDF/HTML/TXT, thêm điểm gửi | ![Step 4](screenshots/10d_configure_step4_xuatkqua.png) |
+
+---
+
 ## 📋 Tổng quan
 
 Widget Data có **15 màn hình chính** được tổ chức thành 5 nhóm:
