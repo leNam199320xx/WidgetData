@@ -3,6 +3,7 @@
 @using MudBlazor
 @using WidgetData.Application.DTOs
 @using WidgetData.Domain.Enums
+@using WidgetData.Web.Services
 @inject WidgetData.Web.Services.ApiService ApiService
 @inject ISnackbar Snackbar
 @inject NavigationManager Nav
@@ -151,10 +152,13 @@ else if (_widget != null)
                         {
                             <MudListItem T="WidgetScheduleDto" Icon="@Icons.Material.Filled.Timer">
                                 <MudText>
-                                    <strong>@sched.CronExpression</strong> — Múi giờ: @sched.Timezone
+                                    <strong>@CronHelper.Describe(sched.CronExpression)</strong>
                                     <MudChip T="string" Size="Size.Small" Color="@(sched.IsEnabled ? Color.Success : Color.Default)" Class="ml-2">
                                         @(sched.IsEnabled ? "Đang chạy" : "Tắt")
                                     </MudChip>
+                                </MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    Cron: <code>@sched.CronExpression</code> — Múi giờ: @sched.Timezone
                                 </MudText>
                                 @if (sched.NextRunAt.HasValue)
                                 {

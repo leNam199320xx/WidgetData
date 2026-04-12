@@ -3,6 +3,7 @@
 @using MudBlazor
 @using WidgetData.Application.DTOs
 @using WidgetData.Domain.Enums
+@using WidgetData.Web.Services
 @inject WidgetData.Web.Services.ApiService ApiService
 @inject ISnackbar Snackbar
 
@@ -80,7 +81,7 @@
         </ToolBarContent>
         <HeaderContent>
             <MudTh>Widget</MudTh>
-            <MudTh>Cron</MudTh>
+            <MudTh>Lịch chạy</MudTh>
             <MudTh>Timezone</MudTh>
             <MudTh>Enabled</MudTh>
             <MudTh>Last Run</MudTh>
@@ -89,7 +90,12 @@
         </HeaderContent>
         <RowTemplate>
             <MudTd>@context.WidgetName</MudTd>
-            <MudTd><code>@context.CronExpression</code></MudTd>
+            <MudTd>
+                <MudTooltip Text="@context.CronExpression" Placement="Placement.Top">
+                    <MudText>@CronHelper.Describe(context.CronExpression)</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary"><code>@context.CronExpression</code></MudText>
+                </MudTooltip>
+            </MudTd>
             <MudTd>@context.Timezone</MudTd>
             <MudTd>
                 <MudChip T="string" Color="@(context.IsEnabled ? Color.Success : Color.Default)" Size="Size.Small">

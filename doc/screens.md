@@ -9,11 +9,34 @@ Các màn hình được capture từ demo chạy thực tế với dữ liệu 
 | Login | ![Login](screenshots/01_login.png) |
 | Dashboard | ![Dashboard](screenshots/02_dashboard.png) |
 | Widgets | ![Widgets](screenshots/03_widgets.png) |
-| Data Sources | ![Data Sources](screenshots/04_datasources.png) |
-| Schedules | ![Schedules](screenshots/05_schedules.png) |
-| Users | ![Users](screenshots/06_users.png) |
-| Settings | ![Settings](screenshots/07_settings.png) |
-| API Docs (Scalar) | ![API Docs](screenshots/08_api_docs.png) |
+| Nhóm Widget | ![Widget Groups](screenshots/04_widget_groups.png) |
+| Data Sources | ![Data Sources](screenshots/05_datasources.png) |
+| Schedules | ![Schedules](screenshots/06_schedules.png) |
+| Lịch sử gửi | ![Deliveries](screenshots/07_deliveries.png) |
+| Users | ![Users](screenshots/08_users.png) |
+| Settings | ![Settings](screenshots/09_settings.png) |
+| Widget Configure | ![Widget Configure](screenshots/10_widget_configure.png) |
+
+---
+
+## 📸 Chi tiết từng bước / từng tab
+
+### 👥 Users – Các tab
+
+| Tab | Mô tả | Screenshot |
+|-----|-------|-----------|
+| Tab 1: Danh sách người dùng | Bảng user với role, status, last login | ![Users Tab 1](screenshots/08a_users_tab1_list.png) |
+| Tab 2: Phân quyền Widget (chưa chọn user) | Hướng dẫn chọn user | ![Users Tab 2 Empty](screenshots/08b_users_tab2_permissions.png) |
+| Tab 2: Phân quyền Widget (đã chọn user) | Hiện quyền của user, nút thêm quyền | ![Users Tab 2 User](screenshots/08c_users_tab2_permissions_user.png) |
+
+### ⚙️ Widget Configure – Các bước
+
+| Bước | Mô tả | Screenshot |
+|------|-------|-----------|
+| Bước 1: Thông tin | Tên kỹ thuật, tên hiển thị, loại widget, kích hoạt | ![Step 1](screenshots/10a_configure_step1_thongtin.png) |
+| Bước 2: Dữ liệu | Chọn data source, câu truy vấn, cấu hình cache | ![Step 2](screenshots/10b_configure_step2_dulieu.png) |
+| Bước 3: Lịch chạy | Lịch cron dạng dễ hiểu (vd: "Mỗi ngày lúc 06:00"), cron gốc ở phụ đề, link tới Schedules | ![Step 3](screenshots/10c_configure_step3_lichchay.png) |
+| Bước 4: Xuất kết quả | Tải xuống CSV/Excel/PDF/HTML/TXT, thêm điểm gửi | ![Step 4](screenshots/10d_configure_step4_xuatkqua.png) |
 
 ---
 
