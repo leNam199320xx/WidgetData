@@ -141,7 +141,6 @@ public class ExportService : IExportService
 
     private static byte[] ExportPdf(string title, string[] headers, List<object?[]> rows)
     {
-        QuestPDF.Settings.License = LicenseType.Community;
         var doc = Document.Create(container =>
         {
             container.Page(page =>

@@ -255,7 +255,7 @@
                 CanEdit = _assignCanEdit
             };
             var result = await ApiService.AssignWidgetPermissionAsync(dto);
-            Snackbar.Add(result != null ? "Da gan quyen!" : "Gan quyen that bai.", result != null ? Severity.Success : Severity.Error);
+            Snackbar.Add(result != null ? "Đã gán quyền!" : "Gán quyền thất bại.", result != null ? Severity.Success : Severity.Error);
             if (result != null) { _assignForm = false; await ShowPermissions(_selectedUserForPerm); }
         }
         finally { _assigningPerm = false; }
@@ -266,7 +266,7 @@
         bool ok = perm.WidgetId.HasValue
             ? await ApiService.RemoveWidgetPermissionAsync(perm.Id)
             : await ApiService.RemoveGroupPermissionAsync(perm.Id);
-        Snackbar.Add(ok ? "Da xoa quyen!" : "Xoa that bai.", ok ? Severity.Success : Severity.Error);
+        Snackbar.Add(ok ? "Đã xóa quyền!" : "Xóa thất bại.", ok ? Severity.Success : Severity.Error);
         if (ok && _selectedUserForPerm != null) await ShowPermissions(_selectedUserForPerm);
     }
 }

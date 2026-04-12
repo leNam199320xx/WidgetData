@@ -246,13 +246,12 @@ public class DeliveryService : IDeliveryService
         var port = int.Parse(cfg.GetValueOrDefault("port", "22"));
         var username = cfg["username"];
         var password = cfg.GetValueOrDefault("password", "");
-        var command = cfg.GetValueOrDefault("command", $"cat > /tmp/{fileName}");
+        var remotePath = cfg.GetValueOrDefault("path", $"/tmp/{fileName}");
 
-        using var client = new SshClient(host, port, username, password);
+        using var client = new SftpClient(host, port, username, password);
         client.Connect();
-        var cmd = client.CreateCommand(command);
         using var inputStream = new MemoryStream(data);
-        cmd.Execute();
+        client.UploadFile(inputStream, remotePath);
         client.Disconnect();
         await Task.CompletedTask;
     }
