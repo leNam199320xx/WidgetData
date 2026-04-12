@@ -26,6 +26,8 @@ public class ApiService
     {
         if (_tokenStore.Token != null)
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _tokenStore.Token);
+        else
+            _http.DefaultRequestHeaders.Authorization = null;
     }
 
     private async Task<T?> GetAsync<T>(string url)
