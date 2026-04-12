@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using QuestPDF.Infrastructure;
 using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Interfaces;
 using WidgetData.Infrastructure.Data;
@@ -13,6 +14,8 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        QuestPDF.Settings.License = LicenseType.Community;
+
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlite(configuration.GetConnectionString("DefaultConnection") ?? "Data Source=widgetdata.db"));
 
@@ -26,7 +29,12 @@ public static class DependencyInjection
         services.AddScoped<IScheduleService, ScheduleService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<IWidgetGroupService, WidgetGroupService>();
+        services.AddScoped<IPermissionService, PermissionService>();
+        services.AddScoped<IExportService, ExportService>();
+        services.AddScoped<IDeliveryService, DeliveryService>();
 
+        services.AddHttpClient();
         services.AddScoped<DataSeeder>();
 
         return services;

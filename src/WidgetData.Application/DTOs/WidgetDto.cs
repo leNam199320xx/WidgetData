@@ -6,6 +6,8 @@ public class WidgetDto
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
+    public string? FriendlyLabel { get; set; }
+    public string? HelpText { get; set; }
     public WidgetType WidgetType { get; set; }
     public string? Description { get; set; }
     public int DataSourceId { get; set; }
@@ -19,11 +21,14 @@ public class WidgetDto
     public int? LastRowCount { get; set; }
     public string? CreatedBy { get; set; }
     public DateTime CreatedAt { get; set; }
+    public IList<int> GroupIds { get; set; } = new List<int>();
 }
 
 public class CreateWidgetDto
 {
     public string Name { get; set; } = string.Empty;
+    public string? FriendlyLabel { get; set; }
+    public string? HelpText { get; set; }
     public WidgetType WidgetType { get; set; }
     public string? Description { get; set; }
     public int DataSourceId { get; set; }
@@ -31,6 +36,7 @@ public class CreateWidgetDto
     public string? ChartConfig { get; set; }
     public bool CacheEnabled { get; set; } = false;
     public int CacheTtlMinutes { get; set; } = 15;
+    public IList<int> GroupIds { get; set; } = new List<int>();
 }
 
 public class UpdateWidgetDto : CreateWidgetDto

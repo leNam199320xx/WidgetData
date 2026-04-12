@@ -92,6 +92,7 @@ public class ApiService
 
     // Widgets
     public Task<IEnumerable<WidgetDto>?> GetWidgetsAsync() => GetAsync<IEnumerable<WidgetDto>>("api/widgets");
+    public Task<WidgetDto?> GetWidgetByIdAsync(int id) => GetAsync<WidgetDto>($"api/widgets/{id}");
     public Task<WidgetDto?> CreateWidgetAsync(CreateWidgetDto dto) => PostAsync<WidgetDto>("api/widgets", dto);
     public Task<WidgetDto?> UpdateWidgetAsync(int id, UpdateWidgetDto dto) => PutAsync<WidgetDto>($"api/widgets/{id}", dto);
     public Task<bool> DeleteWidgetAsync(int id) => DeleteAsync($"api/widgets/{id}");
@@ -119,4 +120,38 @@ public class ApiService
     // Users
     public Task<IEnumerable<UserDto>?> GetUsersAsync() => GetAsync<IEnumerable<UserDto>>("api/users");
     public Task<object?> CreateUserAsync(RegisterDto dto) => PostAsync<object>("api/users", dto);
+
+    // Widget Groups
+    public Task<IEnumerable<WidgetGroupDto>?> GetWidgetGroupsAsync() => GetAsync<IEnumerable<WidgetGroupDto>>("api/widget-groups");
+    public Task<WidgetGroupDto?> GetWidgetGroupAsync(int id) => GetAsync<WidgetGroupDto>($"api/widget-groups/{id}");
+    public Task<WidgetGroupDto?> CreateWidgetGroupAsync(CreateWidgetGroupDto dto) => PostAsync<WidgetGroupDto>("api/widget-groups", dto);
+    public Task<WidgetGroupDto?> UpdateWidgetGroupAsync(int id, UpdateWidgetGroupDto dto) => PutAsync<WidgetGroupDto>($"api/widget-groups/{id}", dto);
+    public Task<bool> DeleteWidgetGroupAsync(int id) => DeleteAsync($"api/widget-groups/{id}");
+
+    // Permissions
+    public Task<IEnumerable<UserPermissionDto>?> GetUserPermissionsAsync(string userId) => GetAsync<IEnumerable<UserPermissionDto>>($"api/permissions/user/{userId}");
+    public Task<IEnumerable<UserPermissionDto>?> GetWidgetPermissionsAsync(int widgetId) => GetAsync<IEnumerable<UserPermissionDto>>($"api/permissions/widget/{widgetId}");
+    public Task<IEnumerable<UserPermissionDto>?> GetGroupPermissionsAsync(int groupId) => GetAsync<IEnumerable<UserPermissionDto>>($"api/permissions/group/{groupId}");
+    public Task<UserPermissionDto?> AssignWidgetPermissionAsync(AssignWidgetPermissionDto dto) => PostAsync<UserPermissionDto>("api/permissions/widget", dto);
+    public Task<UserPermissionDto?> AssignGroupPermissionAsync(AssignGroupPermissionDto dto) => PostAsync<UserPermissionDto>("api/permissions/group", dto);
+    public Task<bool> RemoveWidgetPermissionAsync(int permissionId) => DeleteAsync($"api/permissions/widget/{permissionId}");
+    public Task<bool> RemoveGroupPermissionAsync(int permissionId) => DeleteAsync($"api/permissions/group/{permissionId}");
+
+    // Delivery Targets
+    public Task<IEnumerable<DeliveryTargetDto>?> GetDeliveryTargetsAsync(int widgetId) => GetAsync<IEnumerable<DeliveryTargetDto>>($"api/delivery-targets/widget/{widgetId}");
+    public Task<DeliveryTargetDto?> CreateDeliveryTargetAsync(CreateDeliveryTargetDto dto) => PostAsync<DeliveryTargetDto>("api/delivery-targets", dto);
+    public Task<DeliveryTargetDto?> UpdateDeliveryTargetAsync(int id, UpdateDeliveryTargetDto dto) => PutAsync<DeliveryTargetDto>($"api/delivery-targets/{id}", dto);
+    public Task<bool> DeleteDeliveryTargetAsync(int id) => DeleteAsync($"api/delivery-targets/{id}");
+    public Task<DeliveryExecutionDto?> TriggerDeliveryAsync(int widgetId, int deliveryTargetId) => PostAsync<DeliveryExecutionDto>($"api/widgets/{widgetId}/deliver/{deliveryTargetId}", new { });
+    public Task<IEnumerable<DeliveryExecutionDto>?> GetDeliveryExecutionsAsync(int widgetId) => GetAsync<IEnumerable<DeliveryExecutionDto>>($"api/widgets/{widgetId}/deliveries");
+
+    // Export
+    public string GetExportUrl(int widgetId, string format) => $"api/widgets/{widgetId}/export?format={format}";
+    public async Task<byte[]?> ExportWidgetAsync(int widgetId, string format)
+    {
+        ApplyToken();
+        var response = await _http.GetAsync($"api/widgets/{widgetId}/export?format={format}");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadAsByteArrayAsync();
+    }
 }
