@@ -35,7 +35,7 @@ Các màn hình được capture từ demo chạy thực tế với dữ liệu 
 |------|-------|-----------|
 | Bước 1: Thông tin | Tên kỹ thuật, tên hiển thị, loại widget, kích hoạt | ![Step 1](screenshots/10a_configure_step1_thongtin.png) |
 | Bước 2: Dữ liệu | Chọn data source, câu truy vấn, cấu hình cache | ![Step 2](screenshots/10b_configure_step2_dulieu.png) |
-| Bước 3: Lịch chạy | Xem lịch cron hiện tại, link tới Schedules | ![Step 3](screenshots/10c_configure_step3_lichchay.png) |
+| Bước 3: Lịch chạy | Lịch cron dạng dễ hiểu (vd: "Mỗi ngày lúc 06:00"), cron gốc ở phụ đề, link tới Schedules | ![Step 3](screenshots/10c_configure_step3_lichchay.png) |
 | Bước 4: Xuất kết quả | Tải xuống CSV/Excel/PDF/HTML/TXT, thêm điểm gửi | ![Step 4](screenshots/10d_configure_step4_xuatkqua.png) |
 
 ---
