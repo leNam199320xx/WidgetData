@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using Scalar.AspNetCore;
 using Serilog;
 using WidgetData.Domain.Entities;
 using WidgetData.Infrastructure;
@@ -21,27 +22,10 @@ try
         .WriteTo.Console()
         .ReadFrom.Configuration(ctx.Configuration));
 
+    builder.AddServiceDefaults();
+
     builder.Services.AddControllers();
-    builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen(c =>
-    {
-        c.SwaggerDoc("v1", new() { Title = "WidgetData API", Version = "v1" });
-        c.AddSecurityDefinition("Bearer", new()
-        {
-            Description = "JWT Authorization header. Enter: Bearer {token}",
-            Name = "Authorization",
-            In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-            Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
-            Scheme = "Bearer"
-        });
-        c.AddSecurityRequirement(new()
-        {
-            {
-                new() { Reference = new() { Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme, Id = "Bearer" } },
-                Array.Empty<string>()
-            }
-        });
-    });
+    builder.Services.AddOpenApi();
 
     builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -99,6 +83,8 @@ try
 
     var app = builder.Build();
 
+    app.MapDefaultEndpoints();
+
     using (var scope = app.Services.CreateScope())
     {
         var seeder = scope.ServiceProvider.GetRequiredService<DataSeeder>();
@@ -107,8 +93,8 @@ try
 
     if (app.Environment.IsDevelopment())
     {
-        app.UseSwagger();
-        app.UseSwaggerUI();
+        app.MapOpenApi();
+        app.MapScalarApiReference();
     }
 
     app.UseSerilogRequestLogging();
@@ -129,3 +115,4 @@ finally
 {
     Log.CloseAndFlush();
 }
+

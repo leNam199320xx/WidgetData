@@ -5,6 +5,8 @@ using WidgetData.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddServiceDefaults();
+
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
@@ -29,6 +31,8 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
+
+app.MapDefaultEndpoints();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
