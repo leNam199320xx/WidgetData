@@ -9,11 +9,13 @@ Các màn hình được capture từ demo chạy thực tế với dữ liệu 
 | Login | ![Login](screenshots/01_login.png) |
 | Dashboard | ![Dashboard](screenshots/02_dashboard.png) |
 | Widgets | ![Widgets](screenshots/03_widgets.png) |
-| Data Sources | ![Data Sources](screenshots/04_datasources.png) |
-| Schedules | ![Schedules](screenshots/05_schedules.png) |
-| Users | ![Users](screenshots/06_users.png) |
-| Settings | ![Settings](screenshots/07_settings.png) |
-| API Docs (Scalar) | ![API Docs](screenshots/08_api_docs.png) |
+| Nhóm Widget | ![Widget Groups](screenshots/04_widget_groups.png) |
+| Data Sources | ![Data Sources](screenshots/05_datasources.png) |
+| Schedules | ![Schedules](screenshots/06_schedules.png) |
+| Lịch sử gửi | ![Deliveries](screenshots/07_deliveries.png) |
+| Users | ![Users](screenshots/08_users.png) |
+| Settings | ![Settings](screenshots/09_settings.png) |
+| Widget Configure | ![Widget Configure](screenshots/10_widget_configure.png) |
 
 ---
 
