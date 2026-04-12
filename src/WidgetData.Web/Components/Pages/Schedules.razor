@@ -2,28 +2,128 @@
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using MudBlazor
 @using WidgetData.Application.DTOs
+@using WidgetData.Domain.Enums
 @inject WidgetData.Web.Services.ApiService ApiService
+@inject ISnackbar Snackbar
 
 <PageTitle>Schedules - WidgetData</PageTitle>
 
 <MudText Typo="Typo.h4" Class="mb-4">Schedules</MudText>
 
+@if (_showForm)
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="3">
+        <MudText Typo="Typo.h6" Class="mb-3">@(_editingId == null ? "Add Schedule" : "Edit Schedule")</MudText>
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudSelect @bind-Value="_form.WidgetId" Label="Widget" Variant="Variant.Outlined" Required="true">
+                    @if (_widgets != null)
+                    {
+                        @foreach (var w in _widgets)
+                        {
+                            <MudSelectItem Value="@w.Id">@w.Name</MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_form.CronExpression" Label="Cron Expression" Required="true"
+                              Variant="Variant.Outlined" Placeholder="0 6 * * *" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    <code>0 6 * * *</code> daily 6am &nbsp; <code>*/5 * * * *</code> every 5 min
+                </MudText>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudTextField @bind-Value="_form.Timezone" Label="Timezone" Variant="Variant.Outlined" Placeholder="UTC" />
+            </MudItem>
+            <MudItem xs="4" sm="2">
+                <MudCheckBox @bind-Value="_form.IsEnabled" Label="Enabled" Color="Color.Primary" />
+            </MudItem>
+            <MudItem xs="4" sm="2">
+                <MudCheckBox @bind-Value="_form.RetryOnFailure" Label="Retry" Color="Color.Primary" />
+            </MudItem>
+            <MudItem xs="4" sm="2">
+                <MudNumericField @bind-Value="_form.MaxRetries" Label="Max Retries" Variant="Variant.Outlined" Min="0" Max="10" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveSchedule" Disabled="_saving" Class="mr-2">
+                    @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                    Save
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick="CancelForm">Cancel</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+}
+
+@if (_deletingItem != null)
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="3" Style="border-left: 4px solid #f44336">
+        <MudText Typo="Typo.h6" Color="Color.Error">Confirm Delete</MudText>
+        <MudText Class="mb-3">Delete schedule for <strong>@_deletingItem.WidgetName</strong>?</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DoDelete" Class="mr-2">Delete</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="() => _deletingItem = null">Cancel</MudButton>
+    </MudPaper>
+}
+
 @if (_schedules != null)
 {
     <MudTable Items="_schedules" Dense="true" Hover="true" Striped="true">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Schedule List</MudText>
+            <MudSpacer />
+            @if (!_showForm)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="OpenAddForm">Add Schedule</MudButton>
+            }
+        </ToolBarContent>
         <HeaderContent>
             <MudTh>Widget</MudTh>
             <MudTh>Cron</MudTh>
             <MudTh>Timezone</MudTh>
             <MudTh>Enabled</MudTh>
             <MudTh>Last Run</MudTh>
+            <MudTh>Next Run</MudTh>
+            <MudTh>Actions</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd>@context.WidgetName</MudTd>
-            <MudTd>@context.CronExpression</MudTd>
+            <MudTd><code>@context.CronExpression</code></MudTd>
             <MudTd>@context.Timezone</MudTd>
-            <MudTd><MudChip T="string" Color="@(context.IsEnabled ? Color.Success : Color.Error)" Size="Size.Small">@(context.IsEnabled ? "Enabled" : "Disabled")</MudChip></MudTd>
-            <MudTd>@(context.LastRunAt.HasValue ? context.LastRunAt.Value.ToString("g") : "Never")</MudTd>
+            <MudTd>
+                <MudChip T="string" Color="@(context.IsEnabled ? Color.Success : Color.Default)" Size="Size.Small">
+                    @(context.IsEnabled ? "Enabled" : "Disabled")
+                </MudChip>
+            </MudTd>
+            <MudTd>
+                @if (context.LastRunAt.HasValue)
+                {
+                    <span>@context.LastRunAt.Value.ToString("g")</span>
+                    @if (context.LastRunStatus.HasValue)
+                    {
+                        <MudChip T="string" Color="@StatusColor(context.LastRunStatus.Value)" Size="Size.Small" Class="ml-1">@context.LastRunStatus</MudChip>
+                    }
+                }
+                else { <span>Never</span> }
+            </MudTd>
+            <MudTd>@(context.NextRunAt.HasValue ? context.NextRunAt.Value.ToString("g") : "-")</MudTd>
+            <MudTd>
+                @if (context.IsEnabled)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.PauseCircle" Color="Color.Warning" Size="Size.Small"
+                                   OnClick="() => ToggleSchedule(context, false)" />
+                }
+                else
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.PlayCircle" Color="Color.Success" Size="Size.Small"
+                                   OnClick="() => ToggleSchedule(context, true)" />
+                }
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" Size="Size.Small"
+                               OnClick="() => OpenEditForm(context)" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                               OnClick="() => _deletingItem = context" />
+            </MudTd>
         </RowTemplate>
     </MudTable>
 }
@@ -38,11 +138,93 @@ else
 
 @code {
     IEnumerable<WidgetScheduleDto>? _schedules;
+    IEnumerable<WidgetDto>? _widgets;
+    WidgetScheduleDto? _deletingItem;
     string? _error;
+    bool _showForm;
+    bool _saving;
+    int? _editingId;
+    CreateScheduleDto _form = new();
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    async Task LoadAsync()
     {
-        try { _schedules = await ApiService.GetSchedulesAsync() ?? Array.Empty<WidgetScheduleDto>(); }
-        catch (Exception ex) { _error = $"Failed to load schedules: {ex.Message}"; _schedules = Array.Empty<WidgetScheduleDto>(); }
+        try
+        {
+            _schedules = await ApiService.GetSchedulesAsync() ?? Array.Empty<WidgetScheduleDto>();
+            _widgets = await ApiService.GetWidgetsAsync() ?? Array.Empty<WidgetDto>();
+        }
+        catch (Exception ex) { _error = $"Failed to load: {ex.Message}"; _schedules = Array.Empty<WidgetScheduleDto>(); }
     }
+
+    void OpenAddForm()
+    {
+        _editingId = null;
+        _form = new CreateScheduleDto { Timezone = "UTC", IsEnabled = true, MaxRetries = 3 };
+        _showForm = true;
+    }
+
+    void OpenEditForm(WidgetScheduleDto s)
+    {
+        _editingId = s.Id;
+        _form = new CreateScheduleDto
+        {
+            WidgetId = s.WidgetId, CronExpression = s.CronExpression, Timezone = s.Timezone,
+            IsEnabled = s.IsEnabled, RetryOnFailure = s.RetryOnFailure, MaxRetries = s.MaxRetries
+        };
+        _showForm = true;
+    }
+
+    void CancelForm() { _showForm = false; _editingId = null; }
+
+    async Task SaveSchedule()
+    {
+        _saving = true;
+        try
+        {
+            if (_editingId == null)
+            {
+                var result = await ApiService.CreateScheduleAsync(_form);
+                Snackbar.Add(result != null ? "Schedule created!" : "Failed to create.", result != null ? Severity.Success : Severity.Error);
+            }
+            else
+            {
+                var dto = new UpdateScheduleDto
+                {
+                    WidgetId = _form.WidgetId, CronExpression = _form.CronExpression, Timezone = _form.Timezone,
+                    IsEnabled = _form.IsEnabled, RetryOnFailure = _form.RetryOnFailure, MaxRetries = _form.MaxRetries
+                };
+                var result = await ApiService.UpdateScheduleAsync(_editingId.Value, dto);
+                Snackbar.Add(result != null ? "Schedule updated!" : "Failed to update.", result != null ? Severity.Success : Severity.Error);
+            }
+            _showForm = false;
+            await LoadAsync();
+        }
+        finally { _saving = false; }
+    }
+
+    async Task ToggleSchedule(WidgetScheduleDto s, bool enable)
+    {
+        var ok = enable ? await ApiService.EnableScheduleAsync(s.Id) : await ApiService.DisableScheduleAsync(s.Id);
+        Snackbar.Add(ok ? $"Schedule {(enable ? "enabled" : "disabled")}." : "Operation failed.", ok ? Severity.Success : Severity.Error);
+        await LoadAsync();
+    }
+
+    async Task DoDelete()
+    {
+        if (_deletingItem == null) return;
+        var ok = await ApiService.DeleteScheduleAsync(_deletingItem.Id);
+        Snackbar.Add(ok ? "Deleted." : "Delete failed.", ok ? Severity.Success : Severity.Error);
+        _deletingItem = null;
+        await LoadAsync();
+    }
+
+    static Color StatusColor(ExecutionStatus s) => s switch
+    {
+        ExecutionStatus.Success => Color.Success,
+        ExecutionStatus.Running => Color.Info,
+        ExecutionStatus.Failed => Color.Error,
+        _ => Color.Default
+    };
 }

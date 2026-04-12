@@ -3,14 +3,50 @@
 @using MudBlazor
 @using WidgetData.Application.DTOs
 @inject WidgetData.Web.Services.ApiService ApiService
+@inject ISnackbar Snackbar
 
 <PageTitle>Users - WidgetData</PageTitle>
 
 <MudText Typo="Typo.h4" Class="mb-4">Users</MudText>
 
+@if (_showForm)
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="3">
+        <MudText Typo="Typo.h6" Class="mb-3">Add User</MudText>
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_form.Email" Label="Email" Required="true" Variant="Variant.Outlined" InputType="InputType.Email" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_form.DisplayName" Label="Display Name" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_form.Password" Label="Password" Required="true" Variant="Variant.Outlined"
+                              InputType="InputType.Password" HelperText="Min 8 chars, uppercase, number, symbol" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveUser" Disabled="_saving" Class="mr-2">
+                    @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                    Create
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick="() => _showForm = false">Cancel</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+}
+
 @if (_users != null)
 {
     <MudTable Items="_users" Dense="true" Hover="true" Striped="true">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">User List</MudText>
+            <MudSpacer />
+            @if (!_showForm)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd"
+                           OnClick="() => { _form = new(); _showForm = true; }">Add User</MudButton>
+            }
+        </ToolBarContent>
         <HeaderContent>
             <MudTh>Email</MudTh>
             <MudTh>Display Name</MudTh>
@@ -21,7 +57,12 @@
         <RowTemplate>
             <MudTd>@context.Email</MudTd>
             <MudTd>@context.DisplayName</MudTd>
-            <MudTd>@string.Join(", ", context.Roles)</MudTd>
+            <MudTd>
+                @foreach (var role in context.Roles)
+                {
+                    <MudChip T="string" Color="Color.Primary" Size="Size.Small" Class="mr-1">@role</MudChip>
+                }
+            </MudTd>
             <MudTd><MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Error)" Size="Size.Small">@(context.IsActive ? "Active" : "Inactive")</MudChip></MudTd>
             <MudTd>@(context.LastLoginAt.HasValue ? context.LastLoginAt.Value.ToString("g") : "Never")</MudTd>
         </RowTemplate>
@@ -39,10 +80,27 @@ else
 @code {
     IEnumerable<UserDto>? _users;
     string? _error;
+    bool _showForm;
+    bool _saving;
+    RegisterDto _form = new();
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    async Task LoadAsync()
     {
         try { _users = await ApiService.GetUsersAsync() ?? Array.Empty<UserDto>(); }
         catch (Exception ex) { _error = $"Failed to load users: {ex.Message}"; _users = Array.Empty<UserDto>(); }
+    }
+
+    async Task SaveUser()
+    {
+        _saving = true;
+        try
+        {
+            var result = await ApiService.CreateUserAsync(_form);
+            Snackbar.Add(result != null ? "User created!" : "Failed to create user.", result != null ? Severity.Success : Severity.Error);
+            if (result != null) { _showForm = false; _form = new(); await LoadAsync(); }
+        }
+        finally { _saving = false; }
     }
 }

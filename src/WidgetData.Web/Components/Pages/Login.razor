@@ -5,6 +5,7 @@
 @inject WidgetData.Web.Services.ApiService ApiService
 @inject WidgetData.Web.Services.AuthStateProvider AuthStateProvider
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
 <PageTitle>Login - WidgetData</PageTitle>
 
@@ -59,6 +60,7 @@
             var result = await ApiService.LoginAsync(new LoginDto { Email = _email, Password = _password });
             if (result?.Token != null)
             {
+                await JS.InvokeVoidAsync("sessionStorage.setItem", "jwt_token", result.Token);
                 ApiService.SetToken(result.Token);
                 AuthStateProvider.SetUser(result.Token);
                 Nav.NavigateTo("/");
