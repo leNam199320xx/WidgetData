@@ -154,4 +154,9 @@ public class ApiService
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadAsByteArrayAsync();
     }
+
+    // Reports
+    public Task<IEnumerable<WidgetGroupDto>?> GetReportPagesAsync() => GetAsync<IEnumerable<WidgetGroupDto>>("api/reports/pages");
+    public Task<ReportPageDto?> GetReportPageAsync(int id) => GetAsync<ReportPageDto>($"api/reports/pages/{id}");
+    public Task<WidgetDataDto?> GetWidgetDataAsync(int widgetId) => GetAsync<WidgetDataDto>($"api/reports/widgets/{widgetId}/data");
 }

@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using WidgetData.Application.DTOs;
 using WidgetData.Application.Interfaces;
@@ -141,7 +142,45 @@ public class WidgetService : IWidgetService
     {
         var widget = await _widgetRepo.GetByIdAsync(id);
         if (widget == null) return null;
-        return new { message = "Data retrieval not implemented for this source type", widgetId = id };
+
+        try
+        {
+            var ds = widget.DataSource;
+            if (ds == null) return new { error = "Data source not found" };
+
+            if (ds.SourceType == WidgetData.Domain.Enums.DataSourceType.SQLite && !string.IsNullOrWhiteSpace(ds.ConnectionString))
+            {
+                var config = string.IsNullOrWhiteSpace(widget.Configuration) ? null
+                    : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(widget.Configuration);
+                var query = config?.GetValueOrDefault("query")?.ToString();
+                if (string.IsNullOrWhiteSpace(query))
+                    return new { error = "No query configured for this widget" };
+
+                using var conn = new Microsoft.Data.Sqlite.SqliteConnection(ds.ConnectionString);
+                await conn.OpenAsync();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = query;
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                var columns = Enumerable.Range(0, reader.FieldCount).Select(reader.GetName).ToList();
+                var rows = new List<Dictionary<string, object?>>();
+                while (await reader.ReadAsync())
+                {
+                    var row = new Dictionary<string, object?>();
+                    for (int i = 0; i < reader.FieldCount; i++)
+                        row[columns[i]] = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                    rows.Add(row);
+                }
+
+                return new { columns, rows };
+            }
+
+            return new { message = "Data retrieval not implemented for this source type", widgetId = id };
+        }
+        catch (Exception ex)
+        {
+            return new { error = ex.Message, widgetId = id };
+        }
     }
 
     public async Task<IEnumerable<WidgetExecutionDto>> GetHistoryAsync(int id)

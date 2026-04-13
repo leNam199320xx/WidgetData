@@ -1,0 +1,88 @@
+@page "/reports"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@inject WidgetData.Web.Services.ApiService ApiService
+@inject NavigationManager Nav
+
+<PageTitle>Báo cáo - WidgetData</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-2">
+    <MudIcon Icon="@Icons.Material.Filled.Assessment" Class="mr-2" />
+    Trang báo cáo
+</MudText>
+<MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-6">
+    Xem trước các trang báo cáo được tạo từ dữ liệu cửa hàng thực tế.
+</MudText>
+
+@if (_pages != null)
+{
+    <MudGrid>
+        @foreach (var reportPage in _pages)
+        {
+            var pageId = reportPage.Id;
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard Elevation="3" Class="pa-2">
+                    <MudCardHeader>
+                        <CardHeaderAvatar>
+                            <MudIcon Icon="@GetPageIcon(reportPage.Name)" Color="Color.Primary" />
+                        </CardHeaderAvatar>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">@reportPage.Name</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@reportPage.Description</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudChip T="string" Color="Color.Info" Size="Size.Small" Icon="@Icons.Material.Filled.Widgets">
+                            @reportPage.WidgetIds.Count widget
+                        </MudChip>
+                        <MudChip T="string" Color="@(reportPage.IsActive ? Color.Success : Color.Error)" Size="Size.Small" Class="ml-2">
+                            @(reportPage.IsActive ? "Hoạt động" : "Tạm dừng")
+                        </MudChip>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Preview"
+                                   OnClick="@(() => Nav.NavigateTo("/reports/preview/" + pageId))">
+                            Xem báo cáo
+                        </MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
+}
+else if (_error != null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+else
+{
+    <MudGrid>
+        @for (int i = 0; i < 4; i++)
+        {
+            <MudItem xs="12" sm="6" md="4">
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="180px" />
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    IEnumerable<WidgetGroupDto>? _pages;
+    string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { _pages = await ApiService.GetReportPagesAsync() ?? Array.Empty<WidgetGroupDto>(); }
+        catch (Exception ex) { _error = "Không thể tải danh sách báo cáo: " + ex.Message; }
+    }
+
+    string GetPageIcon(string name) => name.ToLower() switch
+    {
+        var n when n.Contains("doanh") => Icons.Material.Filled.TrendingUp,
+        var n when n.Contains("s\u1ea3n ph\u1ea9m") => Icons.Material.Filled.Inventory,
+        var n when n.Contains("kh\u00e1ch") => Icons.Material.Filled.People,
+        var n when n.Contains("thanh to\u00e1n") => Icons.Material.Filled.Payment,
+        _ => Icons.Material.Filled.BarChart
+    };
+}
