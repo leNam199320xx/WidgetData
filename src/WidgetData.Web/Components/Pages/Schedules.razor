@@ -46,6 +46,10 @@
             <MudItem xs="4" sm="2">
                 <MudNumericField @bind-Value="_form.MaxRetries" Label="Max Retries" Variant="Variant.Outlined" Min="0" Max="10" />
             </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudCheckBox @bind-Value="_form.ArchiveConfigOnRun" Label="Archive config khi chạy" Color="Color.Secondary" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Tự động lưu snapshot cấu hình mỗi lần schedule chạy</MudText>
+            </MudItem>
             <MudItem xs="12">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveSchedule" Disabled="_saving" Class="mr-2">
                     @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
@@ -84,6 +88,7 @@
             <MudTh>Lịch chạy</MudTh>
             <MudTh>Timezone</MudTh>
             <MudTh>Enabled</MudTh>
+            <MudTh>Archive Config</MudTh>
             <MudTh>Last Run</MudTh>
             <MudTh>Next Run</MudTh>
             <MudTh>Actions</MudTh>
@@ -103,6 +108,11 @@
                 </MudChip>
             </MudTd>
             <MudTd>
+                <MudChip T="string" Color="@(context.ArchiveConfigOnRun ? Color.Secondary : Color.Default)" Size="Size.Small">
+                    @(context.ArchiveConfigOnRun ? "✓ Bật" : "Tắt")
+                </MudChip>
+            </MudTd>
+            <MudTd>
                 @if (context.LastRunAt.HasValue)
                 {
                     <span>@context.LastRunAt.Value.ToString("g")</span>
@@ -118,13 +128,15 @@
                 @if (context.IsEnabled)
                 {
                     <MudIconButton Icon="@Icons.Material.Filled.PauseCircle" Color="Color.Warning" Size="Size.Small"
-                                   OnClick="() => ToggleSchedule(context, false)" />
+                                   OnClick="() => ToggleSchedule(context, false)" Title="Tắt schedule" />
                 }
                 else
                 {
                     <MudIconButton Icon="@Icons.Material.Filled.PlayCircle" Color="Color.Success" Size="Size.Small"
-                                   OnClick="() => ToggleSchedule(context, true)" />
+                                   OnClick="() => ToggleSchedule(context, true)" Title="Bật schedule" />
                 }
+                <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Info" Size="Size.Small"
+                               OnClick="() => TriggerSchedule(context)" Title="Chạy ngay (trigger)" />
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" Size="Size.Small"
                                OnClick="() => OpenEditForm(context)" />
                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
@@ -177,7 +189,8 @@ else
         _form = new CreateScheduleDto
         {
             WidgetId = s.WidgetId, CronExpression = s.CronExpression, Timezone = s.Timezone,
-            IsEnabled = s.IsEnabled, RetryOnFailure = s.RetryOnFailure, MaxRetries = s.MaxRetries
+            IsEnabled = s.IsEnabled, RetryOnFailure = s.RetryOnFailure, MaxRetries = s.MaxRetries,
+            ArchiveConfigOnRun = s.ArchiveConfigOnRun
         };
         _showForm = true;
     }
@@ -215,6 +228,16 @@ else
         var ok = enable ? await ApiService.EnableScheduleAsync(s.Id) : await ApiService.DisableScheduleAsync(s.Id);
         Snackbar.Add(ok ? $"Schedule {(enable ? "enabled" : "disabled")}." : "Operation failed.", ok ? Severity.Success : Severity.Error);
         await LoadAsync();
+    }
+
+    async Task TriggerSchedule(WidgetScheduleDto s)
+    {
+        var ok = await ApiService.TriggerScheduleAsync(s.Id);
+        var msg = ok
+            ? (s.ArchiveConfigOnRun ? "✓ Đã trigger schedule và lưu archive config!" : "✓ Đã trigger schedule!")
+            : "Trigger thất bại.";
+        Snackbar.Add(msg, ok ? Severity.Success : Severity.Error);
+        if (ok) await LoadAsync();
     }
 
     async Task DoDelete()

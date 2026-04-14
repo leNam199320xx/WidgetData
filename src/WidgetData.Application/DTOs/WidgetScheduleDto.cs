@@ -12,6 +12,7 @@ public class WidgetScheduleDto
     public bool IsEnabled { get; set; }
     public bool RetryOnFailure { get; set; }
     public int MaxRetries { get; set; }
+    public bool ArchiveConfigOnRun { get; set; }
     public DateTime? LastRunAt { get; set; }
     public ExecutionStatus? LastRunStatus { get; set; }
     public DateTime? NextRunAt { get; set; }
@@ -26,6 +27,7 @@ public class CreateScheduleDto
     public bool IsEnabled { get; set; } = true;
     public bool RetryOnFailure { get; set; } = false;
     public int MaxRetries { get; set; } = 3;
+    public bool ArchiveConfigOnRun { get; set; } = false;
 }
 
 public class UpdateScheduleDto : CreateScheduleDto { }

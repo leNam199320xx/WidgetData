@@ -29,4 +29,5 @@ public class Widget
     public ICollection<DeliveryTarget> DeliveryTargets { get; set; } = new List<DeliveryTarget>();
     public ICollection<WidgetSchedule> Schedules { get; set; } = new List<WidgetSchedule>();
     public ICollection<WidgetExecution> Executions { get; set; } = new List<WidgetExecution>();
+    public ICollection<WidgetConfigArchive> ConfigArchives { get; set; } = new List<WidgetConfigArchive>();
 }

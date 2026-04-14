@@ -14,9 +14,11 @@ public class WidgetSchedule
     public DateTime? LastRunAt { get; set; }
     public ExecutionStatus? LastRunStatus { get; set; }
     public DateTime? NextRunAt { get; set; }
+    public bool ArchiveConfigOnRun { get; set; } = false;
     public string? HangfireJobId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 
     public Widget Widget { get; set; } = null!;
+    public ICollection<WidgetConfigArchive> ConfigArchives { get; set; } = new List<WidgetConfigArchive>();
 }

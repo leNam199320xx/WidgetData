@@ -8,10 +8,12 @@ namespace WidgetData.Infrastructure.Services;
 public class ScheduleService : IScheduleService
 {
     private readonly IScheduleRepository _repo;
+    private readonly IWidgetConfigArchiveService _archiveService;
 
-    public ScheduleService(IScheduleRepository repo)
+    public ScheduleService(IScheduleRepository repo, IWidgetConfigArchiveService archiveService)
     {
         _repo = repo;
+        _archiveService = archiveService;
     }
 
     public async Task<IEnumerable<WidgetScheduleDto>> GetAllAsync()
@@ -29,7 +31,8 @@ public class ScheduleService : IScheduleService
             Timezone = dto.Timezone,
             IsEnabled = dto.IsEnabled,
             RetryOnFailure = dto.RetryOnFailure,
-            MaxRetries = dto.MaxRetries
+            MaxRetries = dto.MaxRetries,
+            ArchiveConfigOnRun = dto.ArchiveConfigOnRun
         };
         var created = await _repo.CreateAsync(entity);
         return MapToDto(created);
@@ -44,6 +47,7 @@ public class ScheduleService : IScheduleService
         entity.IsEnabled = dto.IsEnabled;
         entity.RetryOnFailure = dto.RetryOnFailure;
         entity.MaxRetries = dto.MaxRetries;
+        entity.ArchiveConfigOnRun = dto.ArchiveConfigOnRun;
         entity.UpdatedAt = DateTime.UtcNow;
         var updated = await _repo.UpdateAsync(entity);
         return MapToDto(updated);
@@ -77,6 +81,22 @@ public class ScheduleService : IScheduleService
         return true;
     }
 
+    public async Task<WidgetScheduleDto?> TriggerAsync(int id, string triggeredBy)
+    {
+        var entity = await _repo.GetByIdAsync(id);
+        if (entity == null) return null;
+
+        entity.LastRunAt = DateTime.UtcNow;
+        entity.LastRunStatus = WidgetData.Domain.Enums.ExecutionStatus.Success;
+        entity.UpdatedAt = DateTime.UtcNow;
+        var updated = await _repo.UpdateAsync(entity);
+
+        if (entity.ArchiveConfigOnRun)
+            await _archiveService.CreateForScheduleAsync(entity.WidgetId, entity.Id, triggeredBy);
+
+        return MapToDto(updated);
+    }
+
     private static WidgetScheduleDto MapToDto(WidgetSchedule s) => new()
     {
         Id = s.Id,
@@ -87,6 +107,7 @@ public class ScheduleService : IScheduleService
         IsEnabled = s.IsEnabled,
         RetryOnFailure = s.RetryOnFailure,
         MaxRetries = s.MaxRetries,
+        ArchiveConfigOnRun = s.ArchiveConfigOnRun,
         LastRunAt = s.LastRunAt,
         LastRunStatus = s.LastRunStatus,
         NextRunAt = s.NextRunAt,

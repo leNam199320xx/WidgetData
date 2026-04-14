@@ -1,0 +1,251 @@
+@page "/config-archives"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@inject WidgetData.Web.Services.ApiService ApiService
+@inject ISnackbar Snackbar
+
+<PageTitle>Config Archives - WidgetData</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-1">
+    <MudIcon Icon="@Icons.Material.Filled.Archive" Class="mr-2" />
+    Widget Config Archives
+</MudText>
+<MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">
+    Lịch sử snapshot cấu hình widget theo lịch hoặc thủ công. Có thể khôi phục về bản cũ bất kỳ lúc nào.
+</MudText>
+
+@* Manual Archive Form *@
+@if (_showForm)
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="3">
+        <MudText Typo="Typo.h6" Class="mb-3">Tạo Archive Thủ Công</MudText>
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudSelect @bind-Value="_form.WidgetId" Label="Widget" Variant="Variant.Outlined" Required="true">
+                    @if (_widgets != null)
+                    {
+                        @foreach (var w in _widgets)
+                        {
+                            <MudSelectItem Value="@w.Id">@(w.FriendlyLabel ?? w.Name)</MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_form.Note" Label="Ghi chú" Variant="Variant.Outlined"
+                              Placeholder="VD: Trước khi cập nhật cấu hình mới..." />
+            </MudItem>
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveArchive" Disabled="_saving" Class="mr-2">
+                    @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                    Tạo Archive
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick="() => _showForm = false">Hủy</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+}
+
+@* Restore Confirm *@
+@if (_restoringItem != null)
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="3" Style="border-left: 4px solid #ff9800">
+        <MudText Typo="Typo.h6" Color="Color.Warning">Xác nhận khôi phục cấu hình</MudText>
+        <MudText Class="mb-2">
+            Khôi phục cấu hình widget <strong>@_restoringItem.WidgetName</strong>
+            về snapshot lúc <strong>@_restoringItem.ArchivedAt.ToString("g")</strong>?
+        </MudText>
+        @if (!string.IsNullOrEmpty(_restoringItem.Note))
+        {
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">Ghi chú: @_restoringItem.Note</MudText>
+        }
+        <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-3">
+            Thao tác này sẽ ghi đè cấu hình hiện tại của widget. Bạn có thể tạo archive trước để lưu trạng thái hiện tại.
+        </MudAlert>
+        <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="DoRestore" Class="mr-2">Khôi phục</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="() => _restoringItem = null">Hủy</MudButton>
+    </MudPaper>
+}
+
+@* Delete Confirm *@
+@if (_deletingItem != null)
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="3" Style="border-left: 4px solid #f44336">
+        <MudText Typo="Typo.h6" Color="Color.Error">Xác nhận xóa archive</MudText>
+        <MudText Class="mb-3">Xóa archive của widget <strong>@_deletingItem.WidgetName</strong> lúc @_deletingItem.ArchivedAt.ToString("g")?</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DoDelete" Class="mr-2">Xóa</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="() => _deletingItem = null">Hủy</MudButton>
+    </MudPaper>
+}
+
+@* Filter Bar *@
+@if (_archives != null)
+{
+    <MudPaper Elevation="1" Class="pa-3 mb-3">
+        <MudGrid>
+            <MudItem xs="12" sm="5">
+                <MudSelect @bind-Value="_filterWidgetId" Label="Lọc theo Widget" Variant="Variant.Outlined"
+                           Clearable="true" T="int?" Dense="true">
+                    @if (_widgets != null)
+                    {
+                        @foreach (var w in _widgets)
+                        {
+                            <MudSelectItem T="int?" Value="@((int?)w.Id)">@(w.FriendlyLabel ?? w.Name)</MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="3">
+                <MudSelect @bind-Value="_filterTrigger" Label="Nguồn" Variant="Variant.Outlined"
+                           Clearable="true" T="string?" Dense="true">
+                    <MudSelectItem T="string?" Value="@("schedule")">Theo lịch</MudSelectItem>
+                    <MudSelectItem T="string?" Value="@("manual")">Thủ công</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="4" Class="d-flex align-center gap-2">
+                <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.FilterAlt"
+                           OnClick="ApplyFilter" Size="Size.Small">Lọc</MudButton>
+                <MudSpacer />
+                @if (!_showForm)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="() => { _form = new(); _showForm = true; }">Tạo Archive</MudButton>
+                }
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudTable Items="_filteredArchives" Dense="true" Hover="true" Striped="true">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Danh sách Archive (@_filteredArchives.Count() bản)</MudText>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>Widget</MudTh>
+            <MudTh>Thời điểm archive</MudTh>
+            <MudTh>Nguồn</MudTh>
+            <MudTh>Người archive</MudTh>
+            <MudTh>Ghi chú</MudTh>
+            <MudTh>Thao tác</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>
+                <MudIcon Icon="@Icons.Material.Filled.Widgets" Size="Size.Small" Class="mr-1" Color="Color.Primary" />
+                @context.WidgetName
+            </MudTd>
+            <MudTd>@context.ArchivedAt.ToString("dd/MM/yyyy HH:mm:ss")</MudTd>
+            <MudTd>
+                @if (context.ScheduleId.HasValue)
+                {
+                    <MudChip T="string" Color="Color.Info" Size="Size.Small" Icon="@Icons.Material.Filled.Schedule">
+                        Lịch #@context.ScheduleId
+                    </MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Color="Color.Default" Size="Size.Small" Icon="@Icons.Material.Filled.Person">
+                        Thủ công
+                    </MudChip>
+                }
+            </MudTd>
+            <MudTd>@context.ArchivedBy</MudTd>
+            <MudTd>
+                <MudTooltip Text="@(context.Note ?? "")">
+                    <MudText Style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        @(context.Note ?? "-")
+                    </MudText>
+                </MudTooltip>
+            </MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Restore" Color="Color.Warning" Size="Size.Small"
+                               Title="Khôi phục cấu hình này"
+                               OnClick="() => _restoringItem = context" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                               Title="Xóa archive"
+                               OnClick="() => _deletingItem = context" />
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Class="pa-4" Color="Color.Secondary">Chưa có archive nào.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+}
+else if (_error != null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+else
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+
+@code {
+    IEnumerable<WidgetConfigArchiveDto>? _archives;
+    IEnumerable<WidgetDto>? _widgets;
+    WidgetConfigArchiveDto? _restoringItem;
+    WidgetConfigArchiveDto? _deletingItem;
+    string? _error;
+    bool _showForm;
+    bool _saving;
+    CreateWidgetConfigArchiveDto _form = new();
+    int? _filterWidgetId;
+    string? _filterTrigger;
+
+    IEnumerable<WidgetConfigArchiveDto> _filteredArchives =>
+        (_archives ?? Enumerable.Empty<WidgetConfigArchiveDto>())
+            .Where(a => !_filterWidgetId.HasValue || a.WidgetId == _filterWidgetId.Value)
+            .Where(a => _filterTrigger == null ||
+                (_filterTrigger == "schedule" && a.ScheduleId.HasValue) ||
+                (_filterTrigger == "manual" && !a.ScheduleId.HasValue));
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    async Task LoadAsync()
+    {
+        try
+        {
+            _archives = await ApiService.GetAllConfigArchivesAsync() ?? Array.Empty<WidgetConfigArchiveDto>();
+            _widgets = await ApiService.GetWidgetsAsync() ?? Array.Empty<WidgetDto>();
+        }
+        catch (Exception ex) { _error = $"Không thể tải dữ liệu: {ex.Message}"; _archives = Array.Empty<WidgetConfigArchiveDto>(); }
+    }
+
+    void ApplyFilter() => StateHasChanged();
+
+    async Task SaveArchive()
+    {
+        _saving = true;
+        try
+        {
+            var result = await ApiService.CreateConfigArchiveAsync(_form);
+            if (result != null)
+            {
+                Snackbar.Add("✓ Đã tạo archive thành công!", Severity.Success);
+                _showForm = false;
+                await LoadAsync();
+            }
+            else
+            {
+                Snackbar.Add("Tạo archive thất bại.", Severity.Error);
+            }
+        }
+        finally { _saving = false; }
+    }
+
+    async Task DoRestore()
+    {
+        if (_restoringItem == null) return;
+        var ok = await ApiService.RestoreConfigArchiveAsync(_restoringItem.Id);
+        Snackbar.Add(ok ? "✓ Đã khôi phục cấu hình!" : "Khôi phục thất bại.", ok ? Severity.Success : Severity.Error);
+        _restoringItem = null;
+    }
+
+    async Task DoDelete()
+    {
+        if (_deletingItem == null) return;
+        var ok = await ApiService.DeleteConfigArchiveAsync(_deletingItem.Id);
+        Snackbar.Add(ok ? "✓ Đã xóa archive." : "Xóa thất bại.", ok ? Severity.Success : Severity.Error);
+        _deletingItem = null;
+        await LoadAsync();
+    }
+}
