@@ -133,13 +133,15 @@
                 @if (context.IsEnabled)
                 {
                     <MudIconButton Icon="@Icons.Material.Filled.PauseCircle" Color="Color.Warning" Size="Size.Small"
-                                   OnClick="() => ToggleSchedule(context, false)" />
+                                   OnClick="() => ToggleSchedule(context, false)" Title="Tắt schedule" />
                 }
                 else
                 {
                     <MudIconButton Icon="@Icons.Material.Filled.PlayCircle" Color="Color.Success" Size="Size.Small"
-                                   OnClick="() => ToggleSchedule(context, true)" />
+                                   OnClick="() => ToggleSchedule(context, true)" Title="Bật schedule" />
                 }
+                <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Info" Size="Size.Small"
+                               OnClick="() => TriggerSchedule(context)" Title="Chạy ngay (trigger)" />
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" Size="Size.Small"
                                OnClick="() => OpenEditForm(context)" />
                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
@@ -232,6 +234,16 @@ else
         var ok = enable ? await ApiService.EnableScheduleAsync(s.Id) : await ApiService.DisableScheduleAsync(s.Id);
         Snackbar.Add(ok ? $"Schedule {(enable ? "enabled" : "disabled")}." : "Operation failed.", ok ? Severity.Success : Severity.Error);
         await LoadAsync();
+    }
+
+    async Task TriggerSchedule(WidgetScheduleDto s)
+    {
+        var ok = await ApiService.TriggerScheduleAsync(s.Id);
+        var msg = ok
+            ? (s.ArchiveConfigOnRun ? "✓ Đã trigger schedule và lưu archive config!" : "✓ Đã trigger schedule!")
+            : "Trigger thất bại.";
+        Snackbar.Add(msg, ok ? Severity.Success : Severity.Error);
+        if (ok) await LoadAsync();
     }
 
     async Task DoDelete()

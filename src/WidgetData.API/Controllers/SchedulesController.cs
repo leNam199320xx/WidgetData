@@ -54,4 +54,12 @@ public class SchedulesController : ControllerBase
         var result = await _service.DisableAsync(id);
         return result ? Ok() : NotFound();
     }
+
+    [HttpPost("{id}/trigger")]
+    public async Task<IActionResult> Trigger(int id)
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "schedule";
+        var result = await _service.TriggerAsync(id, userId);
+        return result == null ? NotFound() : Ok(result);
+    }
 }

@@ -21,3 +21,4 @@ public class WidgetSchedule
 
     public Widget Widget { get; set; } = null!;
 }
+

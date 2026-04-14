@@ -160,7 +160,14 @@ public class ApiService
     public Task<DeliveryExecutionDto?> TriggerDeliveryAsync(int widgetId, int deliveryTargetId) => PostAsync<DeliveryExecutionDto>($"api/widgets/{widgetId}/deliver/{deliveryTargetId}", new { });
     public Task<IEnumerable<DeliveryExecutionDto>?> GetDeliveryExecutionsAsync(int widgetId) => GetAsync<IEnumerable<DeliveryExecutionDto>>($"api/widgets/{widgetId}/deliveries");
 
-    // Config Archives
+    public async Task<bool> TriggerScheduleAsync(int id)
+    {
+        ApplyToken();
+        var response = await _http.PostAsync($"api/schedules/{id}/trigger", null);
+        return response.IsSuccessStatusCode;
+    }
+
+    // Config Archives (nested under widgets - used by WidgetConfigure page)
     public Task<IEnumerable<WidgetConfigArchiveDto>?> GetWidgetConfigArchivesAsync(int widgetId)
         => GetAsync<IEnumerable<WidgetConfigArchiveDto>>($"api/widgets/{widgetId}/config-archives");
     public Task<WidgetConfigArchiveDto?> CreateWidgetConfigArchiveAsync(int widgetId, CreateWidgetConfigArchiveDto dto)
@@ -169,6 +176,10 @@ public class ApiService
         => PostAsync<WidgetDto>($"api/widgets/{widgetId}/config-archives/{archiveId}/restore", new { });
     public Task<bool> DeleteWidgetConfigArchiveAsync(int widgetId, int archiveId)
         => DeleteAsync($"api/widgets/{widgetId}/config-archives/{archiveId}");
+
+    // Config Archives (flat - used by /config-archives admin page)
+    public Task<IEnumerable<WidgetConfigArchiveDto>?> GetAllConfigArchivesAsync()
+        => GetAsync<IEnumerable<WidgetConfigArchiveDto>>("api/widget-config-archives");
 
     // Export
     public string GetExportUrl(int widgetId, string format) => $"api/widgets/{widgetId}/export?format={format}";

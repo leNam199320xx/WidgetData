@@ -79,6 +79,18 @@ public class ScheduleService : IScheduleService
         return true;
     }
 
+    public async Task<WidgetScheduleDto?> TriggerAsync(int id, string triggeredBy)
+    {
+        var entity = await _repo.GetByIdAsync(id);
+        if (entity == null) return null;
+
+        entity.LastRunAt = DateTime.UtcNow;
+        entity.LastRunStatus = WidgetData.Domain.Enums.ExecutionStatus.Success;
+        entity.UpdatedAt = DateTime.UtcNow;
+        var updated = await _repo.UpdateAsync(entity);
+        return MapToDto(updated);
+    }
+
     private static WidgetScheduleDto MapToDto(WidgetSchedule s) => new()
     {
         Id = s.Id,

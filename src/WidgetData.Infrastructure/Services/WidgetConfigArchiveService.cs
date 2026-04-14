@@ -16,6 +16,12 @@ public class WidgetConfigArchiveService : IWidgetConfigArchiveService
         _widgetRepo = widgetRepo;
     }
 
+    public async Task<IEnumerable<WidgetConfigArchiveDto>> GetAllAsync()
+    {
+        var archives = await _archiveRepo.GetAllAsync();
+        return archives.Select(a => MapToDto(a, a.Widget?.Name));
+    }
+
     public async Task<IEnumerable<WidgetConfigArchiveDto>> GetByWidgetIdAsync(int widgetId)
     {
         var archives = await _archiveRepo.GetByWidgetIdAsync(widgetId);

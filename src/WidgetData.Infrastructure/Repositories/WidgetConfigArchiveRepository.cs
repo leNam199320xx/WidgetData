@@ -14,6 +14,12 @@ public class WidgetConfigArchiveRepository : IWidgetConfigArchiveRepository
         _context = context;
     }
 
+    public async Task<IEnumerable<WidgetConfigArchive>> GetAllAsync()
+        => await _context.WidgetConfigArchives
+            .Include(a => a.Widget)
+            .OrderByDescending(a => a.ArchivedAt)
+            .ToListAsync();
+
     public async Task<IEnumerable<WidgetConfigArchive>> GetByWidgetIdAsync(int widgetId)
         => await _context.WidgetConfigArchives
             .Where(a => a.WidgetId == widgetId)
