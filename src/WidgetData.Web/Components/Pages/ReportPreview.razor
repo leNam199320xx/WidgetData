@@ -42,14 +42,26 @@ else
             @foreach (var m in _metrics)
             {
                 <MudItem xs="12" sm="6" md="3">
-                    <MudPaper Elevation="2" Class="pa-4" Style="border-top: 4px solid #1976d2;">
-                        <MudText Typo="Typo.h4" Color="Color.Primary">@m.DisplayValue</MudText>
-                        <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="mt-1">@m.Label</MudText>
-                        @if (!string.IsNullOrEmpty(m.HelpText))
-                        {
-                            <MudText Typo="Typo.caption" Color="Color.Tertiary">@m.HelpText</MudText>
-                        }
-                    </MudPaper>
+                    @if (!string.IsNullOrWhiteSpace(m.HtmlTemplate))
+                    {
+                        <MudPaper Elevation="2" Class="pa-2">
+                            @((MarkupString)m.HtmlTemplate
+                                .Replace("{{value}}", System.Web.HttpUtility.HtmlEncode(m.DisplayValue))
+                                .Replace("{{label}}", System.Web.HttpUtility.HtmlEncode(m.Label))
+                                .Replace("{{helpText}}", System.Web.HttpUtility.HtmlEncode(m.HelpText ?? "")))
+                        </MudPaper>
+                    }
+                    else
+                    {
+                        <MudPaper Elevation="2" Class="pa-4" Style="border-top: 4px solid #1976d2;">
+                            <MudText Typo="Typo.h4" Color="Color.Primary">@m.DisplayValue</MudText>
+                            <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="mt-1">@m.Label</MudText>
+                            @if (!string.IsNullOrEmpty(m.HelpText))
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Tertiary">@m.HelpText</MudText>
+                            }
+                        </MudPaper>
+                    }
                 </MudItem>
             }
         </MudGrid>
@@ -114,6 +126,12 @@ else
             {
                 <MudAlert Severity="Severity.Warning" Dense="true">@t.Error</MudAlert>
             }
+            else if (!string.IsNullOrWhiteSpace(t.HtmlTemplate))
+            {
+                <div style="overflow-x:auto;">
+                    @((MarkupString)RenderHtmlTemplate(t.HtmlTemplate, t.Columns, t.Rows))
+                </div>
+            }
             else if (t.Rows.Any())
             {
                 <div style="overflow-x:auto;">
@@ -162,11 +180,11 @@ else
     string? _pageName;
     string? _pageDescription;
 
-    record MetricModel(string DisplayValue, string Label, string? HelpText);
+    record MetricModel(string DisplayValue, string Label, string? HelpText, string? HtmlTemplate);
     record ChartModel(string Title, string? HelpText, ChartType ChartType, string[] Labels,
-        double[] InputData, List<ChartSeries<double>> Series, string? Error);
+        double[] InputData, List<ChartSeries<double>> Series, string? Error, string? HtmlTemplate);
     record TableModel(string Title, string? HelpText, List<string> Columns,
-        List<Dictionary<string, string>> Rows, string? Error);
+        List<Dictionary<string, string>> Rows, string? Error, string? HtmlTemplate);
 
     List<MetricModel> _metrics = new();
     List<ChartModel> _charts = new();
@@ -204,7 +222,7 @@ else
                     var label = config?.GetValueOrDefault("label")?.ToString() ?? title;
                     var format = config?.GetValueOrDefault("format")?.ToString() ?? "number";
                     var rawVal = GetFirstValue(data);
-                    _metrics.Add(new MetricModel(FormatMetric(rawVal, format), label, helpText));
+                    _metrics.Add(new MetricModel(FormatMetric(rawVal, format), label, helpText, widget.HtmlTemplate));
                 }
                 else if (widget.WidgetType == WidgetType.Chart)
                 {
@@ -213,7 +231,7 @@ else
                 }
                 else if (widget.WidgetType == WidgetType.Table)
                 {
-                    var tableModel = BuildTable(title, helpText, data);
+                    var tableModel = BuildTable(title, helpText, widget.HtmlTemplate, data);
                     _tables.Add(tableModel);
                 }
             }
@@ -228,7 +246,7 @@ else
     ChartModel BuildChart(string title, string? helpText, WidgetDto widget, WidgetDataDto? data)
     {
         if (data?.Error != null)
-            return new ChartModel(title, helpText, ChartType.Bar, Array.Empty<string>(), Array.Empty<double>(), new(), data.Error);
+            return new ChartModel(title, helpText, ChartType.Bar, Array.Empty<string>(), Array.Empty<double>(), new(), data.Error, widget.HtmlTemplate);
 
         var chartConfig = ParseConfig(widget.ChartConfig);
         var chartTypeStr = chartConfig?.GetValueOrDefault("type")?.ToString() ?? "Bar";
@@ -246,7 +264,7 @@ else
 
         var rows = data?.Rows ?? new List<Dictionary<string, object?>>();
         if (!rows.Any())
-            return new ChartModel(title, helpText, chartType, Array.Empty<string>(), Array.Empty<double>(), new(), "Không có dữ liệu");
+            return new ChartModel(title, helpText, chartType, Array.Empty<string>(), Array.Empty<double>(), new(), "Không có dữ liệu", widget.HtmlTemplate);
 
         var labels = rows.Select(r => r.GetValueOrDefault(xAxisCol)?.ToString() ?? "").ToArray();
         var values = rows.Select(r => ToDouble(r.GetValueOrDefault(yAxisCol))).ToArray();
@@ -256,13 +274,13 @@ else
             new ChartSeries<double> { Name = seriesLabel, Data = values }
         };
 
-        return new ChartModel(title, helpText, chartType, labels, values, series, null);
+        return new ChartModel(title, helpText, chartType, labels, values, series, null, widget.HtmlTemplate);
     }
 
-    TableModel BuildTable(string title, string? helpText, WidgetDataDto? data)
+    TableModel BuildTable(string title, string? helpText, string? htmlTemplate, WidgetDataDto? data)
     {
         if (data?.Error != null)
-            return new TableModel(title, helpText, new(), new(), data.Error);
+            return new TableModel(title, helpText, new(), new(), data.Error, htmlTemplate);
 
         var columns = data?.Columns?.ToList() ?? new List<string>();
         var rows = (data?.Rows ?? new List<Dictionary<string, object?>>())
@@ -271,7 +289,7 @@ else
                 kvp => kvp.Value is JsonElement je ? je.ToString() : kvp.Value?.ToString() ?? ""
             )).ToList();
 
-        return new TableModel(title, helpText, columns, rows, null);
+        return new TableModel(title, helpText, columns, rows, null, htmlTemplate);
     }
 
     static string? GetFirstValue(WidgetDataDto? data)
@@ -314,5 +332,51 @@ else
         if (string.IsNullOrWhiteSpace(json)) return null;
         try { return JsonSerializer.Deserialize<Dictionary<string, object>>(json); }
         catch { return null; }
+    }
+
+    static string RenderHtmlTemplate(string template, List<string> columns, List<Dictionary<string, string>> rows)
+    {
+        if (string.IsNullOrWhiteSpace(template)) return "";
+        var result = template;
+
+        if (result.Contains("{{#each rows}}") && result.Contains("{{/each}}"))
+        {
+            var startTag = "{{#each rows}}";
+            var endTag = "{{/each}}";
+            var startIdx = result.IndexOf(startTag);
+            var endIdx = result.IndexOf(endTag);
+
+            if (startIdx >= 0 && endIdx > startIdx)
+            {
+                var before = result[..startIdx];
+                var rowTemplate = result[(startIdx + startTag.Length)..endIdx];
+                var after = result[(endIdx + endTag.Length)..];
+
+                var rowsHtml = new System.Text.StringBuilder();
+                foreach (var row in rows.Take(100))
+                {
+                    var rowHtml = rowTemplate;
+                    foreach (var col in columns)
+                    {
+                        var val = row.GetValueOrDefault(col) ?? "";
+                        rowHtml = rowHtml.Replace($"{{{{{col}}}}}", System.Web.HttpUtility.HtmlEncode(val));
+                    }
+                    rowsHtml.Append(rowHtml);
+                }
+                result = before + rowsHtml + after;
+            }
+        }
+
+        var firstRow = rows.FirstOrDefault();
+        if (firstRow != null)
+        {
+            foreach (var col in columns)
+            {
+                var val = firstRow.GetValueOrDefault(col) ?? "";
+                result = result.Replace($"{{{{{col}}}}}", System.Web.HttpUtility.HtmlEncode(val));
+            }
+        }
+
+        return result;
     }
 }

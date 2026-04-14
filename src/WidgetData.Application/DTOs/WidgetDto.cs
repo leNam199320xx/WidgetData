@@ -14,6 +14,7 @@ public class WidgetDto
     public string? DataSourceName { get; set; }
     public string? Configuration { get; set; }
     public string? ChartConfig { get; set; }
+    public string? HtmlTemplate { get; set; }
     public bool IsActive { get; set; }
     public bool CacheEnabled { get; set; }
     public int CacheTtlMinutes { get; set; }
@@ -34,6 +35,7 @@ public class CreateWidgetDto
     public int DataSourceId { get; set; }
     public string? Configuration { get; set; }
     public string? ChartConfig { get; set; }
+    public string? HtmlTemplate { get; set; }
     public bool CacheEnabled { get; set; } = false;
     public int CacheTtlMinutes { get; set; } = 15;
     public IList<int> GroupIds { get; set; } = new List<int>();

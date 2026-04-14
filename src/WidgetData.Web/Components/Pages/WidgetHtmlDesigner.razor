@@ -1,0 +1,386 @@
+@page "/widgets/html-designer/{WidgetId:int}"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@using WidgetData.Domain.Enums
+@using System.Text.Json
+@inject WidgetData.Web.Services.ApiService ApiService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<PageTitle>HTML Designer - @(_widget?.FriendlyLabel ?? _widget?.Name ?? "Widget")</PageTitle>
+
+<MudBreadcrumbs Items="_breadcrumbs" Class="mb-2 px-0" />
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+}
+else if (_error != null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+else if (_widget != null)
+{
+    <MudText Typo="Typo.h4" Class="mb-1">
+        <MudIcon Icon="@Icons.Material.Filled.Code" Class="mr-2" />
+        HTML Designer – @(_widget.FriendlyLabel ?? _widget.Name)
+    </MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+        Thiết kế giao diện HTML tùy chỉnh cho widget. Sử dụng các biến <code>{{column_name}}</code> để hiển thị dữ liệu.
+    </MudText>
+
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="3" Class="pa-4">
+                <MudText Typo="Typo.h6" Class="mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Class="mr-1" />
+                    Soạn thảo HTML Template
+                </MudText>
+
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2 d-block">
+                    Biến có sẵn từ dữ liệu:
+                    @if (_dataColumns != null && _dataColumns.Any())
+                    {
+                        @foreach (var col in _dataColumns)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Info" Class="mr-1 mb-1"
+                                     OnClick="@(() => InsertVariable(col))">
+                                {{@col}}
+                            </MudChip>
+                        }
+                    }
+                    else
+                    {
+                        <span> (chạy widget để xem danh sách cột)</span>
+                    }
+                </MudText>
+
+                <MudTextField @ref="_templateEditor"
+                              @bind-Value="_htmlTemplate"
+                              Label="HTML Template"
+                              Variant="Variant.Outlined"
+                              Lines="20"
+                              Placeholder="@_templatePlaceholder"
+                              Class="mb-3"
+                              Style="font-family: monospace; font-size: 13px;" />
+
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3 d-block">
+                    <strong>Hướng dẫn:</strong> Sử dụng <code>&#123;&#123;column&#125;&#125;</code> để chèn giá trị cột.
+                    Dùng <code>&#123;&#123;#each rows&#125;&#125;...&#123;&#123;/each&#125;&#125;</code> để lặp qua các dòng dữ liệu.
+                    Để trống để dùng giao diện mặc định.
+                </MudText>
+
+                <div class="d-flex gap-2 flex-wrap">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save"
+                               OnClick="SaveTemplate" Disabled="_saving">
+                        @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                        Lưu Template
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Preview"
+                               OnClick="PreviewTemplate">
+                        Xem trước
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.InsertDriveFile"
+                               OnClick="LoadSampleTemplate">
+                        Mẫu template
+                    </MudButton>
+                    @if (!string.IsNullOrWhiteSpace(_htmlTemplate))
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteForever"
+                                   OnClick="ClearTemplate">
+                            Xóa template
+                        </MudButton>
+                    }
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="3" Class="pa-4">
+                <MudText Typo="Typo.h6" Class="mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Preview" Size="Size.Small" Class="mr-1" />
+                    Xem trước
+                </MudText>
+                @if (_showPreview)
+                {
+                    @if (string.IsNullOrWhiteSpace(_htmlTemplate))
+                    {
+                        <MudAlert Severity="Severity.Info" Dense="true">Chưa có HTML template. Đang dùng giao diện mặc định.</MudAlert>
+                        <div class="mt-3">
+                            @RenderDefaultPreview()
+                        </div>
+                    }
+                    else if (_previewData != null)
+                    {
+                        <div style="border: 1px solid #e0e0e0; border-radius: 4px; padding: 12px; background: white;">
+                            @((MarkupString)RenderHtmlTemplate(_htmlTemplate, _previewData))
+                        </div>
+                    }
+                    else if (_previewError != null)
+                    {
+                        <MudAlert Severity="Severity.Warning" Dense="true">@_previewError</MudAlert>
+                    }
+                    else
+                    {
+                        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                    }
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">
+                        Nhấn "Xem trước" để xem kết quả render với dữ liệu thực.
+                    </MudAlert>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Widget: <strong>@(_widget.FriendlyLabel ?? _widget.Name)</strong><br />
+                        Loại: <strong>@_widget.WidgetType</strong><br />
+                        Data Source: <strong>@_widget.DataSourceName</strong>
+                    </MudText>
+                }
+            </MudPaper>
+
+            @if (_widget.WidgetType == WidgetType.Table && _previewData?.Rows != null && _previewData.Rows.Any())
+            {
+                <MudPaper Elevation="2" Class="pa-4 mt-4">
+                    <MudText Typo="Typo.subtitle2" Class="mb-2">Dữ liệu mẫu (5 dòng đầu):</MudText>
+                    <div style="overflow-x:auto;">
+                        <MudSimpleTable Dense="true" Hover="true" Striped="true">
+                            <thead>
+                                <tr>
+                                    @foreach (var col in (_previewData.Columns ?? new List<string>()))
+                                    {
+                                        <th>@col</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in _previewData.Rows.Take(5))
+                                {
+                                    <tr>
+                                        @foreach (var col in (_previewData.Columns ?? new List<string>()))
+                                        {
+                                            <td>@(row.GetValueOrDefault(col) ?? "-")</td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </MudSimpleTable>
+                    </div>
+                </MudPaper>
+            }
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    [Parameter] public int WidgetId { get; set; }
+
+    bool _loading = true;
+    bool _saving;
+    bool _showPreview;
+    string? _error;
+    string? _previewError;
+    string? _htmlTemplate;
+    WidgetDto? _widget;
+    WidgetDataDto? _previewData;
+    List<string>? _dataColumns;
+    MudTextField<string>? _templateEditor;
+
+    List<BreadcrumbItem> _breadcrumbs = new()
+    {
+        new BreadcrumbItem("Dashboard", href: "/"),
+        new BreadcrumbItem("Widgets", href: "/widgets"),
+        new BreadcrumbItem("HTML Designer", href: null, disabled: true)
+    };
+
+    static readonly string _templatePlaceholder =
+        "<div class=\"widget-card\">\n" +
+        "  <h3>{{title}}</h3>\n" +
+        "  {{#each rows}}\n" +
+        "  <div class=\"row\">\n" +
+        "    <span>{{column_name}}</span>\n" +
+        "  </div>\n" +
+        "  {{/each}}\n" +
+        "</div>";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _widget = await ApiService.GetWidgetByIdAsync(WidgetId);
+            if (_widget == null) { _error = "Không tìm thấy widget."; _loading = false; return; }
+            _htmlTemplate = _widget.HtmlTemplate;
+
+            var data = await ApiService.GetWidgetDataAsync(WidgetId);
+            if (data != null)
+            {
+                _previewData = data;
+                _dataColumns = data.Columns?.ToList();
+            }
+        }
+        catch (Exception ex) { _error = "Lỗi tải widget: " + ex.Message; }
+        finally { _loading = false; }
+    }
+
+    async Task SaveTemplate()
+    {
+        _saving = true;
+        try
+        {
+            var result = await ApiService.UpdateWidgetHtmlTemplateAsync(WidgetId, _htmlTemplate);
+            if (result != null)
+            {
+                _widget = result;
+                Snackbar.Add("✓ Đã lưu HTML template!", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Lưu thất bại.", Severity.Error);
+            }
+        }
+        finally { _saving = false; }
+    }
+
+    async Task PreviewTemplate()
+    {
+        _showPreview = true;
+        _previewError = null;
+        try
+        {
+            var data = await ApiService.GetWidgetDataAsync(WidgetId);
+            if (data == null) { _previewError = "Không thể lấy dữ liệu widget."; return; }
+            _previewData = data;
+            _dataColumns = data.Columns?.ToList();
+        }
+        catch (Exception ex) { _previewError = "Lỗi tải dữ liệu: " + ex.Message; }
+    }
+
+    void InsertVariable(string columnName)
+    {
+        _htmlTemplate = (_htmlTemplate ?? "") + $"{{{{{columnName}}}}}";
+    }
+
+    void LoadSampleTemplate()
+    {
+        var cols = _dataColumns ?? new List<string> { "column1", "column2" };
+        var firstCol = cols.FirstOrDefault() ?? "column";
+        var secondCol = cols.Skip(1).FirstOrDefault() ?? "value";
+
+        if (_widget?.WidgetType == WidgetType.Metric)
+        {
+            _htmlTemplate =
+                "<div style=\"text-align:center;padding:20px;\">\n" +
+                $"  <div style=\"font-size:3rem;font-weight:bold;color:#1976d2;\">{{{{{firstCol}}}}}</div>\n" +
+                $"  <div style=\"color:#666;margin-top:8px;\">{(_widget.FriendlyLabel ?? _widget?.Name ?? "Metric")}</div>\n" +
+                "</div>";
+        }
+        else if (_widget?.WidgetType == WidgetType.Table)
+        {
+            _htmlTemplate =
+                "<div style=\"overflow-x:auto;\">\n" +
+                "  <table style=\"width:100%;border-collapse:collapse;\">\n" +
+                "    <thead>\n" +
+                "      <tr style=\"background:#1976d2;color:white;\">\n" +
+                string.Join("", cols.Select(c => $"        <th style=\"padding:8px;text-align:left;\">{c}</th>\n")) +
+                "      </tr>\n" +
+                "    </thead>\n" +
+                "    <tbody>\n" +
+                "    {{#each rows}}\n" +
+                "      <tr style=\"border-bottom:1px solid #eee;\">\n" +
+                string.Join("", cols.Select(c => $"        <td style=\"padding:8px;\">{{{{{{ {c} }}}}}}</td>\n")) +
+                "      </tr>\n" +
+                "    {{/each}}\n" +
+                "    </tbody>\n" +
+                "  </table>\n" +
+                "</div>";
+        }
+        else
+        {
+            _htmlTemplate =
+                "<div style=\"padding:16px;\">\n" +
+                $"  <h3 style=\"color:#1976d2;\">{(_widget?.FriendlyLabel ?? _widget?.Name ?? "Widget")}</h3>\n" +
+                "  {{#each rows}}\n" +
+                "  <div style=\"padding:8px;border-bottom:1px solid #eee;\">\n" +
+                $"    <strong>{{{{{firstCol}}}}}</strong>: {{{{{secondCol}}}}}\n" +
+                "  </div>\n" +
+                "  {{/each}}\n" +
+                "</div>";
+        }
+    }
+
+    async Task ClearTemplate()
+    {
+        _htmlTemplate = null;
+        await SaveTemplate();
+    }
+
+    RenderFragment RenderDefaultPreview()
+    {
+        return builder =>
+        {
+            if (_previewData == null)
+            {
+                builder.AddMarkupContent(0, "<p style='color:#999'>Chưa có dữ liệu để xem trước.</p>");
+                return;
+            }
+            if (_widget?.WidgetType == WidgetType.Table && _previewData.Rows != null)
+            {
+                builder.AddMarkupContent(0, $"<p style='color:#555'>Bảng dữ liệu: {_previewData.Rows.Count} dòng, {_previewData.Columns?.Count ?? 0} cột</p>");
+            }
+            else if (_widget?.WidgetType == WidgetType.Metric && _previewData.Rows != null)
+            {
+                var val = _previewData.Rows.FirstOrDefault()?.Values.FirstOrDefault();
+                var display = val is JsonElement je ? je.ToString() : val?.ToString() ?? "-";
+                builder.AddMarkupContent(0, $"<div style='font-size:2.5rem;font-weight:bold;text-align:center;color:#1976d2'>{display}</div>");
+            }
+        };
+    }
+
+    static string RenderHtmlTemplate(string template, WidgetDataDto data)
+    {
+        if (string.IsNullOrWhiteSpace(template)) return "";
+
+        var rows = data.Rows ?? new List<Dictionary<string, object?>>();
+        var result = template;
+
+        if (result.Contains("{{#each rows}}") && result.Contains("{{/each}}"))
+        {
+            var startTag = "{{#each rows}}";
+            var endTag = "{{/each}}";
+            var startIdx = result.IndexOf(startTag);
+            var endIdx = result.IndexOf(endTag);
+
+            if (startIdx >= 0 && endIdx > startIdx)
+            {
+                var before = result[..startIdx];
+                var rowTemplate = result[(startIdx + startTag.Length)..endIdx];
+                var after = result[(endIdx + endTag.Length)..];
+
+                var rowsHtml = new System.Text.StringBuilder();
+                foreach (var row in rows.Take(100))
+                {
+                    var rowHtml = rowTemplate;
+                    foreach (var col in row.Keys)
+                    {
+                        var val = row[col] is JsonElement je ? je.ToString() : row[col]?.ToString() ?? "";
+                        rowHtml = rowHtml.Replace($"{{{{{col}}}}}", System.Web.HttpUtility.HtmlEncode(val));
+                    }
+                    rowsHtml.Append(rowHtml);
+                }
+                result = before + rowsHtml + after;
+            }
+        }
+
+        var firstRow = rows.FirstOrDefault();
+        if (firstRow != null)
+        {
+            foreach (var col in firstRow.Keys)
+            {
+                var val = firstRow[col] is JsonElement je ? je.ToString() : firstRow[col]?.ToString() ?? "";
+                result = result.Replace($"{{{{{col}}}}}", System.Web.HttpUtility.HtmlEncode(val));
+            }
+        }
+
+        return result;
+    }
+}
