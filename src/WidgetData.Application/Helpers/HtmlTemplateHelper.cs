@@ -2,7 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.Web;
 
-namespace WidgetData.Web.Services;
+namespace WidgetData.Application.Helpers;
 
 /// <summary>
 /// Helper for rendering HTML templates with widget data variable substitution.

@@ -283,4 +283,82 @@ public class WidgetServiceTests
 
         Assert.Equal("Production DB", result!.DataSourceName);
     }
+
+    // ─── HtmlTemplate field ───────────────────────────────────────────────────
+
+    [Fact]
+    public async Task CreateAsync_WithHtmlTemplate_SetsHtmlTemplateOnEntity()
+    {
+        const string template = "<p>{{name}}</p>";
+        var dto = TestDataBuilder.CreateWidgetDto("HTML Widget");
+        dto.HtmlTemplate = template;
+
+        var created = new Widget
+        {
+            Id = 20,
+            Name = dto.Name,
+            WidgetType = dto.WidgetType,
+            DataSourceId = dto.DataSourceId,
+            HtmlTemplate = template,
+            CreatedBy = "user1",
+            DataSource = TestDataBuilder.CreateDataSource(dto.DataSourceId)
+        };
+        _widgetRepoMock.Setup(r => r.CreateAsync(It.IsAny<Widget>())).ReturnsAsync(created);
+
+        var result = await _service.CreateAsync(dto, "user1");
+
+        Assert.Equal(template, result.HtmlTemplate);
+        _widgetRepoMock.Verify(r => r.CreateAsync(It.Is<Widget>(w => w.HtmlTemplate == template)), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WithHtmlTemplate_UpdatesHtmlTemplateOnEntity()
+    {
+        const string updatedTemplate = "<table>{{#each rows}}<tr><td>{{name}}</td></tr>{{/each}}</table>";
+        var existing = TestDataBuilder.CreateWidget(1);
+        var dto = TestDataBuilder.UpdateWidgetDto("HTML Widget Updated");
+        dto.HtmlTemplate = updatedTemplate;
+
+        var updated = new Widget
+        {
+            Id = 1,
+            Name = dto.Name,
+            WidgetType = dto.WidgetType,
+            DataSourceId = dto.DataSourceId,
+            HtmlTemplate = updatedTemplate,
+            DataSource = TestDataBuilder.CreateDataSource(dto.DataSourceId)
+        };
+        _widgetRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(existing);
+        _widgetRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Widget>())).ReturnsAsync(updated);
+
+        var result = await _service.UpdateAsync(1, dto);
+
+        Assert.Equal(updatedTemplate, result!.HtmlTemplate);
+        _widgetRepoMock.Verify(r => r.UpdateAsync(It.Is<Widget>(w => w.HtmlTemplate == updatedTemplate)), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_MapsHtmlTemplateCorrectly()
+    {
+        const string template = "<div>{{value}}</div>";
+        var widget = TestDataBuilder.CreateWidget(1);
+        widget.HtmlTemplate = template;
+        _widgetRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(widget);
+
+        var result = await _service.GetByIdAsync(1);
+
+        Assert.Equal(template, result!.HtmlTemplate);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_NullHtmlTemplate_MapsAsNull()
+    {
+        var widget = TestDataBuilder.CreateWidget(1);
+        widget.HtmlTemplate = null;
+        _widgetRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(widget);
+
+        var result = await _service.GetByIdAsync(1);
+
+        Assert.Null(result!.HtmlTemplate);
+    }
 }
