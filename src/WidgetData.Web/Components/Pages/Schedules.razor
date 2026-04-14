@@ -47,7 +47,7 @@
                 <MudNumericField @bind-Value="_form.MaxRetries" Label="Max Retries" Variant="Variant.Outlined" Min="0" Max="10" />
             </MudItem>
             <MudItem xs="12" sm="4">
-                <MudCheckBox @bind-Value="_form.ArchiveConfigOnRun" Label="Archive config khi chạy" Color="Color.Secondary" />
+                <MudCheckBox @bind-Value="_form.ArchiveConfigOnRun" Label="Lưu cấu hình khi chạy" Color="Color.Secondary" />
                 <MudText Typo="Typo.caption" Color="Color.Secondary">Tự động lưu snapshot cấu hình mỗi lần schedule chạy</MudText>
             </MudItem>
             <MudItem xs="12">
@@ -109,7 +109,7 @@
             </MudTd>
             <MudTd>
                 <MudChip T="string" Color="@(context.ArchiveConfigOnRun ? Color.Secondary : Color.Default)" Size="Size.Small">
-                    @(context.ArchiveConfigOnRun ? "✓ Bật" : "Tắt")
+                    @(context.ArchiveConfigOnRun ? "Bật" : "Tắt")
                 </MudChip>
             </MudTd>
             <MudTd>
