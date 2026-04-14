@@ -4,6 +4,7 @@
 @using WidgetData.Application.DTOs
 @using WidgetData.Domain.Enums
 @using System.Text.Json
+@using WidgetData.Web.Services
 @inject WidgetData.Web.Services.ApiService ApiService
 @inject ISnackbar Snackbar
 @inject NavigationManager Nav
@@ -338,49 +339,8 @@ else if (_widget != null)
 
     static string RenderHtmlTemplate(string template, WidgetDataDto data)
     {
-        if (string.IsNullOrWhiteSpace(template)) return "";
-
-        var rows = data.Rows ?? new List<Dictionary<string, object?>>();
-        var result = template;
-
-        if (result.Contains("{{#each rows}}") && result.Contains("{{/each}}"))
-        {
-            var startTag = "{{#each rows}}";
-            var endTag = "{{/each}}";
-            var startIdx = result.IndexOf(startTag);
-            var endIdx = result.IndexOf(endTag);
-
-            if (startIdx >= 0 && endIdx > startIdx)
-            {
-                var before = result[..startIdx];
-                var rowTemplate = result[(startIdx + startTag.Length)..endIdx];
-                var after = result[(endIdx + endTag.Length)..];
-
-                var rowsHtml = new System.Text.StringBuilder();
-                foreach (var row in rows.Take(100))
-                {
-                    var rowHtml = rowTemplate;
-                    foreach (var col in row.Keys)
-                    {
-                        var val = row[col] is JsonElement je ? je.ToString() : row[col]?.ToString() ?? "";
-                        rowHtml = rowHtml.Replace($"{{{{{col}}}}}", System.Web.HttpUtility.HtmlEncode(val));
-                    }
-                    rowsHtml.Append(rowHtml);
-                }
-                result = before + rowsHtml + after;
-            }
-        }
-
-        var firstRow = rows.FirstOrDefault();
-        if (firstRow != null)
-        {
-            foreach (var col in firstRow.Keys)
-            {
-                var val = firstRow[col] is JsonElement je ? je.ToString() : firstRow[col]?.ToString() ?? "";
-                result = result.Replace($"{{{{{col}}}}}", System.Web.HttpUtility.HtmlEncode(val));
-            }
-        }
-
-        return result;
+        var columns = data.Columns?.ToList() ?? new List<string>();
+        var rows = HtmlTemplateHelper.ToStringRows(data.Rows);
+        return HtmlTemplateHelper.Render(template, columns, rows);
     }
 }

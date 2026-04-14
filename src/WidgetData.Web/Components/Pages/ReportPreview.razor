@@ -4,6 +4,7 @@
 @using WidgetData.Application.DTOs
 @using WidgetData.Domain.Enums
 @using System.Text.Json
+@using WidgetData.Web.Services
 @inject WidgetData.Web.Services.ApiService ApiService
 @inject NavigationManager Nav
 
@@ -129,7 +130,7 @@ else
             else if (!string.IsNullOrWhiteSpace(t.HtmlTemplate))
             {
                 <div style="overflow-x:auto;">
-                    @((MarkupString)RenderHtmlTemplate(t.HtmlTemplate, t.Columns, t.Rows))
+                    @((MarkupString)HtmlTemplateHelper.Render(t.HtmlTemplate, t.Columns, t.Rows))
                 </div>
             }
             else if (t.Rows.Any())
@@ -283,12 +284,7 @@ else
             return new TableModel(title, helpText, new(), new(), data.Error, htmlTemplate);
 
         var columns = data?.Columns?.ToList() ?? new List<string>();
-        var rows = (data?.Rows ?? new List<Dictionary<string, object?>>())
-            .Select(r => r.ToDictionary(
-                kvp => kvp.Key,
-                kvp => kvp.Value is JsonElement je ? je.ToString() : kvp.Value?.ToString() ?? ""
-            )).ToList();
-
+        var rows = HtmlTemplateHelper.ToStringRows(data?.Rows);
         return new TableModel(title, helpText, columns, rows, null, htmlTemplate);
     }
 
@@ -332,51 +328,5 @@ else
         if (string.IsNullOrWhiteSpace(json)) return null;
         try { return JsonSerializer.Deserialize<Dictionary<string, object>>(json); }
         catch { return null; }
-    }
-
-    static string RenderHtmlTemplate(string template, List<string> columns, List<Dictionary<string, string>> rows)
-    {
-        if (string.IsNullOrWhiteSpace(template)) return "";
-        var result = template;
-
-        if (result.Contains("{{#each rows}}") && result.Contains("{{/each}}"))
-        {
-            var startTag = "{{#each rows}}";
-            var endTag = "{{/each}}";
-            var startIdx = result.IndexOf(startTag);
-            var endIdx = result.IndexOf(endTag);
-
-            if (startIdx >= 0 && endIdx > startIdx)
-            {
-                var before = result[..startIdx];
-                var rowTemplate = result[(startIdx + startTag.Length)..endIdx];
-                var after = result[(endIdx + endTag.Length)..];
-
-                var rowsHtml = new System.Text.StringBuilder();
-                foreach (var row in rows.Take(100))
-                {
-                    var rowHtml = rowTemplate;
-                    foreach (var col in columns)
-                    {
-                        var val = row.GetValueOrDefault(col) ?? "";
-                        rowHtml = rowHtml.Replace($"{{{{{col}}}}}", System.Web.HttpUtility.HtmlEncode(val));
-                    }
-                    rowsHtml.Append(rowHtml);
-                }
-                result = before + rowsHtml + after;
-            }
-        }
-
-        var firstRow = rows.FirstOrDefault();
-        if (firstRow != null)
-        {
-            foreach (var col in columns)
-            {
-                var val = firstRow.GetValueOrDefault(col) ?? "";
-                result = result.Replace($"{{{{{col}}}}}", System.Web.HttpUtility.HtmlEncode(val));
-            }
-        }
-
-        return result;
     }
 }
