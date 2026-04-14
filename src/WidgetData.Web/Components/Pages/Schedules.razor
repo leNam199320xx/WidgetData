@@ -6,15 +6,16 @@
 @using WidgetData.Web.Services
 @inject WidgetData.Web.Services.ApiService ApiService
 @inject ISnackbar Snackbar
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Schedules - WidgetData</PageTitle>
+<PageTitle>@L["Sched_Title"] - WidgetData</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-4">Schedules</MudText>
+<MudText Typo="Typo.h4" Class="mb-4">@L["Sched_Title"]</MudText>
 
 @if (_showForm)
 {
     <MudPaper Class="pa-4 mb-4" Elevation="3">
-        <MudText Typo="Typo.h6" Class="mb-3">@(_editingId == null ? "Add Schedule" : "Edit Schedule")</MudText>
+        <MudText Typo="Typo.h6" Class="mb-3">@(_editingId == null ? L["Sched_AddTitle"] : L["Sched_EditTitle"])</MudText>
         <MudGrid>
             <MudItem xs="12" sm="6">
                 <MudSelect @bind-Value="_form.WidgetId" Label="Widget" Variant="Variant.Outlined" Required="true">
@@ -28,34 +29,34 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_form.CronExpression" Label="Cron Expression" Required="true"
+                <MudTextField @bind-Value="_form.CronExpression" Label="@L["Sched_CronExpr"]" Required="true"
                               Variant="Variant.Outlined" Placeholder="0 6 * * *" />
                 <MudText Typo="Typo.caption" Color="Color.Secondary">
-                    <code>0 6 * * *</code> daily 6am &nbsp; <code>*/5 * * * *</code> every 5 min
+                    @L["Sched_CronHelp", "<code>0 6 * * *</code>", "<code>*/5 * * * *</code>"]
                 </MudText>
             </MudItem>
             <MudItem xs="12" sm="4">
-                <MudTextField @bind-Value="_form.Timezone" Label="Timezone" Variant="Variant.Outlined" Placeholder="UTC" />
+                <MudTextField @bind-Value="_form.Timezone" Label="@L["Sched_Timezone"]" Variant="Variant.Outlined" Placeholder="UTC" />
             </MudItem>
             <MudItem xs="4" sm="2">
-                <MudCheckBox @bind-Value="_form.IsEnabled" Label="Enabled" Color="Color.Primary" />
+                <MudCheckBox @bind-Value="_form.IsEnabled" Label="@L["Sched_IsEnabled"]" Color="Color.Primary" />
             </MudItem>
             <MudItem xs="4" sm="2">
-                <MudCheckBox @bind-Value="_form.RetryOnFailure" Label="Retry" Color="Color.Primary" />
+                <MudCheckBox @bind-Value="_form.RetryOnFailure" Label="@L["Sched_Retry"]" Color="Color.Primary" />
             </MudItem>
             <MudItem xs="4" sm="2">
-                <MudNumericField @bind-Value="_form.MaxRetries" Label="Max Retries" Variant="Variant.Outlined" Min="0" Max="10" />
+                <MudNumericField @bind-Value="_form.MaxRetries" Label="@L["Sched_MaxRetries"]" Variant="Variant.Outlined" Min="0" Max="10" />
             </MudItem>
             <MudItem xs="12" sm="4">
-                <MudCheckBox @bind-Value="_form.ArchiveConfigOnRun" Label="Lưu archive cấu hình mỗi lần chạy" Color="Color.Secondary" />
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Tự động lưu snapshot cấu hình widget mỗi khi lịch này kích hoạt</MudText>
+                <MudCheckBox @bind-Value="_form.ArchiveConfigOnRun" Label="@L["Sched_ArchiveConfig"]" Color="Color.Secondary" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Sched_ArchiveConfigHelper"]</MudText>
             </MudItem>
             <MudItem xs="12">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveSchedule" Disabled="_saving" Class="mr-2">
                     @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
-                    Save
+                    @L["Save"]
                 </MudButton>
-                <MudButton Variant="Variant.Outlined" OnClick="CancelForm">Cancel</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick="CancelForm">@L["Cancel"]</MudButton>
             </MudItem>
         </MudGrid>
     </MudPaper>
@@ -64,10 +65,10 @@
 @if (_deletingItem != null)
 {
     <MudPaper Class="pa-4 mb-4" Elevation="3" Style="border-left: 4px solid #f44336">
-        <MudText Typo="Typo.h6" Color="Color.Error">Confirm Delete</MudText>
-        <MudText Class="mb-3">Delete schedule for <strong>@_deletingItem.WidgetName</strong>?</MudText>
-        <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DoDelete" Class="mr-2">Delete</MudButton>
-        <MudButton Variant="Variant.Outlined" OnClick="() => _deletingItem = null">Cancel</MudButton>
+        <MudText Typo="Typo.h6" Color="Color.Error">@L["ConfirmDelete"]</MudText>
+        <MudText Class="mb-3">@L["Sched_DeleteConfirm", _deletingItem.WidgetName]</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DoDelete" Class="mr-2">@L["Delete"]</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="() => _deletingItem = null">@L["Cancel"]</MudButton>
     </MudPaper>
 }
 
@@ -75,23 +76,23 @@
 {
     <MudTable Items="_schedules" Dense="true" Hover="true" Striped="true">
         <ToolBarContent>
-            <MudText Typo="Typo.h6">Schedule List</MudText>
+            <MudText Typo="Typo.h6">@L["Sched_List"]</MudText>
             <MudSpacer />
             @if (!_showForm)
             {
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
-                           OnClick="OpenAddForm">Add Schedule</MudButton>
+                           OnClick="OpenAddForm">@L["Sched_AddTitle"]</MudButton>
             }
         </ToolBarContent>
         <HeaderContent>
             <MudTh>Widget</MudTh>
-            <MudTh>Lịch chạy</MudTh>
-            <MudTh>Timezone</MudTh>
-            <MudTh>Enabled</MudTh>
-            <MudTh>Archive Config</MudTh>
-            <MudTh>Last Run</MudTh>
-            <MudTh>Next Run</MudTh>
-            <MudTh>Actions</MudTh>
+            <MudTh>@L["Sched_CronCol"]</MudTh>
+            <MudTh>@L["Sched_Timezone"]</MudTh>
+            <MudTh>@L["Enabled"]</MudTh>
+            <MudTh>@L["Sched_ArchiveConfigCol"]</MudTh>
+            <MudTh>@L["Sched_LastRun"]</MudTh>
+            <MudTh>@L["Sched_NextRun"]</MudTh>
+            <MudTh>@L["Actions"]</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd>@context.WidgetName</MudTd>
@@ -104,13 +105,13 @@
             <MudTd>@context.Timezone</MudTd>
             <MudTd>
                 <MudChip T="string" Color="@(context.IsEnabled ? Color.Success : Color.Default)" Size="Size.Small">
-                    @(context.IsEnabled ? "Enabled" : "Disabled")
+                    @(context.IsEnabled ? L["Enabled"] : L["Disabled"])
                 </MudChip>
             </MudTd>
             <MudTd>
                 @if (context.ArchiveConfigOnRun)
                 {
-                    <MudChip T="string" Color="Color.Secondary" Size="Size.Small" Icon="@Icons.Material.Filled.Archive">Có</MudChip>
+                    <MudChip T="string" Color="Color.Secondary" Size="Size.Small" Icon="@Icons.Material.Filled.Archive">@L["Yes"]</MudChip>
                 }
                 else
                 {
@@ -126,22 +127,22 @@
                         <MudChip T="string" Color="@StatusColor(context.LastRunStatus.Value)" Size="Size.Small" Class="ml-1">@context.LastRunStatus</MudChip>
                     }
                 }
-                else { <span>Never</span> }
+                else { <span>@L["Never"]</span> }
             </MudTd>
             <MudTd>@(context.NextRunAt.HasValue ? context.NextRunAt.Value.ToString("g") : "-")</MudTd>
             <MudTd>
                 @if (context.IsEnabled)
                 {
                     <MudIconButton Icon="@Icons.Material.Filled.PauseCircle" Color="Color.Warning" Size="Size.Small"
-                                   OnClick="() => ToggleSchedule(context, false)" Title="Tắt schedule" />
+                                   OnClick="() => ToggleSchedule(context, false)" Title="@L["Disabled"]" />
                 }
                 else
                 {
                     <MudIconButton Icon="@Icons.Material.Filled.PlayCircle" Color="Color.Success" Size="Size.Small"
-                                   OnClick="() => ToggleSchedule(context, true)" Title="Bật schedule" />
+                                   OnClick="() => ToggleSchedule(context, true)" Title="@L["Enabled"]" />
                 }
                 <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Info" Size="Size.Small"
-                               OnClick="() => TriggerSchedule(context)" Title="Chạy ngay (trigger)" />
+                               OnClick="() => TriggerSchedule(context)" Title="Trigger" />
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" Size="Size.Small"
                                OnClick="() => OpenEditForm(context)" />
                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
@@ -178,7 +179,7 @@ else
             _schedules = await ApiService.GetSchedulesAsync() ?? Array.Empty<WidgetScheduleDto>();
             _widgets = await ApiService.GetWidgetsAsync() ?? Array.Empty<WidgetDto>();
         }
-        catch (Exception ex) { _error = $"Failed to load: {ex.Message}"; _schedules = Array.Empty<WidgetScheduleDto>(); }
+        catch (Exception ex) { _error = L["FailedToLoad", ex.Message]; _schedules = Array.Empty<WidgetScheduleDto>(); }
     }
 
     void OpenAddForm()
@@ -210,7 +211,7 @@ else
             if (_editingId == null)
             {
                 var result = await ApiService.CreateScheduleAsync(_form);
-                Snackbar.Add(result != null ? "Schedule created!" : "Failed to create.", result != null ? Severity.Success : Severity.Error);
+                Snackbar.Add(result != null ? L["Sched_Created"].Value : L["FailedCreate"].Value, result != null ? Severity.Success : Severity.Error);
             }
             else
             {
@@ -221,7 +222,7 @@ else
                     ArchiveConfigOnRun = _form.ArchiveConfigOnRun
                 };
                 var result = await ApiService.UpdateScheduleAsync(_editingId.Value, dto);
-                Snackbar.Add(result != null ? "Schedule updated!" : "Failed to update.", result != null ? Severity.Success : Severity.Error);
+                Snackbar.Add(result != null ? L["Sched_Updated"].Value : L["FailedUpdate"].Value, result != null ? Severity.Success : Severity.Error);
             }
             _showForm = false;
             await LoadAsync();
@@ -232,7 +233,7 @@ else
     async Task ToggleSchedule(WidgetScheduleDto s, bool enable)
     {
         var ok = enable ? await ApiService.EnableScheduleAsync(s.Id) : await ApiService.DisableScheduleAsync(s.Id);
-        Snackbar.Add(ok ? $"Schedule {(enable ? "enabled" : "disabled")}." : "Operation failed.", ok ? Severity.Success : Severity.Error);
+        Snackbar.Add(ok ? (enable ? L["Sched_EnabledMsg"].Value : L["Sched_DisabledMsg"].Value) : L["Sched_ToggleFailed"].Value, ok ? Severity.Success : Severity.Error);
         await LoadAsync();
     }
 
@@ -240,8 +241,8 @@ else
     {
         var ok = await ApiService.TriggerScheduleAsync(s.Id);
         var msg = ok
-            ? (s.ArchiveConfigOnRun ? "✓ Đã trigger schedule và lưu archive config!" : "✓ Đã trigger schedule!")
-            : "Trigger thất bại.";
+            ? (s.ArchiveConfigOnRun ? L["Sched_TriggeredWithArchive"].Value : L["Sched_Triggered"].Value)
+            : L["Sched_TriggerFailed"].Value;
         Snackbar.Add(msg, ok ? Severity.Success : Severity.Error);
         if (ok) await LoadAsync();
     }
@@ -250,7 +251,7 @@ else
     {
         if (_deletingItem == null) return;
         var ok = await ApiService.DeleteScheduleAsync(_deletingItem.Id);
-        Snackbar.Add(ok ? "Deleted." : "Delete failed.", ok ? Severity.Success : Severity.Error);
+        Snackbar.Add(ok ? L["Deleted"].Value : L["DeleteFailed"].Value, ok ? Severity.Success : Severity.Error);
         _deletingItem = null;
         await LoadAsync();
     }

@@ -4,15 +4,16 @@
 @using WidgetData.Application.DTOs
 @inject WidgetData.Web.Services.ApiService ApiService
 @inject NavigationManager Nav
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Báo cáo - WidgetData</PageTitle>
+<PageTitle>@L["Reports_Title"] - WidgetData</PageTitle>
 
 <MudText Typo="Typo.h4" Class="mb-2">
     <MudIcon Icon="@Icons.Material.Filled.Assessment" Class="mr-2" />
-    Trang báo cáo
+    @L["Reports_Title"]
 </MudText>
 <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-6">
-    Xem trước các trang báo cáo được tạo từ dữ liệu cửa hàng thực tế.
+    @L["Reports_Subtitle"]
 </MudText>
 
 @if (_pages != null)
@@ -34,16 +35,16 @@
                     </MudCardHeader>
                     <MudCardContent>
                         <MudChip T="string" Color="Color.Info" Size="Size.Small" Icon="@Icons.Material.Filled.Widgets">
-                            @reportPage.WidgetIds.Count widget
+                            @L["DP_WidgetCount", reportPage.WidgetIds.Count]
                         </MudChip>
                         <MudChip T="string" Color="@(reportPage.IsActive ? Color.Success : Color.Error)" Size="Size.Small" Class="ml-2">
-                            @(reportPage.IsActive ? "Hoạt động" : "Tạm dừng")
+                            @(reportPage.IsActive ? L["Active"] : L["Inactive"])
                         </MudChip>
                     </MudCardContent>
                     <MudCardActions>
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Preview"
                                    OnClick="@(() => Nav.NavigateTo("/reports/preview/" + pageId))">
-                            Xem báo cáo
+                            @L["Reports_ViewReport"]
                         </MudButton>
                     </MudCardActions>
                 </MudCard>
@@ -74,7 +75,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         try { _pages = await ApiService.GetReportPagesAsync() ?? Array.Empty<WidgetGroupDto>(); }
-        catch (Exception ex) { _error = "Không thể tải danh sách báo cáo: " + ex.Message; }
+        catch (Exception ex) { _error = L["Reports_FailedToLoad", ex.Message]; }
     }
 
     string GetPageIcon(string name) => name.ToLower() switch

@@ -3,10 +3,11 @@
 @using MudBlazor
 @using WidgetData.Application.DTOs
 @inject WidgetData.Web.Services.ApiService ApiService
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Dashboard - WidgetData</PageTitle>
+<PageTitle>@L["Home_Title"] - WidgetData</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-4">Dashboard</MudText>
+<MudText Typo="Typo.h4" Class="mb-4">@L["Home_Title"]</MudText>
 
 @if (_stats != null)
 {
@@ -15,7 +16,7 @@
             <MudCard>
                 <MudCardContent>
                     <MudText Typo="Typo.h5">@_stats.TotalWidgets</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">Total Widgets</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Home_TotalWidgets"]</MudText>
                 </MudCardContent>
             </MudCard>
         </MudItem>
@@ -23,7 +24,7 @@
             <MudCard>
                 <MudCardContent>
                     <MudText Typo="Typo.h5">@_stats.TotalDataSources</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">Data Sources</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Home_DataSources"]</MudText>
                 </MudCardContent>
             </MudCard>
         </MudItem>
@@ -31,7 +32,7 @@
             <MudCard>
                 <MudCardContent>
                     <MudText Typo="Typo.h5">@_stats.ActiveSchedules</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">Active Schedules</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Home_ActiveSchedules"]</MudText>
                 </MudCardContent>
             </MudCard>
         </MudItem>
@@ -39,19 +40,19 @@
             <MudCard>
                 <MudCardContent>
                     <MudText Typo="Typo.h5">@_stats.SuccessfulExecutions</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">Successful Executions</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Home_SuccessfulExecutions"]</MudText>
                 </MudCardContent>
             </MudCard>
         </MudItem>
     </MudGrid>
 
-    <MudText Typo="Typo.h5" Class="mt-6 mb-3">Recent Executions</MudText>
+    <MudText Typo="Typo.h5" Class="mt-6 mb-3">@L["Home_RecentExecutions"]</MudText>
     <MudTable Items="_stats.RecentExecutions" Dense="true" Hover="true">
         <HeaderContent>
-            <MudTh>Widget</MudTh>
-            <MudTh>Status</MudTh>
-            <MudTh>Started</MudTh>
-            <MudTh>Duration</MudTh>
+            <MudTh>@L["Home_ColWidget"]</MudTh>
+            <MudTh>@L["Home_ColStatus"]</MudTh>
+            <MudTh>@L["Home_ColStarted"]</MudTh>
+            <MudTh>@L["Home_ColDuration"]</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd>@context.WidgetName</MudTd>
@@ -77,6 +78,6 @@ else
     protected override async Task OnInitializedAsync()
     {
         try { _stats = await ApiService.GetDashboardStatsAsync(); }
-        catch (Exception ex) { _error = $"Failed to load dashboard stats: {ex.Message}"; }
+        catch (Exception ex) { _error = L["Home_FailedToLoad", ex.Message]; }
     }
 }

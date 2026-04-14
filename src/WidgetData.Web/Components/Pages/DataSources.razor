@@ -5,22 +5,23 @@
 @using WidgetData.Domain.Enums
 @inject WidgetData.Web.Services.ApiService ApiService
 @inject ISnackbar Snackbar
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Data Sources - WidgetData</PageTitle>
+<PageTitle>@L["DS_Title"] - WidgetData</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-4">Data Sources</MudText>
+<MudText Typo="Typo.h4" Class="mb-4">@L["DS_Title"]</MudText>
 
 @* Inline Add/Edit Form *@
 @if (_showForm)
 {
     <MudPaper Class="pa-4 mb-4" Elevation="3">
-        <MudText Typo="Typo.h6" Class="mb-3">@(_editingId == null ? "Add Data Source" : "Edit Data Source")</MudText>
+        <MudText Typo="Typo.h6" Class="mb-3">@(_editingId == null ? L["DS_AddTitle"] : L["DS_EditTitle"])</MudText>
         <MudGrid>
             <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_form.Name" Label="Name" Required="true" Variant="Variant.Outlined" />
+                <MudTextField @bind-Value="_form.Name" Label="@L["Name"]" Required="true" Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudSelect @bind-Value="_form.SourceType" Label="Type" Variant="Variant.Outlined">
+                <MudSelect @bind-Value="_form.SourceType" Label="@L["Type"]" Variant="Variant.Outlined">
                     @foreach (var t in Enum.GetValues<DataSourceType>())
                     {
                         <MudSelectItem Value="@t">@t</MudSelectItem>
@@ -28,61 +29,61 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudTextField @bind-Value="_form.Description" Label="Description" Variant="Variant.Outlined" Lines="2" />
+                <MudTextField @bind-Value="_form.Description" Label="@L["Description"]" Variant="Variant.Outlined" Lines="2" />
             </MudItem>
             @if (_form.SourceType == DataSourceType.SQLite)
             {
                 <MudItem xs="12">
-                    <MudTextField @bind-Value="_form.ConnectionString" Label="Connection String" Variant="Variant.Outlined"
+                    <MudTextField @bind-Value="_form.ConnectionString" Label="@L["DS_ConnString"]" Variant="Variant.Outlined"
                                   Placeholder="Data Source=mydb.db" />
                 </MudItem>
             }
             else if (_form.SourceType == DataSourceType.RestApi)
             {
                 <MudItem xs="12">
-                    <MudTextField @bind-Value="_form.ApiEndpoint" Label="API Endpoint" Variant="Variant.Outlined"
+                    <MudTextField @bind-Value="_form.ApiEndpoint" Label="@L["DS_ApiEndpoint"]" Variant="Variant.Outlined"
                                   Placeholder="https://api.example.com/data" />
                 </MudItem>
                 <MudItem xs="12">
-                    <MudTextField @bind-Value="_form.ApiKey" Label="API Key" Variant="Variant.Outlined" InputType="InputType.Password" />
+                    <MudTextField @bind-Value="_form.ApiKey" Label="@L["DS_ApiKey"]" Variant="Variant.Outlined" InputType="InputType.Password" />
                 </MudItem>
             }
             else if (_form.SourceType is DataSourceType.SqlServer or DataSourceType.PostgreSql or DataSourceType.MySql)
             {
                 <MudItem xs="8">
-                    <MudTextField @bind-Value="_form.Host" Label="Host" Variant="Variant.Outlined" />
+                    <MudTextField @bind-Value="_form.Host" Label="@L["DS_Host"]" Variant="Variant.Outlined" />
                 </MudItem>
                 <MudItem xs="4">
-                    <MudNumericField @bind-Value="_form.Port" Label="Port" Variant="Variant.Outlined" />
+                    <MudNumericField @bind-Value="_form.Port" Label="@L["DS_Port"]" Variant="Variant.Outlined" />
                 </MudItem>
                 <MudItem xs="12">
-                    <MudTextField @bind-Value="_form.DatabaseName" Label="Database" Variant="Variant.Outlined" />
+                    <MudTextField @bind-Value="_form.DatabaseName" Label="@L["DS_Database"]" Variant="Variant.Outlined" />
                 </MudItem>
                 <MudItem xs="6">
-                    <MudTextField @bind-Value="_form.Username" Label="Username" Variant="Variant.Outlined" />
+                    <MudTextField @bind-Value="_form.Username" Label="@L["DS_Username"]" Variant="Variant.Outlined" />
                 </MudItem>
                 <MudItem xs="6">
-                    <MudTextField @bind-Value="_form.Password" Label="Password" Variant="Variant.Outlined" InputType="InputType.Password" />
+                    <MudTextField @bind-Value="_form.Password" Label="@L["DS_Password"]" Variant="Variant.Outlined" InputType="InputType.Password" />
                 </MudItem>
             }
             else
             {
                 <MudItem xs="12">
-                    <MudTextField @bind-Value="_form.AdditionalConfig" Label="Additional Config (JSON)" Variant="Variant.Outlined" Lines="3" />
+                    <MudTextField @bind-Value="_form.AdditionalConfig" Label="@L["DS_AdditionalConfig"]" Variant="Variant.Outlined" Lines="3" />
                 </MudItem>
             }
             @if (_editingId != null)
             {
                 <MudItem xs="12">
-                    <MudCheckBox @bind-Value="_formIsActive" Label="Active" Color="Color.Primary" />
+                    <MudCheckBox @bind-Value="_formIsActive" Label="@L["DS_ActiveLabel"]" Color="Color.Primary" />
                 </MudItem>
             }
             <MudItem xs="12">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveDataSource" Disabled="_saving" Class="mr-2">
                     @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
-                    Save
+                    @L["Save"]
                 </MudButton>
-                <MudButton Variant="Variant.Outlined" OnClick="CancelForm">Cancel</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick="CancelForm">@L["Cancel"]</MudButton>
             </MudItem>
         </MudGrid>
     </MudPaper>
@@ -92,10 +93,10 @@
 @if (_deletingItem != null)
 {
     <MudPaper Class="pa-4 mb-4" Elevation="3" Style="border-left: 4px solid #f44336">
-        <MudText Typo="Typo.h6" Color="Color.Error">Confirm Delete</MudText>
-        <MudText Class="mb-3">Delete data source <strong>@_deletingItem.Name</strong>? This cannot be undone.</MudText>
-        <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DoDelete" Class="mr-2">Delete</MudButton>
-        <MudButton Variant="Variant.Outlined" OnClick="() => _deletingItem = null">Cancel</MudButton>
+        <MudText Typo="Typo.h6" Color="Color.Error">@L["ConfirmDelete"]</MudText>
+        <MudText Class="mb-3">@L["DS_DeleteConfirm", _deletingItem.Name]</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DoDelete" Class="mr-2">@L["Delete"]</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="() => _deletingItem = null">@L["Cancel"]</MudButton>
     </MudPaper>
 }
 
@@ -103,29 +104,29 @@
 {
     <MudTable Items="_sources" Dense="true" Hover="true" Striped="true">
         <ToolBarContent>
-            <MudText Typo="Typo.h6">Data Source List</MudText>
+            <MudText Typo="Typo.h6">@L["DS_List"]</MudText>
             <MudSpacer />
             @if (!_showForm)
             {
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
-                           OnClick="OpenAddForm">Add Data Source</MudButton>
+                           OnClick="OpenAddForm">@L["DS_AddTitle"]</MudButton>
             }
         </ToolBarContent>
         <HeaderContent>
-            <MudTh>Name</MudTh>
-            <MudTh>Type</MudTh>
-            <MudTh>Description</MudTh>
-            <MudTh>Status</MudTh>
-            <MudTh>Last Tested</MudTh>
-            <MudTh>Actions</MudTh>
+            <MudTh>@L["Name"]</MudTh>
+            <MudTh>@L["Type"]</MudTh>
+            <MudTh>@L["Description"]</MudTh>
+            <MudTh>@L["Status"]</MudTh>
+            <MudTh>@L["DS_LastTested"]</MudTh>
+            <MudTh>@L["Actions"]</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd>@context.Name</MudTd>
             <MudTd>@context.SourceType</MudTd>
             <MudTd>@(context.Description ?? "-")</MudTd>
-            <MudTd><MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Error)" Size="Size.Small">@(context.IsActive ? "Active" : "Inactive")</MudChip></MudTd>
+            <MudTd><MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Error)" Size="Size.Small">@(context.IsActive ? L["Active"] : L["Inactive"])</MudChip></MudTd>
             <MudTd>
-                @(context.LastTestedAt.HasValue ? context.LastTestedAt.Value.ToString("g") : "Never")
+                @(context.LastTestedAt.HasValue ? context.LastTestedAt.Value.ToString("g") : L["DS_NeverTested"].Value)
                 @if (!string.IsNullOrEmpty(context.LastTestResult))
                 {
                     <MudChip T="string" Color="Color.Success" Size="Size.Small" Class="ml-1">@context.LastTestResult</MudChip>
@@ -166,7 +167,7 @@ else
     async Task LoadAsync()
     {
         try { _sources = await ApiService.GetDataSourcesAsync() ?? Array.Empty<DataSourceDto>(); }
-        catch (Exception ex) { _error = $"Failed to load: {ex.Message}"; _sources = Array.Empty<DataSourceDto>(); }
+        catch (Exception ex) { _error = L["FailedToLoad", ex.Message]; _sources = Array.Empty<DataSourceDto>(); }
     }
 
     void OpenAddForm()
@@ -200,7 +201,7 @@ else
             if (_editingId == null)
             {
                 var result = await ApiService.CreateDataSourceAsync(_form);
-                Snackbar.Add(result != null ? "Data source created!" : "Failed to create.", result != null ? Severity.Success : Severity.Error);
+                Snackbar.Add(result != null ? L["DS_Created"].Value : L["FailedCreate"].Value, result != null ? Severity.Success : Severity.Error);
             }
             else
             {
@@ -213,7 +214,7 @@ else
                     IsActive = _formIsActive
                 };
                 var result = await ApiService.UpdateDataSourceAsync(_editingId.Value, dto);
-                Snackbar.Add(result != null ? "Data source updated!" : "Failed to update.", result != null ? Severity.Success : Severity.Error);
+                Snackbar.Add(result != null ? L["DS_Updated"].Value : L["FailedUpdate"].Value, result != null ? Severity.Success : Severity.Error);
             }
             _showForm = false;
             await LoadAsync();
@@ -224,7 +225,7 @@ else
     async Task TestConnection(DataSourceDto ds)
     {
         var result = await ApiService.TestDataSourceAsync(ds.Id);
-        Snackbar.Add(result != null ? $"✓ {result}" : "Test connection failed.", result != null ? Severity.Success : Severity.Error);
+        Snackbar.Add(result != null ? $"✓ {result}" : L["DS_TestFailed"].Value, result != null ? Severity.Success : Severity.Error);
         await LoadAsync();
     }
 
@@ -232,7 +233,7 @@ else
     {
         if (_deletingItem == null) return;
         var ok = await ApiService.DeleteDataSourceAsync(_deletingItem.Id);
-        Snackbar.Add(ok ? "Deleted." : "Delete failed.", ok ? Severity.Success : Severity.Error);
+        Snackbar.Add(ok ? L["Deleted"].Value : L["DeleteFailed"].Value, ok ? Severity.Success : Severity.Error);
         _deletingItem = null;
         await LoadAsync();
     }
