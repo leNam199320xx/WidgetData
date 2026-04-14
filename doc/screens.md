@@ -16,6 +16,11 @@ Các màn hình được capture từ demo chạy thực tế với dữ liệu 
 | Users | ![Users](screenshots/08_users.png) |
 | Settings | ![Settings](screenshots/09_settings.png) |
 | Widget Configure | ![Widget Configure](screenshots/10_widget_configure.png) |
+| Reports | ![Reports](screenshots/11_reports.png) |
+| Report Preview | ![Report Preview](screenshots/11a_report_preview.png) |
+| Dashboard Pages | ![Dashboard Pages](screenshots/12_dashboard_pages.png) |
+| Dashboard Page Builder | ![Page Builder](screenshots/12a_page_builder.png) |
+| Widget HTML Designer | ![HTML Designer](screenshots/13_widget_html_designer.png) |
 
 ---
 
@@ -42,13 +47,14 @@ Các màn hình được capture từ demo chạy thực tế với dữ liệu 
 
 ## 📋 Tổng quan
 
-Widget Data có **15 màn hình chính** được tổ chức thành 5 nhóm:
+Widget Data có **20 màn hình chính** được tổ chức thành 6 nhóm:
 
 1. **Dashboard & Overview** (2 screens)
-2. **Widget Management** (4 screens)
+2. **Widget Management** (5 screens – bao gồm HTML Designer)
 3. **Data Sources** (3 screens)
 4. **Scheduling & Execution** (2 screens)
-5. **Administration** (4 screens)
+5. **Reports & Pages** (4 screens – mới)
+6. **Administration** (4 screens)
 
 ---
 
@@ -857,6 +863,184 @@ public class DashboardViewModel
 - Hangfire job status
 - External API availability
 - System resources (CPU, Memory, Disk)
+
+---
+
+## 📑 6. Reports & Dashboard Pages *(Mới – PR #8 & #9)*
+
+### 6.1. Reports (`/reports`)
+
+**Mục đích:** Danh sách các trang báo cáo được tạo từ dữ liệu cửa hàng thực tế (SalesDataSeeder).
+
+**Layout:**
+```
+┌──────────────────────────────────────────────────────────┐
+│ [≡] Widget Data                         [🔔] [👤] admin  │
+├──────────────────────────────────────────────────────────┤
+│                                                          │
+│  📋 Trang báo cáo                                        │
+│  Xem trước các trang báo cáo được tạo từ dữ liệu cửa    │
+│  hàng thực tế.                                           │
+│                                                          │
+│  ┌──────────────────┐ ┌──────────────────┐              │
+│  │ 📈 Báo cáo       │ │ 📊 Phân tích     │              │
+│  │ Doanh thu        │ │ Sản phẩm         │              │
+│  │ [3 widget] ●     │ │ [2 widget] ●     │              │
+│  │ [Xem báo cáo]    │ │ [Xem báo cáo]    │              │
+│  └──────────────────┘ └──────────────────┘              │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
+```
+
+**Thành phần:**
+- Grid thẻ báo cáo (MudCard): tên, mô tả, số widget, trạng thái
+- Icon phân loại theo tên trang (📈 doanh thu, 📦 sản phẩm, ...)
+- Nút "Xem báo cáo" → chuyển tới `/reports/preview/{id}`
+
+---
+
+### 6.2. Report Preview (`/reports/preview/{id}`)
+
+**Mục đích:** Hiển thị trang báo cáo đầy đủ – mỗi widget render HTML template với dữ liệu thực.
+
+**Layout:**
+```
+┌──────────────────────────────────────────────────────────┐
+│  ← Báo cáo /  Báo cáo Doanh thu                         │
+│                                                          │
+│  📋 Báo cáo Doanh thu         [Xuất HTML] [In báo cáo]  │
+│  Cập nhật: 14/04/2026 04:00                              │
+│                                                          │
+│  ┌────────────────────────────────────────────────────┐  │
+│  │  Widget 1: Doanh thu theo tháng                    │  │
+│  │  <HTML template được render với dữ liệu thực>      │  │
+│  │  ┌──────┬────────────┐                             │  │
+│  │  │ T1   │ 125,000,000│                             │  │
+│  │  │ T2   │ 138,500,000│                             │  │
+│  │  └──────┴────────────┘                             │  │
+│  └────────────────────────────────────────────────────┘  │
+│                                                          │
+│  ┌────────────────────────────────────────────────────┐  │
+│  │  Widget 2: Top sản phẩm bán chạy                   │  │
+│  │  <HTML template render dạng thẻ sản phẩm>         │  │
+│  └────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────┘
+```
+
+**Thành phần:**
+- Breadcrumb navigation
+- Nút Xuất HTML / In báo cáo
+- Từng widget render bằng `HtmlTemplateHelper.Render()` – hỗ trợ `{{column}}` và `{{#each rows}}`
+
+---
+
+### 6.3. Dashboard Pages (`/pages`)
+
+**Mục đích:** Quản lý các trang dashboard tùy chỉnh – tạo, sửa, xóa, và điều hướng vào Page Builder.
+
+**Layout:**
+```
+┌──────────────────────────────────────────────────────────┐
+│  🗂️ Dashboard Pages                   [+ Tạo trang mới]  │
+│  Tạo và quản lý các trang dashboard nhiều widget.        │
+│                                                          │
+│  ┌─────────────────── Form tạo / sửa ──────────────────┐│
+│  │ Tên trang:  [___________________]                    ││
+│  │ Mô tả:      [___________________]                    ││
+│  │ Widgets:    [Widget A] [Widget B] [Widget C]          ││
+│  │                              [Hủy] [Tạo trang]       ││
+│  └──────────────────────────────────────────────────────┘│
+│                                                          │
+│  ┌──────────────────┬──────────────┬────────────────────┐│
+│  │ Tên trang        │ Widgets      │ Thao tác           ││
+│  ├──────────────────┼──────────────┼────────────────────┤│
+│  │ Báo cáo T4/2026  │ 3 widget     │ [Xây dựng][Xóa]   ││
+│  │ KPI Dashboard    │ 5 widget     │ [Xây dựng][Xóa]   ││
+│  └──────────────────┴──────────────┴────────────────────┘│
+└──────────────────────────────────────────────────────────┘
+```
+
+**Thành phần:**
+- Form tạo/sửa: tên, mô tả, chọn widgets bằng MudChipSet
+- Bảng danh sách pages với thao tác
+- Nút "Xây dựng" → Page Builder (`/pages/builder/{id}`)
+
+---
+
+### 6.4. Dashboard Page Builder (`/pages/builder/{id}`)
+
+**Mục đích:** Sắp xếp widget trong trang, chỉnh layout, xem trước trực tiếp.
+
+**Layout:**
+```
+┌──────────────────────────────────────────────────────────┐
+│  ← Pages /  Báo cáo T4/2026                             │
+│                                                          │
+│  🗂️ Báo cáo T4/2026           [+ Thêm widget] [Lưu]    │
+│  Trang báo cáo doanh thu tháng 4                        │
+│                                                          │
+│  ┌─── Chọn widget để thêm ──────────────────────────┐   │
+│  │ [Widget A] [Widget B] [Widget C]  [Thêm]          │   │
+│  └──────────────────────────────────────────────────┘   │
+│                                                          │
+│  Widget 1: Doanh thu tháng            [↑][↓][✕]        │
+│  ┌─────────────────────────────────────────────────┐    │
+│  │ <Preview HTML template – 20 dòng đầu>           │    │
+│  └─────────────────────────────────────────────────┘    │
+│                                                          │
+│  Widget 2: Top sản phẩm               [↑][↓][✕]        │
+│  ┌─────────────────────────────────────────────────┐    │
+│  │ <Preview HTML template – 20 dòng đầu>           │    │
+│  └─────────────────────────────────────────────────┘    │
+└──────────────────────────────────────────────────────────┘
+```
+
+**Thành phần:**
+- Thêm/xóa widget, sắp xếp thứ tự (↑/↓)
+- Preview inline từng widget (tối đa 20 dòng)
+- Nút Xem trước → `/reports/preview/{id}`
+- Nút Lưu thay đổi
+
+---
+
+### 6.5. Widget HTML Designer (`/widgets/html-designer/{id}`)
+
+**Mục đích:** Thiết kế và xem trước HTML template tùy chỉnh cho widget.
+
+**Layout:**
+```
+┌──────────────────────────────────────────────────────────┐
+│  ← Widgets /  HTML Designer – Doanh thu tháng           │
+│                                                          │
+│  🖌️ HTML Designer – Doanh thu tháng                     │
+│  Sử dụng {{column_name}} để hiển thị dữ liệu.           │
+│                                                          │
+│  ┌────────────── Editor ──────────┬── Preview ─────────┐ │
+│  │  Biến có sẵn:                 │                     │ │
+│  │  [month] [revenue] [orders]   │  <Xem trước HTML>   │ │
+│  │                               │  T1 | 125,000,000   │ │
+│  │  <textarea>                   │  T2 | 138,500,000   │ │
+│  │  <table>                      │  ...                │ │
+│  │    {{#each rows}}             │                     │ │
+│  │    <tr>                       │                     │ │
+│  │      <td>{{month}}</td>       │                     │ │
+│  │      <td>{{revenue}}</td>     │                     │ │
+│  │    </tr>                      │                     │ │
+│  │    {{/each}}                  │                     │ │
+│  │  </table>                     │                     │ │
+│  │  </textarea>                  │                     │ │
+│  │                               │                     │ │
+│  │  [Cập nhật xem trước] [Lưu]  │                     │ │
+│  └───────────────────────────────┴─────────────────────┘ │
+└──────────────────────────────────────────────────────────┘
+```
+
+**Thành phần:**
+- Chip list biến cột (click để chèn vào editor)
+- Textarea soạn thảo HTML template
+- Panel xem trước live (render với `HtmlTemplateHelper`)
+- Template gợi ý theo loại widget (Table, Chart, Metric, ...)
+- Nút Lưu → cập nhật `HtmlTemplate` trên Widget entity
 
 ---
 

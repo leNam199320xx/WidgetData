@@ -2,8 +2,9 @@
 
 > 🚀 Data Pipeline & Widget Platform - Read, Transform, Visualize data từ nhiều nguồn với No-Code approach
 
-[![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
-[![Blazor](https://img.shields.io/badge/Blazor-WebAssembly-512BD4?logo=blazor)](https://dotnet.microsoft.com/apps/aspnet/web-apps/blazor)
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![Blazor](https://img.shields.io/badge/Blazor-Server-512BD4?logo=blazor)](https://dotnet.microsoft.com/apps/aspnet/web-apps/blazor)
+[![Aspire](https://img.shields.io/badge/.NET_Aspire-AppHost-512BD4?logo=dotnet)](https://learn.microsoft.com/en-us/dotnet/aspire/)
 
 ## 📋 Tổng quan
 
@@ -14,6 +15,8 @@ Widget Data là platform cho phép bạn:
 - 📅 **Tự động hóa** với scheduling (cron, interval, event-driven)
 - ⚡ **Cache & optimize** với multi-level caching
 - 📈 **Visualize real-time** trên Blazor dashboard với SignalR
+- 🎨 **HTML Designer** tạo giao diện tùy chỉnh với template engine
+- 📑 **Dashboard Pages** ghép nhiều widget thành trang báo cáo
 - 🔐 **Bảo mật** với authentication, authorization, encryption
 
 **Không cần code!** Business users có thể tạo data pipelines qua visual builder.
@@ -22,6 +25,9 @@ Widget Data là platform cho phép bạn:
 
 - **Multi-Step Processing**: Pipeline với nhiều bước xử lý tuần tự → [📖 Chi tiết](doc/multi-step-processing.md)
 - **Branching & Variables**: If-else, switch-case, parallel branches + biến → [📖 Chi tiết](doc/branching-variables.md)
+- **HTML Widget Designer**: Thiết kế template HTML tùy chỉnh với biến `{{column}}` và vòng lặp `{{#each rows}}`
+- **Dashboard Page Builder**: Kéo-thả widget thành trang dashboard, xem trước trực tiếp
+- **Reports & Preview**: Trang báo cáo doanh thu/bán hàng từ dữ liệu thực tế
 - **Scheduling**: Hangfire scheduler với cron expressions, interval, on-demand
 - **Caching**: In-memory, Redis, file-based cache với TTL và invalidation
 - **Live Data**: Real-time dashboard qua SignalR, auto-refresh
@@ -32,7 +38,7 @@ Widget Data là platform cho phép bạn:
 
 ### 1. Sales Report Pipeline
 ```
-Step 1: Đọc orders từ SQL Server
+Step 1: Đọc orders từ SQLite
 Step 2: Đọc products từ CSV  
 Step 3: Join orders + products
 Step 4: Aggregate revenue by category
@@ -54,13 +60,18 @@ ELSE:
 Extract từ legacy DB → Clean data → Transform format → Load to warehouse
 ```
 
+### 4. HTML Widget Report
+```
+Tạo HTML template: <table>{{#each rows}}<tr><td>{{product}}</td><td>{{revenue}}</td></tr>{{/each}}</table>
+Widget tự điền dữ liệu thực tế → Dashboard Page → Xuất PDF/HTML
+```
+
 ## 🚀 Quick Start
 
 ### Prerequisites
-- .NET 8.0 SDK
-- SQL Server 2019+ (hoặc PostgreSQL/MySQL)  
-- Redis (optional)
-- Visual Studio 2022 / VS Code
+- .NET 10.0 SDK
+- Docker Desktop (cho .NET Aspire AppHost)
+- Visual Studio 2022 / VS Code / Rider
 
 ### Installation
 
@@ -72,53 +83,62 @@ cd widget-data
 # Restore packages
 dotnet restore
 
-# Update database
-dotnet ef database update --project src/WidgetData.Infrastructure
+# Chạy toàn bộ hệ thống qua .NET Aspire
+dotnet run --project src/WidgetData.AppHost
 
-# Run application
+# Hoặc chạy riêng từng service
 dotnet run --project src/WidgetData.Web
+dotnet run --project src/WidgetData.API
 ```
 
 Truy cập:
-- Frontend: `https://localhost:5001`
-- Hangfire: `https://localhost:5001/hangfire`
+- Frontend (Blazor): `https://localhost:5001`
+- API Gateway (YARP): `https://localhost:7000`
 - API Swagger: `https://localhost:7001/swagger`
+- .NET Aspire Dashboard: `https://localhost:15888`
 
 👉 [Hướng dẫn cài đặt chi tiết](doc/deployment.md)
 
 ## 📐 Architecture
 
 ```
-┌─────────────────────────────────────┐
-│     BLAZOR FRONTEND                 │
-│  Dashboard | Widget Builder         │
-└──────────────┬──────────────────────┘
-               │ SignalR + REST API
-┌──────────────┴──────────────────────┐
-│     ASP.NET CORE WEB API            │
-│  Widget API | Auth | Source API     │
-└──────────────┬──────────────────────┘
-               │
-┌──────────────┴──────────────────────┐
-│  Services: Widget | Schedule | Cache│
-└──────────────┬──────────────────────┘
-               │
-┌──────────────┴──────────────────────┐
-│  Infra: EF Core | Hangfire | Redis  │
-└──────────────┬──────────────────────┘
-               │
-┌──────────────┴──────────────────────┐
-│  Data: SQL | Files | APIs           │
-└─────────────────────────────────────┘
+┌───────────────────────────────────────────┐
+│         .NET ASPIRE APP HOST              │
+│   AppHost + ServiceDefaults + Gateway     │
+└────────────────┬──────────────────────────┘
+                 │ YARP Reverse Proxy
+┌────────────────┴──────────────────────────┐
+│         BLAZOR FRONTEND (Web)             │
+│  Dashboard | Widget Builder | HTML Designer│
+│  Dashboard Pages | Reports Preview        │
+└────────────────┬──────────────────────────┘
+                 │ SignalR + REST API
+┌────────────────┴──────────────────────────┐
+│         ASP.NET CORE WEB API              │
+│  Widget API | Auth | Reports | Source API │
+└────────────────┬──────────────────────────┘
+                 │
+┌────────────────┴──────────────────────────┐
+│  Services: Widget | Schedule | Cache      │
+│  HtmlTemplateHelper | SalesDataSeeder     │
+└────────────────┬──────────────────────────┘
+                 │
+┌────────────────┴──────────────────────────┐
+│  Infra: EF Core SQLite | Hangfire | Redis │
+└────────────────┬──────────────────────────┘
+                 │
+┌────────────────┴──────────────────────────┐
+│  Data: SQLite | Files | APIs              │
+└───────────────────────────────────────────┘
 ```
 
 👉 [Chi tiết Architecture](doc/architecture.md)
 
 ## 💻 Technology Stack
 
-**Backend**: ASP.NET Core 8.0, EF Core, Hangfire, SignalR, Redis  
-**Frontend**: Blazor Server/WASM, MudBlazor, ChartJs, BlazorMonaco  
-**Infrastructure**: Docker, Azure App Service, SQL Server, Serilog  
+**Backend**: ASP.NET Core 10.0, EF Core, Hangfire, SignalR, QuestPDF  
+**Frontend**: Blazor Server, MudBlazor, ChartJs, BlazorMonaco  
+**Infrastructure**: .NET Aspire, YARP Gateway, SQLite, Docker, Serilog  
 
 👉 [Chi tiết Technology](doc/architecture.md#technology-stack)
 
@@ -151,6 +171,7 @@ Truy cập:
 
 ### 🗺️ Planning
 - [Roadmap](doc/roadmap.md) - v1.0 → v3.0
+- [Screens & UI](doc/screens.md) - Tất cả màn hình
 - [📑 Tài liệu đầy đủ](doc/INDEX.md) - All docs
 
 ## 📊 Example: Multi-Step Widget
@@ -186,9 +207,26 @@ Truy cập:
 
 👉 [Xem thêm examples](doc/multi-step-processing.md#ví-dụ-cấu-hình)
 
+## 🖌️ Example: HTML Widget Template
+
+```html
+<!-- Widget HTML Template – biến {{column}} tự động thay thế bằng dữ liệu -->
+<table class="report-table">
+  <thead><tr><th>Sản phẩm</th><th>Doanh thu</th></tr></thead>
+  <tbody>
+    {{#each rows}}
+    <tr>
+      <td>{{product_name}}</td>
+      <td>{{revenue}}</td>
+    </tr>
+    {{/each}}
+  </tbody>
+</table>
+```
+
 ## 🚦 Roadmap
 
-- ✅ **v1.0** (Q2 2026) - MVP: Core widgets, scheduling, Blazor UI
+- ✅ **v1.0** (Q2 2026) - MVP: Core widgets, scheduling, Blazor UI, .NET Aspire, HTML Designer, Dashboard Pages, Reports
 - 🔄 **v1.5** (Q3 2026) - Advanced charts, templates
 - 📅 **v2.0** (Q4 2026) - AI features, Power BI integration
 - 📅 **v2.5** (Q1 2027) - Visual ETL, multi-tenancy
@@ -220,3 +258,4 @@ MIT License - see [LICENSE](LICENSE)
 ---
 
 **Made with ❤️ using .NET & Blazor**
+
