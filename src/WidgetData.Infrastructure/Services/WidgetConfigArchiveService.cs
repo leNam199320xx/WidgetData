@@ -54,6 +54,19 @@ public class WidgetConfigArchiveService : IWidgetConfigArchiveService
         var widget = await _widgetRepo.GetByIdAsync(widgetId);
         if (widget == null) return null;
 
+        // Archive current config before overwriting (preserve current state)
+        await _archiveRepo.CreateAsync(new WidgetConfigArchive
+        {
+            WidgetId = widgetId,
+            Configuration = widget.Configuration,
+            ChartConfig = widget.ChartConfig,
+            HtmlTemplate = widget.HtmlTemplate,
+            Note = $"Auto-archived before restore from archive #{archiveId}",
+            TriggerSource = "OnSave",
+            ArchivedBy = userId,
+            ArchivedAt = DateTime.UtcNow
+        });
+
         widget.Configuration = archive.Configuration;
         widget.ChartConfig = archive.ChartConfig;
         widget.HtmlTemplate = archive.HtmlTemplate;
