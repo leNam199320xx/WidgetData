@@ -11,6 +11,7 @@ public class WidgetSchedule
     public bool IsEnabled { get; set; } = true;
     public bool RetryOnFailure { get; set; } = false;
     public int MaxRetries { get; set; } = 3;
+    public bool ArchiveConfigOnRun { get; set; } = false;
     public DateTime? LastRunAt { get; set; }
     public ExecutionStatus? LastRunStatus { get; set; }
     public DateTime? NextRunAt { get; set; }

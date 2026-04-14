@@ -15,17 +15,20 @@ public class WidgetsController : ControllerBase
     private readonly IPermissionService _permissionService;
     private readonly IExportService _exportService;
     private readonly IDeliveryService _deliveryService;
+    private readonly IWidgetConfigArchiveService _archiveService;
 
     public WidgetsController(
         IWidgetService service,
         IPermissionService permissionService,
         IExportService exportService,
-        IDeliveryService deliveryService)
+        IDeliveryService deliveryService,
+        IWidgetConfigArchiveService archiveService)
     {
         _service = service;
         _permissionService = permissionService;
         _exportService = exportService;
         _deliveryService = deliveryService;
+        _archiveService = archiveService;
     }
 
     [HttpGet]
@@ -77,10 +80,10 @@ public class WidgetsController : ControllerBase
     }
 
     [HttpPost("{id}/execute")]
-    public async Task<IActionResult> Execute(int id)
+    public async Task<IActionResult> Execute(int id, [FromQuery] int? scheduleId = null)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
-        var result = await _service.ExecuteAsync(id, userId);
+        var result = await _service.ExecuteAsync(id, userId, scheduleId);
         return Ok(result);
     }
 
@@ -133,4 +136,35 @@ public class WidgetsController : ControllerBase
     [HttpGet("{id}/deliveries")]
     public async Task<IActionResult> GetDeliveries(int id)
         => Ok(await _deliveryService.GetExecutionsAsync(id));
+
+    // Config Archives
+    [HttpGet("{id}/config-archives")]
+    public async Task<IActionResult> GetConfigArchives(int id)
+        => Ok(await _archiveService.GetByWidgetIdAsync(id));
+
+    [HttpPost("{id}/config-archives")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> CreateConfigArchive(int id, [FromBody] CreateWidgetConfigArchiveDto dto)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
+        var result = await _archiveService.CreateAsync(id, dto, userId, "Manual");
+        return result == null ? NotFound() : Ok(result);
+    }
+
+    [HttpPost("{id}/config-archives/{archiveId}/restore")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> RestoreConfigArchive(int id, int archiveId)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
+        var result = await _archiveService.RestoreAsync(id, archiveId, userId);
+        return result == null ? NotFound() : Ok(result);
+    }
+
+    [HttpDelete("{id}/config-archives/{archiveId}")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> DeleteConfigArchive(int id, int archiveId)
+    {
+        var result = await _archiveService.DeleteAsync(archiveId);
+        return result ? NoContent() : NotFound();
+    }
 }

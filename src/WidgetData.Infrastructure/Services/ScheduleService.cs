@@ -29,7 +29,8 @@ public class ScheduleService : IScheduleService
             Timezone = dto.Timezone,
             IsEnabled = dto.IsEnabled,
             RetryOnFailure = dto.RetryOnFailure,
-            MaxRetries = dto.MaxRetries
+            MaxRetries = dto.MaxRetries,
+            ArchiveConfigOnRun = dto.ArchiveConfigOnRun
         };
         var created = await _repo.CreateAsync(entity);
         return MapToDto(created);
@@ -44,6 +45,7 @@ public class ScheduleService : IScheduleService
         entity.IsEnabled = dto.IsEnabled;
         entity.RetryOnFailure = dto.RetryOnFailure;
         entity.MaxRetries = dto.MaxRetries;
+        entity.ArchiveConfigOnRun = dto.ArchiveConfigOnRun;
         entity.UpdatedAt = DateTime.UtcNow;
         var updated = await _repo.UpdateAsync(entity);
         return MapToDto(updated);
@@ -87,6 +89,7 @@ public class ScheduleService : IScheduleService
         IsEnabled = s.IsEnabled,
         RetryOnFailure = s.RetryOnFailure,
         MaxRetries = s.MaxRetries,
+        ArchiveConfigOnRun = s.ArchiveConfigOnRun,
         LastRunAt = s.LastRunAt,
         LastRunStatus = s.LastRunStatus,
         NextRunAt = s.NextRunAt,

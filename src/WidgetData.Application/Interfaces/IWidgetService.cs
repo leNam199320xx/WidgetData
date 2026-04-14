@@ -9,7 +9,7 @@ public interface IWidgetService
     Task<WidgetDto> CreateAsync(CreateWidgetDto dto, string userId);
     Task<WidgetDto?> UpdateAsync(int id, UpdateWidgetDto dto);
     Task<bool> DeleteAsync(int id);
-    Task<WidgetExecutionDto> ExecuteAsync(int id, string userId);
+    Task<WidgetExecutionDto> ExecuteAsync(int id, string userId, int? scheduleId = null);
     Task<object?> GetDataAsync(int id);
     Task<IEnumerable<WidgetExecutionDto>> GetHistoryAsync(int id);
 }

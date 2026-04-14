@@ -160,6 +160,16 @@ public class ApiService
     public Task<DeliveryExecutionDto?> TriggerDeliveryAsync(int widgetId, int deliveryTargetId) => PostAsync<DeliveryExecutionDto>($"api/widgets/{widgetId}/deliver/{deliveryTargetId}", new { });
     public Task<IEnumerable<DeliveryExecutionDto>?> GetDeliveryExecutionsAsync(int widgetId) => GetAsync<IEnumerable<DeliveryExecutionDto>>($"api/widgets/{widgetId}/deliveries");
 
+    // Config Archives
+    public Task<IEnumerable<WidgetConfigArchiveDto>?> GetWidgetConfigArchivesAsync(int widgetId)
+        => GetAsync<IEnumerable<WidgetConfigArchiveDto>>($"api/widgets/{widgetId}/config-archives");
+    public Task<WidgetConfigArchiveDto?> CreateWidgetConfigArchiveAsync(int widgetId, CreateWidgetConfigArchiveDto dto)
+        => PostAsync<WidgetConfigArchiveDto>($"api/widgets/{widgetId}/config-archives", dto);
+    public Task<WidgetDto?> RestoreWidgetConfigArchiveAsync(int widgetId, int archiveId)
+        => PostAsync<WidgetDto>($"api/widgets/{widgetId}/config-archives/{archiveId}/restore", new { });
+    public Task<bool> DeleteWidgetConfigArchiveAsync(int widgetId, int archiveId)
+        => DeleteAsync($"api/widgets/{widgetId}/config-archives/{archiveId}");
+
     // Export
     public string GetExportUrl(int widgetId, string format) => $"api/widgets/{widgetId}/export?format={format}";
     public async Task<byte[]?> ExportWidgetAsync(int widgetId, string format)

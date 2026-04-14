@@ -19,6 +19,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<UserGroupPermission> UserGroupPermissions => Set<UserGroupPermission>();
     public DbSet<DeliveryTarget> DeliveryTargets => Set<DeliveryTarget>();
     public DbSet<DeliveryExecution> DeliveryExecutions => Set<DeliveryExecution>();
+    public DbSet<WidgetConfigArchive> WidgetConfigArchives => Set<WidgetConfigArchive>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -91,6 +92,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasOne(e => e.DeliveryTarget)
             .WithMany(d => d.Executions)
             .HasForeignKey(e => e.DeliveryTargetId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<WidgetConfigArchive>()
+            .HasOne(a => a.Widget)
+            .WithMany()
+            .HasForeignKey(a => a.WidgetId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -282,6 +282,69 @@ else if (_widget != null)
                 }
             </MudPaper>
         </MudStep>
+
+        @* Bước 5: Lịch sử cấu hình (Config Archive) *@
+        <MudStep Title="Lịch sử cấu hình" Icon="@Icons.Material.Filled.Archive">
+            <MudPaper Class="pa-4" Elevation="0">
+                <MudText Typo="Typo.h6" Class="mb-2">Bước 5: Lịch sử cấu hình (Config Archive)</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                    Mỗi lần lưu thay đổi cấu hình, hệ thống tự động tạo một bản snapshot.
+                    Bạn có thể tạo bản lưu thủ công, hoặc khôi phục cấu hình từ bản cũ.
+                    Các lịch chạy có tuỳ chọn <strong>Lưu archive mỗi lần chạy</strong> cũng sẽ tạo snapshot tự động.
+                </MudText>
+
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+                           StartIcon="@Icons.Material.Filled.AddCircleOutline"
+                           OnClick="CreateManualArchive" Disabled="_savingArchive" Class="mb-4">
+                    @if (_savingArchive) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" /> }
+                    Lưu snapshot ngay bây giờ
+                </MudButton>
+
+                @if (_configArchives == null)
+                {
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                }
+                else if (!_configArchives.Any())
+                {
+                    <MudAlert Severity="Severity.Info">Chưa có bản archive nào.</MudAlert>
+                }
+                else
+                {
+                    <MudTable Items="_configArchives" Dense="true" Hover="true" Striped="true">
+                        <HeaderContent>
+                            <MudTh>Thời gian</MudTh>
+                            <MudTh>Nguồn</MudTh>
+                            <MudTh>Người lưu</MudTh>
+                            <MudTh>Ghi chú</MudTh>
+                            <MudTh>Thao tác</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@context.ArchivedAt.ToString("dd/MM/yyyy HH:mm:ss")</MudTd>
+                            <MudTd>
+                                <MudChip T="string" Size="Size.Small"
+                                         Color="@ArchiveTriggerColor(context.TriggerSource)">
+                                    @ArchiveTriggerLabel(context.TriggerSource)
+                                </MudChip>
+                                @if (context.ScheduleId.HasValue)
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary"> (Lịch #@context.ScheduleId)</MudText>
+                                }
+                            </MudTd>
+                            <MudTd>@(context.ArchivedBy ?? "—")</MudTd>
+                            <MudTd>@(context.Note ?? "—")</MudTd>
+                            <MudTd>
+                                <MudIconButton Icon="@Icons.Material.Filled.RestoreFromTrash" Color="Color.Warning"
+                                               Size="Size.Small" Title="Khôi phục cấu hình này"
+                                               OnClick="() => RestoreArchive(context)" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                               Size="Size.Small" Title="Xóa bản archive này"
+                                               OnClick="() => DeleteArchive(context.Id)" />
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+            </MudPaper>
+        </MudStep>
     </MudStepper>
 
     <MudDivider Class="my-4" />
@@ -311,6 +374,9 @@ else if (_widget != null)
     bool _savingDelivery;
     CreateDeliveryTargetDto _deliveryForm = new();
 
+    IEnumerable<WidgetConfigArchiveDto>? _configArchives;
+    bool _savingArchive;
+
     List<BreadcrumbItem> _breadcrumbs = new()
     {
         new("Widgets", "/widgets"),
@@ -324,7 +390,8 @@ else if (_widget != null)
             LoadDataSourcesAsync(),
             LoadGroupsAsync(),
             LoadSchedulesAsync(),
-            LoadDeliveryTargetsAsync()
+            LoadDeliveryTargetsAsync(),
+            LoadConfigArchivesAsync()
         );
     }
 
@@ -382,6 +449,63 @@ else if (_widget != null)
         try { _deliveryTargets = await ApiService.GetDeliveryTargetsAsync(Id) ?? Array.Empty<DeliveryTargetDto>(); }
         catch { _deliveryTargets = Array.Empty<DeliveryTargetDto>(); }
     }
+
+    async Task LoadConfigArchivesAsync()
+    {
+        try { _configArchives = await ApiService.GetWidgetConfigArchivesAsync(Id) ?? Array.Empty<WidgetConfigArchiveDto>(); }
+        catch { _configArchives = Array.Empty<WidgetConfigArchiveDto>(); }
+    }
+
+    async Task CreateManualArchive()
+    {
+        _savingArchive = true;
+        try
+        {
+            var result = await ApiService.CreateWidgetConfigArchiveAsync(Id, new CreateWidgetConfigArchiveDto());
+            Snackbar.Add(result != null ? "Đã lưu snapshot cấu hình!" : "Lưu snapshot thất bại.", result != null ? Severity.Success : Severity.Error);
+            await LoadConfigArchivesAsync();
+        }
+        finally { _savingArchive = false; }
+    }
+
+    async Task RestoreArchive(WidgetConfigArchiveDto archive)
+    {
+        var result = await ApiService.RestoreWidgetConfigArchiveAsync(Id, archive.Id);
+        if (result != null)
+        {
+            _widget = result;
+            _form.Configuration = result.Configuration;
+            _form.ChartConfig = result.ChartConfig;
+            _form.HtmlTemplate = result.HtmlTemplate;
+            Snackbar.Add($"Đã khôi phục cấu hình từ {archive.ArchivedAt:dd/MM/yyyy HH:mm}!", Severity.Success);
+            await LoadConfigArchivesAsync();
+        }
+        else
+        {
+            Snackbar.Add("Khôi phục thất bại.", Severity.Error);
+        }
+    }
+
+    async Task DeleteArchive(int archiveId)
+    {
+        var result = await ApiService.DeleteWidgetConfigArchiveAsync(Id, archiveId);
+        Snackbar.Add(result ? "Đã xóa bản archive." : "Xóa thất bại.", result ? Severity.Success : Severity.Error);
+        await LoadConfigArchivesAsync();
+    }
+
+    static Color ArchiveTriggerColor(string trigger) => trigger switch
+    {
+        "OnSave" => Color.Info,
+        "Schedule" => Color.Secondary,
+        _ => Color.Default
+    };
+
+    static string ArchiveTriggerLabel(string trigger) => trigger switch
+    {
+        "OnSave" => "Lưu cấu hình",
+        "Schedule" => "Theo lịch",
+        _ => "Thủ công"
+    };
 
     async Task SaveWidget()
     {
