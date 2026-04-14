@@ -1,16 +1,17 @@
 @using MudBlazor
 @inject NavigationManager Nav
+@inject IStringLocalizer<SharedResource> L
 
 <MudNavMenu>
-    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
-    <MudNavLink Href="/reports" Icon="@Icons.Material.Filled.Assessment">Báo cáo</MudNavLink>
-    <MudNavLink Href="/pages" Icon="@Icons.Material.Filled.GridView">Dashboard Pages</MudNavLink>
-    <MudNavLink Href="/widgets" Icon="@Icons.Material.Filled.Widgets">Widgets</MudNavLink>
-    <MudNavLink Href="/widget-groups" Icon="@Icons.Material.Filled.FolderSpecial">Nhóm Widget</MudNavLink>
-    <MudNavLink Href="/datasources" Icon="@Icons.Material.Filled.Storage">Data Sources</MudNavLink>
-    <MudNavLink Href="/schedules" Icon="@Icons.Material.Filled.Schedule">Schedules</MudNavLink>
-    <MudNavLink Href="/config-archives" Icon="@Icons.Material.Filled.Archive">Config Archives</MudNavLink>
-    <MudNavLink Href="/deliveries" Icon="@Icons.Material.Filled.Send">Lịch sử gửi</MudNavLink>
-    <MudNavLink Href="/users" Icon="@Icons.Material.Filled.People">Users</MudNavLink>
-    <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings">Settings</MudNavLink>
+    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">@L["Nav_Dashboard"]</MudNavLink>
+    <MudNavLink Href="/reports" Icon="@Icons.Material.Filled.Assessment">@L["Nav_Reports"]</MudNavLink>
+    <MudNavLink Href="/pages" Icon="@Icons.Material.Filled.GridView">@L["Nav_DashboardPages"]</MudNavLink>
+    <MudNavLink Href="/widgets" Icon="@Icons.Material.Filled.Widgets">@L["Nav_Widgets"]</MudNavLink>
+    <MudNavLink Href="/widget-groups" Icon="@Icons.Material.Filled.FolderSpecial">@L["Nav_WidgetGroups"]</MudNavLink>
+    <MudNavLink Href="/datasources" Icon="@Icons.Material.Filled.Storage">@L["Nav_DataSources"]</MudNavLink>
+    <MudNavLink Href="/schedules" Icon="@Icons.Material.Filled.Schedule">@L["Nav_Schedules"]</MudNavLink>
+    <MudNavLink Href="/config-archives" Icon="@Icons.Material.Filled.Archive">@L["Nav_ConfigArchives"]</MudNavLink>
+    <MudNavLink Href="/deliveries" Icon="@Icons.Material.Filled.Send">@L["Nav_DeliveryHistory"]</MudNavLink>
+    <MudNavLink Href="/users" Icon="@Icons.Material.Filled.People">@L["Nav_Users"]</MudNavLink>
+    <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings">@L["Nav_Settings"]</MudNavLink>
 </MudNavMenu>

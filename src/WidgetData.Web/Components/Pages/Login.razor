@@ -6,15 +6,16 @@
 @inject WidgetData.Web.Services.AuthStateProvider AuthStateProvider
 @inject NavigationManager Nav
 @inject IJSRuntime JS
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Login - WidgetData</PageTitle>
+<PageTitle>@L["Login_Title"] - WidgetData</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Small" Class="mt-16">
     <MudCard>
         <MudCardHeader>
             <CardHeaderContent>
-                <MudText Typo="Typo.h5" Align="Align.Center">Sign In</MudText>
-                <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Secondary">WidgetData Platform</MudText>
+                <MudText Typo="Typo.h5" Align="Align.Center">@L["Login_Title"]</MudText>
+                <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Secondary">@L["Login_Subtitle"]</MudText>
             </CardHeaderContent>
         </MudCardHeader>
         <MudCardContent>
@@ -24,7 +25,7 @@
             }
             <MudTextField @bind-Value="_email" Label="Email" Variant="Variant.Outlined" InputType="InputType.Email"
                           Class="mb-3" Disabled="_loading" />
-            <MudTextField @bind-Value="_password" Label="Password" Variant="Variant.Outlined"
+            <MudTextField @bind-Value="_password" Label="@L["Login_Password"]" Variant="Variant.Outlined"
                           InputType="@(_showPassword ? InputType.Text : InputType.Password)"
                           Adornment="Adornment.End"
                           AdornmentIcon="@(_showPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
@@ -38,7 +39,7 @@
                 {
                     <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
                 }
-                Sign In
+                @L["Login_Title"]
             </MudButton>
         </MudCardActions>
     </MudCard>
@@ -67,12 +68,12 @@
             }
             else
             {
-                _error = "Invalid credentials. Please try again.";
+                _error = L["Login_InvalidCredentials"].Value;
             }
         }
         catch (Exception ex)
         {
-            _error = $"Login failed: {ex.Message}";
+            _error = L["Login_Failed", ex.Message].Value;
         }
         finally
         {

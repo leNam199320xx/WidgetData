@@ -5,22 +5,23 @@
 @using WidgetData.Domain.Enums
 @inject WidgetData.Web.Services.ApiService ApiService
 @inject ISnackbar Snackbar
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Lịch sử gửi kết quả - WidgetData</PageTitle>
+<PageTitle>@L["Del_Title"] - WidgetData</PageTitle>
 
 <MudText Typo="Typo.h4" Class="mb-2">
     <MudIcon Icon="@Icons.Material.Filled.Send" Class="mr-2" />
-    Lịch sử gửi kết quả
+    @L["Del_Title"]
 </MudText>
 <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
-    Theo dõi trạng thái các lần gửi dữ liệu đến các điểm đích.
+    @L["Del_Subtitle"]
 </MudText>
 
 @if (_widgets != null && _widgets.Any())
 {
-    <MudSelect Value="_selectedWidgetId" T="int" Label="Chọn widget" Variant="Variant.Outlined"
+    <MudSelect Value="_selectedWidgetId" T="int" Label="@L["Del_SelectWidget"]" Variant="Variant.Outlined"
                Class="mb-4" Style="max-width:400px" ValueChanged="@((int id) => OnWidgetChanged(id))">
-        <MudSelectItem Value="0">-- Tất cả --</MudSelectItem>
+        <MudSelectItem Value="0">@L["Del_AllWidgets"]</MudSelectItem>
         @foreach (var w in _widgets)
         {
             <MudSelectItem Value="@w.Id">@(w.FriendlyLabel ?? w.Name)</MudSelectItem>
@@ -34,18 +35,18 @@
 }
 else if (!_executions.Any())
 {
-    <MudAlert Severity="Severity.Info">Chưa có lịch sử gửi nào.</MudAlert>
+    <MudAlert Severity="Severity.Info">@L["Del_NoHistory"]</MudAlert>
 }
 else
 {
     <MudTable Items="_executions" Dense="true" Hover="true" Striped="true">
         <HeaderContent>
             <MudTh>Widget</MudTh>
-            <MudTh>Điểm gửi</MudTh>
-            <MudTh>Trạng thái</MudTh>
-            <MudTh>Thời gian</MudTh>
-            <MudTh>Thông báo</MudTh>
-            <MudTh>Người gửi</MudTh>
+            <MudTh>@L["Del_DeliveryTarget"]</MudTh>
+            <MudTh>@L["Status"]</MudTh>
+            <MudTh>@L["Del_Time"]</MudTh>
+            <MudTh>@L["Del_Message"]</MudTh>
+            <MudTh>@L["Del_SentBy"]</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd>@GetWidgetName(context.WidgetId)</MudTd>
@@ -123,11 +124,11 @@ else
         _ => Color.Default
     };
 
-    static string GetStatusLabel(ExecutionStatus s) => s switch
+    string GetStatusLabel(ExecutionStatus s) => s switch
     {
-        ExecutionStatus.Success => "✅ Thành công",
-        ExecutionStatus.Failed => "❌ Thất bại",
-        ExecutionStatus.Running => "⏳ Đang chạy",
+        ExecutionStatus.Success => L["Del_Success"],
+        ExecutionStatus.Failed => L["Del_Failed"],
+        ExecutionStatus.Running => L["Del_Running"],
         _ => s.ToString()
     };
 }

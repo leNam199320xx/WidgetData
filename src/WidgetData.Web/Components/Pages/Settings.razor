@@ -1,12 +1,13 @@
 @page "/settings"
 @using MudBlazor
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Settings - WidgetData</PageTitle>
+<PageTitle>@L["Settings_Title"] - WidgetData</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-4">Settings</MudText>
+<MudText Typo="Typo.h4" Class="mb-4">@L["Settings_Title"]</MudText>
 
 <MudCard>
     <MudCardContent>
-        <MudText Typo="Typo.body1">Settings page - configure application preferences here.</MudText>
+        <MudText Typo="Typo.body1">@L["Settings_Placeholder"]</MudText>
     </MudCardContent>
 </MudCard>

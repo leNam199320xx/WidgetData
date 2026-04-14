@@ -1,6 +1,7 @@
 @inherits LayoutComponentBase
 @using MudBlazor
-@inject NavigationManager Nav
+@inject NavigationManager NavManager
+@inject IStringLocalizer<SharedResource> L
 @inject WidgetData.Web.Services.ApiService ApiService
 @inject WidgetData.Web.Services.AuthStateProvider AuthStateProvider
 @inject IJSRuntime JS
@@ -15,6 +16,10 @@
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
         <MudText Typo="Typo.h6" Class="ml-3">WidgetData</MudText>
         <MudSpacer />
+        <MudButton Href="@($"/culture?name=en&redirectUri={Uri.EscapeDataString(NavManager.Uri)}")"
+                   Variant="Variant.Text" Color="Color.Inherit" Size="Size.Small">EN</MudButton>
+        <MudButton Href="@($"/culture?name=vi&redirectUri={Uri.EscapeDataString(NavManager.Uri)}")"
+                   Variant="Variant.Text" Color="Color.Inherit" Size="Size.Small">VI</MudButton>
         <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" />
     </MudAppBar>
     <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
