@@ -1,4 +1,4 @@
-@page "/widget-groups"
+@page "/pages"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using MudBlazor
 @using WidgetData.Application.DTOs
@@ -6,39 +6,42 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager Nav
 
-<PageTitle>Widget Groups - WidgetData</PageTitle>
+<PageTitle>Dashboard Pages - WidgetData</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-4">
-    <MudIcon Icon="@Icons.Material.Filled.FolderSpecial" Class="mr-2" />
-    Nhóm Widget
+<MudText Typo="Typo.h4" Class="mb-1">
+    <MudIcon Icon="@Icons.Material.Filled.Dashboard" Class="mr-2" />
+    Dashboard Pages
 </MudText>
-<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
-    Phân nhóm các widget để dễ quản lý và phân quyền theo nhóm.
+<MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">
+    Tạo và quản lý các trang dashboard với nhiều widget trong một trang.
 </MudText>
 
+@* Add/Edit Form *@
 @if (_showForm)
 {
     <MudPaper Class="pa-4 mb-4" Elevation="3">
-        <MudText Typo="Typo.h6" Class="mb-3">@(_editingId == null ? "Tạo nhóm mới" : "Chỉnh sửa nhóm")</MudText>
+        <MudText Typo="Typo.h6" Class="mb-3">@(_editingId == null ? "Tạo trang mới" : "Chỉnh sửa trang")</MudText>
         <MudGrid>
             <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_form.Name" Label="Tên nhóm" Required="true" Variant="Variant.Outlined"
-                              HelperText="Đặt tên ngắn gọn, dễ nhớ (VD: Báo cáo doanh thu)" />
+                <MudTextField @bind-Value="_form.Name" Label="Tên trang" Required="true" Variant="Variant.Outlined"
+                              HelperText='VD: "Báo cáo doanh thu tháng 1"' />
             </MudItem>
             <MudItem xs="12" sm="6">
                 <MudTextField @bind-Value="_form.Description" Label="Mô tả" Variant="Variant.Outlined"
-                              HelperText="Giải thích ngắn gọn nhóm này dùng để làm gì" />
+                              HelperText="Mô tả ngắn gọn về nội dung trang" />
             </MudItem>
             <MudItem xs="12">
-                <MudText Typo="Typo.subtitle2" Class="mb-2">Chọn widget vào nhóm này:</MudText>
-                @if (_widgets != null)
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Chọn widget hiển thị trên trang này:</MudText>
+                @if (_allWidgets != null)
                 {
                     <MudChipSet T="int" MultiSelection="true" SelectedValues="_selectedWidgetIds"
                                 SelectedValuesChanged="@((IReadOnlyCollection<int> ids) => _selectedWidgetIds = ids.ToHashSet())">
-                        @foreach (var w in _widgets)
+                        @foreach (var w in _allWidgets)
                         {
-                            <MudChip T="int" Value="@w.Id" Color="@(_selectedWidgetIds.Contains(w.Id) ? Color.Primary : Color.Default)"
-                                     Variant="Variant.Outlined" Size="Size.Small">
+                            <MudChip T="int" Value="@w.Id"
+                                     Color="@(_selectedWidgetIds.Contains(w.Id) ? Color.Primary : Color.Default)"
+                                     Variant="Variant.Outlined" Size="Size.Small"
+                                     Icon="@GetWidgetTypeIcon(w.WidgetType.ToString())">
                                 @(w.FriendlyLabel ?? w.Name)
                             </MudChip>
                         }
@@ -54,7 +57,7 @@
             <MudItem xs="12">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save" Disabled="_saving" Class="mr-2">
                     @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
-                    Lưu
+                    Lưu trang
                 </MudButton>
                 <MudButton Variant="Variant.Outlined" OnClick="CancelForm">Hủy</MudButton>
             </MudItem>
@@ -62,30 +65,32 @@
     </MudPaper>
 }
 
+@* Delete Confirm *@
 @if (_deletingItem != null)
 {
     <MudPaper Class="pa-4 mb-4" Elevation="3" Style="border-left: 4px solid #f44336">
         <MudText Typo="Typo.h6" Color="Color.Error">Xác nhận xóa</MudText>
-        <MudText Class="mb-3">Xóa nhóm <strong>@_deletingItem.Name</strong>?</MudText>
+        <MudText Class="mb-3">Xóa trang <strong>@_deletingItem.Name</strong>?</MudText>
         <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DoDelete" Class="mr-2">Xóa</MudButton>
         <MudButton Variant="Variant.Outlined" OnClick="() => _deletingItem = null">Hủy</MudButton>
     </MudPaper>
 }
 
-@if (_groups != null)
+@* Page List *@
+@if (_pages != null)
 {
-    <MudTable Items="_groups" Dense="true" Hover="true" Striped="true">
+    <MudTable Items="_pages" Dense="true" Hover="true" Striped="true">
         <ToolBarContent>
-            <MudText Typo="Typo.h6">Danh sách nhóm</MudText>
+            <MudText Typo="Typo.h6">Danh sách trang</MudText>
             <MudSpacer />
             @if (!_showForm)
             {
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
-                           OnClick="OpenAddForm">Tạo nhóm</MudButton>
+                           OnClick="OpenAddForm">Tạo trang mới</MudButton>
             }
         </ToolBarContent>
         <HeaderContent>
-            <MudTh>Tên nhóm</MudTh>
+            <MudTh>Tên trang</MudTh>
             <MudTh>Mô tả</MudTh>
             <MudTh>Số widget</MudTh>
             <MudTh>Trạng thái</MudTh>
@@ -93,7 +98,7 @@
         </HeaderContent>
         <RowTemplate>
             <MudTd>
-                <MudIcon Icon="@Icons.Material.Filled.Folder" Size="Size.Small" Class="mr-1" Color="Color.Warning" />
+                <MudIcon Icon="@Icons.Material.Filled.Dashboard" Size="Size.Small" Class="mr-1" Color="Color.Primary" />
                 @context.Name
             </MudTd>
             <MudTd>@(context.Description ?? "-")</MudTd>
@@ -108,10 +113,12 @@
             <MudTd>
                 <MudIconButton Icon="@Icons.Material.Filled.GridView" Color="Color.Primary" Size="Size.Small"
                                OnClick="@(() => Nav.NavigateTo($"/pages/builder/{context.Id}"))" Title="Xây dựng trang" />
+                <MudIconButton Icon="@Icons.Material.Filled.Preview" Color="Color.Success" Size="Size.Small"
+                               OnClick="@(() => Nav.NavigateTo($"/reports/preview/{context.Id}"))" Title="Xem trước" />
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" Size="Size.Small"
-                               OnClick="() => OpenEditForm(context)" />
+                               OnClick="() => OpenEditForm(context)" Title="Chỉnh sửa" />
                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
-                               OnClick="() => _deletingItem = context" />
+                               OnClick="() => _deletingItem = context" Title="Xóa" />
             </MudTd>
         </RowTemplate>
     </MudTable>
@@ -126,8 +133,8 @@ else
 }
 
 @code {
-    IEnumerable<WidgetGroupDto>? _groups;
-    IEnumerable<WidgetDto>? _widgets;
+    IEnumerable<WidgetGroupDto>? _pages;
+    IEnumerable<WidgetDto>? _allWidgets;
     string? _error;
     bool _showForm;
     bool _saving;
@@ -139,19 +146,19 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.WhenAll(LoadGroupsAsync(), LoadWidgetsAsync());
+        await Task.WhenAll(LoadPagesAsync(), LoadWidgetsAsync());
     }
 
-    async Task LoadGroupsAsync()
+    async Task LoadPagesAsync()
     {
-        try { _groups = await ApiService.GetWidgetGroupsAsync() ?? Array.Empty<WidgetGroupDto>(); }
-        catch (Exception ex) { _error = $"Không thể tải danh sách nhóm: {ex.Message}"; _groups = Array.Empty<WidgetGroupDto>(); }
+        try { _pages = await ApiService.GetDashboardPagesAsync() ?? Array.Empty<WidgetGroupDto>(); }
+        catch (Exception ex) { _error = $"Không thể tải danh sách trang: {ex.Message}"; _pages = Array.Empty<WidgetGroupDto>(); }
     }
 
     async Task LoadWidgetsAsync()
     {
-        try { _widgets = await ApiService.GetWidgetsAsync() ?? Array.Empty<WidgetDto>(); }
-        catch { _widgets = Array.Empty<WidgetDto>(); }
+        try { _allWidgets = await ApiService.GetWidgetsAsync() ?? Array.Empty<WidgetDto>(); }
+        catch { _allWidgets = Array.Empty<WidgetDto>(); }
     }
 
     void OpenAddForm()
@@ -182,22 +189,29 @@ else
             _form.WidgetIds = _selectedWidgetIds.ToList();
             if (_editingId == null)
             {
-                var result = await ApiService.CreateWidgetGroupAsync(_form);
-                Snackbar.Add(result != null ? "Đã tạo nhóm!" : "Tạo nhóm thất bại.", result != null ? Severity.Success : Severity.Error);
+                var result = await ApiService.CreateDashboardPageAsync(_form);
+                if (result != null)
+                {
+                    Snackbar.Add("✓ Đã tạo trang dashboard!", Severity.Success);
+                    _showForm = false;
+                    Nav.NavigateTo($"/pages/builder/{result.Id}");
+                    return;
+                }
+                Snackbar.Add("Tạo trang thất bại.", Severity.Error);
             }
             else
             {
-                var updateDto = new UpdateWidgetGroupDto
+                var dto = new UpdateWidgetGroupDto
                 {
                     Name = _form.Name, Description = _form.Description,
                     WidgetIds = _form.WidgetIds, IsActive = _formIsActive
                 };
-                var result = await ApiService.UpdateWidgetGroupAsync(_editingId.Value, updateDto);
-                Snackbar.Add(result != null ? "Đã cập nhật nhóm!" : "Cập nhật thất bại.", result != null ? Severity.Success : Severity.Error);
+                var result = await ApiService.UpdateDashboardPageAsync(_editingId.Value, dto);
+                Snackbar.Add(result != null ? "✓ Đã cập nhật trang!" : "Cập nhật thất bại.", result != null ? Severity.Success : Severity.Error);
             }
             _showForm = false;
             _editingId = null;
-            await LoadGroupsAsync();
+            await LoadPagesAsync();
         }
         finally { _saving = false; }
     }
@@ -205,9 +219,18 @@ else
     async Task DoDelete()
     {
         if (_deletingItem == null) return;
-        var result = await ApiService.DeleteWidgetGroupAsync(_deletingItem.Id);
-        Snackbar.Add(result ? "Đã xóa nhóm!" : "Xóa thất bại.", result ? Severity.Success : Severity.Error);
+        var result = await ApiService.DeleteDashboardPageAsync(_deletingItem.Id);
+        Snackbar.Add(result ? "✓ Đã xóa trang!" : "Xóa thất bại.", result ? Severity.Success : Severity.Error);
         _deletingItem = null;
-        await LoadGroupsAsync();
+        await LoadPagesAsync();
     }
+
+    static string GetWidgetTypeIcon(string type) => type switch
+    {
+        "Chart" => Icons.Material.Filled.BarChart,
+        "Table" => Icons.Material.Filled.TableChart,
+        "Metric" => Icons.Material.Filled.Speed,
+        "Map" => Icons.Material.Filled.Map,
+        _ => Icons.Material.Filled.Widgets
+    };
 }

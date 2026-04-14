@@ -51,6 +51,7 @@ public class WidgetService : IWidgetService
             DataSourceId = dto.DataSourceId,
             Configuration = dto.Configuration,
             ChartConfig = dto.ChartConfig,
+            HtmlTemplate = dto.HtmlTemplate,
             CacheEnabled = dto.CacheEnabled,
             CacheTtlMinutes = dto.CacheTtlMinutes,
             CreatedBy = userId
@@ -80,6 +81,7 @@ public class WidgetService : IWidgetService
         widget.DataSourceId = dto.DataSourceId;
         widget.Configuration = dto.Configuration;
         widget.ChartConfig = dto.ChartConfig;
+        widget.HtmlTemplate = dto.HtmlTemplate;
         widget.CacheEnabled = dto.CacheEnabled;
         widget.CacheTtlMinutes = dto.CacheTtlMinutes;
         widget.IsActive = dto.IsActive;
@@ -201,6 +203,7 @@ public class WidgetService : IWidgetService
         DataSourceName = w.DataSource?.Name,
         Configuration = w.Configuration,
         ChartConfig = w.ChartConfig,
+        HtmlTemplate = w.HtmlTemplate,
         IsActive = w.IsActive,
         CacheEnabled = w.CacheEnabled,
         CacheTtlMinutes = w.CacheTtlMinutes,

@@ -98,6 +98,21 @@ public class ApiService
     public Task<bool> DeleteWidgetAsync(int id) => DeleteAsync($"api/widgets/{id}");
     public Task<WidgetExecutionDto?> ExecuteWidgetAsync(int id) => PostAsync<WidgetExecutionDto>($"api/widgets/{id}/execute", new { });
     public Task<IEnumerable<WidgetExecutionDto>?> GetWidgetHistoryAsync(int id) => GetAsync<IEnumerable<WidgetExecutionDto>>($"api/widgets/{id}/history");
+    public async Task<WidgetDto?> UpdateWidgetHtmlTemplateAsync(int id, string? htmlTemplate)
+    {
+        var widget = await GetWidgetByIdAsync(id);
+        if (widget == null) return null;
+        var dto = new UpdateWidgetDto
+        {
+            Name = widget.Name, FriendlyLabel = widget.FriendlyLabel, HelpText = widget.HelpText,
+            WidgetType = widget.WidgetType, Description = widget.Description,
+            DataSourceId = widget.DataSourceId, Configuration = widget.Configuration,
+            ChartConfig = widget.ChartConfig, HtmlTemplate = htmlTemplate,
+            CacheEnabled = widget.CacheEnabled, CacheTtlMinutes = widget.CacheTtlMinutes,
+            IsActive = widget.IsActive, GroupIds = widget.GroupIds
+        };
+        return await PutAsync<WidgetDto>($"api/widgets/{id}", dto);
+    }
 
     // Schedules
     public Task<IEnumerable<WidgetScheduleDto>?> GetSchedulesAsync() => GetAsync<IEnumerable<WidgetScheduleDto>>("api/schedules");
@@ -159,4 +174,11 @@ public class ApiService
     public Task<IEnumerable<WidgetGroupDto>?> GetReportPagesAsync() => GetAsync<IEnumerable<WidgetGroupDto>>("api/reports/pages");
     public Task<ReportPageDto?> GetReportPageAsync(int id) => GetAsync<ReportPageDto>($"api/reports/pages/{id}");
     public Task<WidgetDataDto?> GetWidgetDataAsync(int widgetId) => GetAsync<WidgetDataDto>($"api/reports/widgets/{widgetId}/data");
+
+    // Dashboard Pages (alias for Widget Groups with builder support)
+    public Task<IEnumerable<WidgetGroupDto>?> GetDashboardPagesAsync() => GetAsync<IEnumerable<WidgetGroupDto>>("api/widget-groups");
+    public Task<WidgetGroupDto?> GetDashboardPageAsync(int id) => GetAsync<WidgetGroupDto>($"api/widget-groups/{id}");
+    public Task<WidgetGroupDto?> CreateDashboardPageAsync(CreateWidgetGroupDto dto) => PostAsync<WidgetGroupDto>("api/widget-groups", dto);
+    public Task<WidgetGroupDto?> UpdateDashboardPageAsync(int id, UpdateWidgetGroupDto dto) => PutAsync<WidgetGroupDto>($"api/widget-groups/{id}", dto);
+    public Task<bool> DeleteDashboardPageAsync(int id) => DeleteAsync($"api/widget-groups/{id}");
 }

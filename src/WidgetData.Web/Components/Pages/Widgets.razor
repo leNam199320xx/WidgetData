@@ -137,6 +137,8 @@
                                OnClick="() => ExecuteWidget(context)" Title="Chạy ngay" />
                 <MudIconButton Icon="@Icons.Material.Filled.History" Color="Color.Info" Size="Size.Small"
                                OnClick="() => ViewHistory(context)" Title="Lịch sử" />
+                <MudIconButton Icon="@Icons.Material.Filled.Code" Color="Color.Info" Size="Size.Small"
+                               OnClick="@(() => Nav.NavigateTo($"/widgets/html-designer/{context.Id}"))" Title="HTML Designer" />
                 <MudIconButton Icon="@Icons.Material.Filled.Tune" Color="Color.Secondary" Size="Size.Small"
                                OnClick="@(() => Nav.NavigateTo($"/widgets/configure/{context.Id}"))" Title="Cấu hình chi tiết" />
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" Size="Size.Small"

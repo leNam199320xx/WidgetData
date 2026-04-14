@@ -18,6 +18,7 @@ public class Widget
     public int? LastRowCount { get; set; }
     public string? FriendlyLabel { get; set; }
     public string? HelpText { get; set; }
+    public string? HtmlTemplate { get; set; }
     public string? CreatedBy { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
