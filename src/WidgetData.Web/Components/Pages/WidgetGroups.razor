@@ -146,7 +146,7 @@ else
     async Task LoadGroupsAsync()
     {
         try { _groups = await ApiService.GetWidgetGroupsAsync() ?? Array.Empty<WidgetGroupDto>(); }
-        catch (Exception ex) { _error = L["WG_FailedToLoad", ex.Message]; _groups = Array.Empty<WidgetGroupDto>(); }
+        catch (Exception ex) { _error = L["WG_FailedToLoad", ex.Message].Value; _groups = Array.Empty<WidgetGroupDto>(); }
     }
 
     async Task LoadWidgetsAsync()

@@ -68,12 +68,12 @@
             }
             else
             {
-                _error = L["Login_InvalidCredentials"];
+                _error = L["Login_InvalidCredentials"].Value;
             }
         }
         catch (Exception ex)
         {
-            _error = L["Login_Failed", ex.Message];
+            _error = L["Login_Failed", ex.Message].Value;
         }
         finally
         {

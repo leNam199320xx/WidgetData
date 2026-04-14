@@ -210,7 +210,7 @@
     async Task LoadAsync()
     {
         try { _users = await ApiService.GetUsersAsync() ?? Array.Empty<UserDto>(); }
-        catch (Exception ex) { _error = L["FailedToLoad", ex.Message]; _users = Array.Empty<UserDto>(); }
+        catch (Exception ex) { _error = L["FailedToLoad", ex.Message].Value; _users = Array.Empty<UserDto>(); }
     }
 
     async Task LoadWidgetsAsync()

@@ -153,7 +153,7 @@ else
     async Task LoadPagesAsync()
     {
         try { _pages = await ApiService.GetDashboardPagesAsync() ?? Array.Empty<WidgetGroupDto>(); }
-        catch (Exception ex) { _error = L["DP_FailedToLoad", ex.Message]; _pages = Array.Empty<WidgetGroupDto>(); }
+        catch (Exception ex) { _error = L["DP_FailedToLoad", ex.Message].Value; _pages = Array.Empty<WidgetGroupDto>(); }
     }
 
     async Task LoadWidgetsAsync()

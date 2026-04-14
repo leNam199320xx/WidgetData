@@ -179,7 +179,7 @@ else
             _schedules = await ApiService.GetSchedulesAsync() ?? Array.Empty<WidgetScheduleDto>();
             _widgets = await ApiService.GetWidgetsAsync() ?? Array.Empty<WidgetDto>();
         }
-        catch (Exception ex) { _error = L["FailedToLoad", ex.Message]; _schedules = Array.Empty<WidgetScheduleDto>(); }
+        catch (Exception ex) { _error = L["FailedToLoad", ex.Message].Value; _schedules = Array.Empty<WidgetScheduleDto>(); }
     }
 
     void OpenAddForm()

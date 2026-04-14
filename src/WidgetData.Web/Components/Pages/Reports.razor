@@ -75,7 +75,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         try { _pages = await ApiService.GetReportPagesAsync() ?? Array.Empty<WidgetGroupDto>(); }
-        catch (Exception ex) { _error = L["Reports_FailedToLoad", ex.Message]; }
+        catch (Exception ex) { _error = L["Reports_FailedToLoad", ex.Message].Value; }
     }
 
     string GetPageIcon(string name) => name.ToLower() switch

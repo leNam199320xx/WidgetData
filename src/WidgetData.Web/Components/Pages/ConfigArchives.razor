@@ -152,7 +152,7 @@ else
     async Task LoadAsync()
     {
         try { _archives = await ApiService.GetAllConfigArchivesAsync() ?? Array.Empty<WidgetConfigArchiveDto>(); }
-        catch (Exception ex) { _error = L["CA_FailedToLoad", ex.Message]; _archives = Array.Empty<WidgetConfigArchiveDto>(); }
+        catch (Exception ex) { _error = L["CA_FailedToLoad", ex.Message].Value; _archives = Array.Empty<WidgetConfigArchiveDto>(); }
     }
 
     void ApplyFilter() => StateHasChanged();

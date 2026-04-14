@@ -78,6 +78,6 @@ else
     protected override async Task OnInitializedAsync()
     {
         try { _stats = await ApiService.GetDashboardStatsAsync(); }
-        catch (Exception ex) { _error = L["Home_FailedToLoad", ex.Message]; }
+        catch (Exception ex) { _error = L["Home_FailedToLoad", ex.Message].Value; }
     }
 }

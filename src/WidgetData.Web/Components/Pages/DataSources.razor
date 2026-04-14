@@ -167,7 +167,7 @@ else
     async Task LoadAsync()
     {
         try { _sources = await ApiService.GetDataSourcesAsync() ?? Array.Empty<DataSourceDto>(); }
-        catch (Exception ex) { _error = L["FailedToLoad", ex.Message]; _sources = Array.Empty<DataSourceDto>(); }
+        catch (Exception ex) { _error = L["FailedToLoad", ex.Message].Value; _sources = Array.Empty<DataSourceDto>(); }
     }
 
     void OpenAddForm()

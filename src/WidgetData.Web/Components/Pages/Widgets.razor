@@ -214,7 +214,7 @@ else
             _widgets = await ApiService.GetWidgetsAsync() ?? Array.Empty<WidgetDto>();
             _dataSources = await ApiService.GetDataSourcesAsync() ?? Array.Empty<DataSourceDto>();
         }
-        catch (Exception ex) { _error = L["FailedToLoad", ex.Message]; _widgets = Array.Empty<WidgetDto>(); }
+        catch (Exception ex) { _error = L["FailedToLoad", ex.Message].Value; _widgets = Array.Empty<WidgetDto>(); }
     }
 
     void OpenAddForm()
