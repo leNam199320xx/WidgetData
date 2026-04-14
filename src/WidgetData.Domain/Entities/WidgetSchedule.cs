@@ -11,14 +11,14 @@ public class WidgetSchedule
     public bool IsEnabled { get; set; } = true;
     public bool RetryOnFailure { get; set; } = false;
     public int MaxRetries { get; set; } = 3;
+    public bool ArchiveConfigOnRun { get; set; } = false;
     public DateTime? LastRunAt { get; set; }
     public ExecutionStatus? LastRunStatus { get; set; }
     public DateTime? NextRunAt { get; set; }
-    public bool ArchiveConfigOnRun { get; set; } = false;
     public string? HangfireJobId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 
     public Widget Widget { get; set; } = null!;
-    public ICollection<WidgetConfigArchive> ConfigArchives { get; set; } = new List<WidgetConfigArchive>();
 }
+

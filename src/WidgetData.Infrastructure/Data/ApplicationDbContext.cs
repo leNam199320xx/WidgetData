@@ -96,15 +96,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
         builder.Entity<WidgetConfigArchive>()
             .HasOne(a => a.Widget)
-            .WithMany(w => w.ConfigArchives)
+            .WithMany()
             .HasForeignKey(a => a.WidgetId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        builder.Entity<WidgetConfigArchive>()
-            .HasOne(a => a.Schedule)
-            .WithMany(s => s.ConfigArchives)
-            .HasForeignKey(a => a.ScheduleId)
-            .IsRequired(false)
-            .OnDelete(DeleteBehavior.SetNull);
     }
 }

@@ -8,5 +8,5 @@ public interface IWidgetConfigArchiveRepository
     Task<IEnumerable<WidgetConfigArchive>> GetByWidgetIdAsync(int widgetId);
     Task<WidgetConfigArchive?> GetByIdAsync(int id);
     Task<WidgetConfigArchive> CreateAsync(WidgetConfigArchive archive);
-    Task DeleteAsync(int id);
+    Task<bool> DeleteAsync(int id);
 }

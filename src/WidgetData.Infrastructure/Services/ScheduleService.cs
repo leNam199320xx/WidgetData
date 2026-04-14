@@ -8,12 +8,10 @@ namespace WidgetData.Infrastructure.Services;
 public class ScheduleService : IScheduleService
 {
     private readonly IScheduleRepository _repo;
-    private readonly IWidgetConfigArchiveService _archiveService;
 
-    public ScheduleService(IScheduleRepository repo, IWidgetConfigArchiveService archiveService)
+    public ScheduleService(IScheduleRepository repo)
     {
         _repo = repo;
-        _archiveService = archiveService;
     }
 
     public async Task<IEnumerable<WidgetScheduleDto>> GetAllAsync()
@@ -90,10 +88,6 @@ public class ScheduleService : IScheduleService
         entity.LastRunStatus = WidgetData.Domain.Enums.ExecutionStatus.Success;
         entity.UpdatedAt = DateTime.UtcNow;
         var updated = await _repo.UpdateAsync(entity);
-
-        if (entity.ArchiveConfigOnRun)
-            await _archiveService.CreateForScheduleAsync(entity.WidgetId, entity.Id, triggeredBy);
-
         return MapToDto(updated);
     }
 

@@ -13,6 +13,8 @@ public class WidgetServiceTests
 {
     private readonly Mock<IWidgetRepository> _widgetRepoMock;
     private readonly Mock<IExecutionRepository> _executionRepoMock;
+    private readonly Mock<IWidgetConfigArchiveRepository> _archiveRepoMock;
+    private readonly Mock<IScheduleRepository> _scheduleRepoMock;
     private readonly ApplicationDbContext _context;
     private readonly WidgetService _service;
 
@@ -20,11 +22,14 @@ public class WidgetServiceTests
     {
         _widgetRepoMock = new Mock<IWidgetRepository>();
         _executionRepoMock = new Mock<IExecutionRepository>();
+        _archiveRepoMock = new Mock<IWidgetConfigArchiveRepository>();
+        _scheduleRepoMock = new Mock<IScheduleRepository>();
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
         _context = new ApplicationDbContext(options);
-        _service = new WidgetService(_widgetRepoMock.Object, _executionRepoMock.Object, _context);
+        _service = new WidgetService(_widgetRepoMock.Object, _executionRepoMock.Object, _context,
+            _archiveRepoMock.Object, _scheduleRepoMock.Object);
     }
 
     // ─── GetAllAsync ─────────────────────────────────────────────────────────
@@ -130,6 +135,8 @@ public class WidgetServiceTests
         };
         _widgetRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(existing);
         _widgetRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Widget>())).ReturnsAsync(updated);
+        _archiveRepoMock.Setup(r => r.CreateAsync(It.IsAny<WidgetConfigArchive>()))
+            .ReturnsAsync((WidgetConfigArchive a) => a);
 
         var result = await _service.UpdateAsync(1, dto);
 
@@ -330,6 +337,8 @@ public class WidgetServiceTests
         };
         _widgetRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(existing);
         _widgetRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Widget>())).ReturnsAsync(updated);
+        _archiveRepoMock.Setup(r => r.CreateAsync(It.IsAny<WidgetConfigArchive>()))
+            .ReturnsAsync((WidgetConfigArchive a) => a);
 
         var result = await _service.UpdateAsync(1, dto);
 

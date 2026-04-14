@@ -1,5 +1,4 @@
 using Moq;
-using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Interfaces;
 using WidgetData.Infrastructure.Services;
@@ -10,14 +9,12 @@ namespace WidgetData.Tests.Services;
 public class ScheduleServiceTests
 {
     private readonly Mock<IScheduleRepository> _repoMock;
-    private readonly Mock<IWidgetConfigArchiveService> _archiveMock;
     private readonly ScheduleService _service;
 
     public ScheduleServiceTests()
     {
         _repoMock = new Mock<IScheduleRepository>();
-        _archiveMock = new Mock<IWidgetConfigArchiveService>();
-        _service = new ScheduleService(_repoMock.Object, _archiveMock.Object);
+        _service = new ScheduleService(_repoMock.Object);
     }
 
     // ─── GetAllAsync ─────────────────────────────────────────────────────────

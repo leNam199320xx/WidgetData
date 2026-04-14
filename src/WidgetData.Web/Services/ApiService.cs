@@ -167,22 +167,19 @@ public class ApiService
         return response.IsSuccessStatusCode;
     }
 
-    // Widget Config Archives
+    // Config Archives (nested under widgets - used by WidgetConfigure page)
+    public Task<IEnumerable<WidgetConfigArchiveDto>?> GetWidgetConfigArchivesAsync(int widgetId)
+        => GetAsync<IEnumerable<WidgetConfigArchiveDto>>($"api/widgets/{widgetId}/config-archives");
+    public Task<WidgetConfigArchiveDto?> CreateWidgetConfigArchiveAsync(int widgetId, CreateWidgetConfigArchiveDto dto)
+        => PostAsync<WidgetConfigArchiveDto>($"api/widgets/{widgetId}/config-archives", dto);
+    public Task<WidgetDto?> RestoreWidgetConfigArchiveAsync(int widgetId, int archiveId)
+        => PostAsync<WidgetDto>($"api/widgets/{widgetId}/config-archives/{archiveId}/restore", new { });
+    public Task<bool> DeleteWidgetConfigArchiveAsync(int widgetId, int archiveId)
+        => DeleteAsync($"api/widgets/{widgetId}/config-archives/{archiveId}");
+
+    // Config Archives (flat - used by /config-archives admin page)
     public Task<IEnumerable<WidgetConfigArchiveDto>?> GetAllConfigArchivesAsync()
         => GetAsync<IEnumerable<WidgetConfigArchiveDto>>("api/widget-config-archives");
-    public Task<IEnumerable<WidgetConfigArchiveDto>?> GetConfigArchivesByWidgetAsync(int widgetId)
-        => GetAsync<IEnumerable<WidgetConfigArchiveDto>>($"api/widget-config-archives/widget/{widgetId}");
-    public Task<WidgetConfigArchiveDto?> GetConfigArchiveByIdAsync(int id)
-        => GetAsync<WidgetConfigArchiveDto>($"api/widget-config-archives/{id}");
-    public Task<WidgetConfigArchiveDto?> CreateConfigArchiveAsync(CreateWidgetConfigArchiveDto dto)
-        => PostAsync<WidgetConfigArchiveDto>("api/widget-config-archives", dto);
-    public async Task<bool> RestoreConfigArchiveAsync(int id)
-    {
-        ApplyToken();
-        var response = await _http.PostAsync($"api/widget-config-archives/{id}/restore", null);
-        return response.IsSuccessStatusCode;
-    }
-    public Task<bool> DeleteConfigArchiveAsync(int id) => DeleteAsync($"api/widget-config-archives/{id}");
 
     // Export
     public string GetExportUrl(int widgetId, string format) => $"api/widgets/{widgetId}/export?format={format}";

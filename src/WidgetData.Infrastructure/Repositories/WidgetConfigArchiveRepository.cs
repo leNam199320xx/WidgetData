@@ -17,23 +17,17 @@ public class WidgetConfigArchiveRepository : IWidgetConfigArchiveRepository
     public async Task<IEnumerable<WidgetConfigArchive>> GetAllAsync()
         => await _context.WidgetConfigArchives
             .Include(a => a.Widget)
-            .Include(a => a.Schedule)
             .OrderByDescending(a => a.ArchivedAt)
             .ToListAsync();
 
     public async Task<IEnumerable<WidgetConfigArchive>> GetByWidgetIdAsync(int widgetId)
         => await _context.WidgetConfigArchives
-            .Include(a => a.Widget)
-            .Include(a => a.Schedule)
             .Where(a => a.WidgetId == widgetId)
             .OrderByDescending(a => a.ArchivedAt)
             .ToListAsync();
 
     public async Task<WidgetConfigArchive?> GetByIdAsync(int id)
-        => await _context.WidgetConfigArchives
-            .Include(a => a.Widget)
-            .Include(a => a.Schedule)
-            .FirstOrDefaultAsync(a => a.Id == id);
+        => await _context.WidgetConfigArchives.FindAsync(id);
 
     public async Task<WidgetConfigArchive> CreateAsync(WidgetConfigArchive archive)
     {
@@ -42,13 +36,12 @@ public class WidgetConfigArchiveRepository : IWidgetConfigArchiveRepository
         return archive;
     }
 
-    public async Task DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id)
     {
         var archive = await _context.WidgetConfigArchives.FindAsync(id);
-        if (archive != null)
-        {
-            _context.WidgetConfigArchives.Remove(archive);
-            await _context.SaveChangesAsync();
-        }
+        if (archive == null) return false;
+        _context.WidgetConfigArchives.Remove(archive);
+        await _context.SaveChangesAsync();
+        return true;
     }
 }

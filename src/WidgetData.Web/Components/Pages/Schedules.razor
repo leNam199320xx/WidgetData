@@ -47,8 +47,8 @@
                 <MudNumericField @bind-Value="_form.MaxRetries" Label="Max Retries" Variant="Variant.Outlined" Min="0" Max="10" />
             </MudItem>
             <MudItem xs="12" sm="4">
-                <MudCheckBox @bind-Value="_form.ArchiveConfigOnRun" Label="Lưu cấu hình khi chạy" Color="Color.Secondary" />
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Tự động lưu snapshot cấu hình mỗi lần schedule chạy</MudText>
+                <MudCheckBox @bind-Value="_form.ArchiveConfigOnRun" Label="Lưu archive cấu hình mỗi lần chạy" Color="Color.Secondary" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Tự động lưu snapshot cấu hình widget mỗi khi lịch này kích hoạt</MudText>
             </MudItem>
             <MudItem xs="12">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveSchedule" Disabled="_saving" Class="mr-2">
@@ -108,9 +108,14 @@
                 </MudChip>
             </MudTd>
             <MudTd>
-                <MudChip T="string" Color="@(context.ArchiveConfigOnRun ? Color.Secondary : Color.Default)" Size="Size.Small">
-                    @(context.ArchiveConfigOnRun ? "Bật" : "Tắt")
-                </MudChip>
+                @if (context.ArchiveConfigOnRun)
+                {
+                    <MudChip T="string" Color="Color.Secondary" Size="Size.Small" Icon="@Icons.Material.Filled.Archive">Có</MudChip>
+                }
+                else
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Tertiary">—</MudText>
+                }
             </MudTd>
             <MudTd>
                 @if (context.LastRunAt.HasValue)
@@ -179,7 +184,7 @@ else
     void OpenAddForm()
     {
         _editingId = null;
-        _form = new CreateScheduleDto { Timezone = "UTC", IsEnabled = true, MaxRetries = 3 };
+        _form = new CreateScheduleDto { Timezone = "UTC", IsEnabled = true, MaxRetries = 3, ArchiveConfigOnRun = false };
         _showForm = true;
     }
 
@@ -212,7 +217,8 @@ else
                 var dto = new UpdateScheduleDto
                 {
                     WidgetId = _form.WidgetId, CronExpression = _form.CronExpression, Timezone = _form.Timezone,
-                    IsEnabled = _form.IsEnabled, RetryOnFailure = _form.RetryOnFailure, MaxRetries = _form.MaxRetries
+                    IsEnabled = _form.IsEnabled, RetryOnFailure = _form.RetryOnFailure, MaxRetries = _form.MaxRetries,
+                    ArchiveConfigOnRun = _form.ArchiveConfigOnRun
                 };
                 var result = await ApiService.UpdateScheduleAsync(_editingId.Value, dto);
                 Snackbar.Add(result != null ? "Schedule updated!" : "Failed to update.", result != null ? Severity.Success : Severity.Error);

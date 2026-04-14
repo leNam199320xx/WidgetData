@@ -18,44 +18,19 @@ public class WidgetConfigArchiveService : IWidgetConfigArchiveService
 
     public async Task<IEnumerable<WidgetConfigArchiveDto>> GetAllAsync()
     {
-        var items = await _archiveRepo.GetAllAsync();
-        return items.Select(MapToDto);
+        var archives = await _archiveRepo.GetAllAsync();
+        return archives.Select(a => MapToDto(a, a.Widget?.Name));
     }
 
     public async Task<IEnumerable<WidgetConfigArchiveDto>> GetByWidgetIdAsync(int widgetId)
     {
-        var items = await _archiveRepo.GetByWidgetIdAsync(widgetId);
-        return items.Select(MapToDto);
+        var archives = await _archiveRepo.GetByWidgetIdAsync(widgetId);
+        var widget = await _widgetRepo.GetByIdAsync(widgetId);
+        return archives.Select(a => MapToDto(a, widget?.Name));
     }
 
-    public async Task<WidgetConfigArchiveDto?> GetByIdAsync(int id)
-    {
-        var item = await _archiveRepo.GetByIdAsync(id);
-        return item == null ? null : MapToDto(item);
-    }
-
-    public async Task<WidgetConfigArchiveDto> CreateAsync(CreateWidgetConfigArchiveDto dto, string archivedBy)
-    {
-        var widget = await _widgetRepo.GetByIdAsync(dto.WidgetId);
-        if (widget == null) throw new KeyNotFoundException($"Widget {dto.WidgetId} not found");
-
-        var archive = new WidgetConfigArchive
-        {
-            WidgetId = dto.WidgetId,
-            ScheduleId = dto.ScheduleId,
-            Configuration = widget.Configuration,
-            ChartConfig = widget.ChartConfig,
-            HtmlTemplate = widget.HtmlTemplate,
-            Note = dto.Note,
-            ArchivedBy = archivedBy,
-            ArchivedAt = DateTime.UtcNow
-        };
-
-        var created = await _archiveRepo.CreateAsync(archive);
-        return MapToDto(created);
-    }
-
-    public async Task<WidgetConfigArchiveDto?> CreateForScheduleAsync(int widgetId, int scheduleId, string archivedBy)
+    public async Task<WidgetConfigArchiveDto?> CreateAsync(int widgetId, CreateWidgetConfigArchiveDto dto,
+        string userId, string triggerSource = "Manual", int? scheduleId = null)
     {
         var widget = await _widgetRepo.GetByIdAsync(widgetId);
         if (widget == null) return null;
@@ -63,54 +38,84 @@ public class WidgetConfigArchiveService : IWidgetConfigArchiveService
         var archive = new WidgetConfigArchive
         {
             WidgetId = widgetId,
-            ScheduleId = scheduleId,
             Configuration = widget.Configuration,
             ChartConfig = widget.ChartConfig,
             HtmlTemplate = widget.HtmlTemplate,
-            Note = "Auto-archived by schedule",
-            ArchivedBy = archivedBy,
+            Note = dto.Note,
+            TriggerSource = triggerSource,
+            ScheduleId = scheduleId,
+            ArchivedBy = userId,
             ArchivedAt = DateTime.UtcNow
         };
 
         var created = await _archiveRepo.CreateAsync(archive);
-        return MapToDto(created);
+        return MapToDto(created, widget.Name);
     }
 
-    public async Task<bool> RestoreAsync(int archiveId)
+    public async Task<WidgetDto?> RestoreAsync(int widgetId, int archiveId, string userId)
     {
         var archive = await _archiveRepo.GetByIdAsync(archiveId);
-        if (archive == null) return false;
+        if (archive == null || archive.WidgetId != widgetId) return null;
 
-        var widget = await _widgetRepo.GetByIdAsync(archive.WidgetId);
-        if (widget == null) return false;
+        var widget = await _widgetRepo.GetByIdAsync(widgetId);
+        if (widget == null) return null;
+
+        // Archive current config before overwriting (preserve current state)
+        await _archiveRepo.CreateAsync(new WidgetConfigArchive
+        {
+            WidgetId = widgetId,
+            Configuration = widget.Configuration,
+            ChartConfig = widget.ChartConfig,
+            HtmlTemplate = widget.HtmlTemplate,
+            Note = $"Auto-archived before restore from archive #{archiveId}",
+            TriggerSource = "OnSave",
+            ArchivedBy = userId,
+            ArchivedAt = DateTime.UtcNow
+        });
 
         widget.Configuration = archive.Configuration;
         widget.ChartConfig = archive.ChartConfig;
         widget.HtmlTemplate = archive.HtmlTemplate;
         widget.UpdatedAt = DateTime.UtcNow;
 
-        await _widgetRepo.UpdateAsync(widget);
-        return true;
+        var updated = await _widgetRepo.UpdateAsync(widget);
+        return new WidgetDto
+        {
+            Id = updated.Id,
+            Name = updated.Name,
+            FriendlyLabel = updated.FriendlyLabel,
+            HelpText = updated.HelpText,
+            WidgetType = updated.WidgetType,
+            Description = updated.Description,
+            DataSourceId = updated.DataSourceId,
+            DataSourceName = updated.DataSource?.Name,
+            Configuration = updated.Configuration,
+            ChartConfig = updated.ChartConfig,
+            HtmlTemplate = updated.HtmlTemplate,
+            IsActive = updated.IsActive,
+            CacheEnabled = updated.CacheEnabled,
+            CacheTtlMinutes = updated.CacheTtlMinutes,
+            LastExecutedAt = updated.LastExecutedAt,
+            LastRowCount = updated.LastRowCount,
+            CreatedBy = updated.CreatedBy,
+            CreatedAt = updated.CreatedAt
+        };
     }
 
-    public async Task<bool> DeleteAsync(int id)
-    {
-        var archive = await _archiveRepo.GetByIdAsync(id);
-        if (archive == null) return false;
-        await _archiveRepo.DeleteAsync(id);
-        return true;
-    }
+    public async Task<bool> DeleteAsync(int archiveId)
+        => await _archiveRepo.DeleteAsync(archiveId);
 
-    private static WidgetConfigArchiveDto MapToDto(WidgetConfigArchive a) => new()
+    private static WidgetConfigArchiveDto MapToDto(WidgetConfigArchive a, string? widgetName) => new()
     {
         Id = a.Id,
         WidgetId = a.WidgetId,
-        WidgetName = a.Widget?.Name,
-        ScheduleId = a.ScheduleId,
+        WidgetName = widgetName,
         Configuration = a.Configuration,
         ChartConfig = a.ChartConfig,
         HtmlTemplate = a.HtmlTemplate,
         Note = a.Note,
+        TriggerSource = a.TriggerSource,
+        ScheduleId = a.ScheduleId,
         ArchivedBy = a.ArchivedBy,
         ArchivedAt = a.ArchivedAt
     };

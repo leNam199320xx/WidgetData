@@ -14,12 +14,18 @@ public class WidgetService : IWidgetService
     private readonly IWidgetRepository _widgetRepo;
     private readonly IExecutionRepository _executionRepo;
     private readonly ApplicationDbContext _context;
+    private readonly IWidgetConfigArchiveRepository _archiveRepo;
+    private readonly IScheduleRepository _scheduleRepo;
 
-    public WidgetService(IWidgetRepository widgetRepo, IExecutionRepository executionRepo, ApplicationDbContext context)
+    public WidgetService(IWidgetRepository widgetRepo, IExecutionRepository executionRepo,
+        ApplicationDbContext context, IWidgetConfigArchiveRepository archiveRepo,
+        IScheduleRepository scheduleRepo)
     {
         _widgetRepo = widgetRepo;
         _executionRepo = executionRepo;
         _context = context;
+        _archiveRepo = archiveRepo;
+        _scheduleRepo = scheduleRepo;
     }
 
     public async Task<IEnumerable<WidgetDto>> GetAllAsync()
@@ -73,6 +79,23 @@ public class WidgetService : IWidgetService
         var widget = await _widgetRepo.GetByIdAsync(id);
         if (widget == null) return null;
 
+        // Auto-archive current config before updating
+        var configChanged = widget.Configuration != dto.Configuration
+            || widget.ChartConfig != dto.ChartConfig
+            || widget.HtmlTemplate != dto.HtmlTemplate;
+        if (configChanged)
+        {
+            await _archiveRepo.CreateAsync(new WidgetConfigArchive
+            {
+                WidgetId = id,
+                Configuration = widget.Configuration,
+                ChartConfig = widget.ChartConfig,
+                HtmlTemplate = widget.HtmlTemplate,
+                TriggerSource = "OnSave",
+                ArchivedAt = DateTime.UtcNow
+            });
+        }
+
         widget.Name = dto.Name;
         widget.FriendlyLabel = dto.FriendlyLabel;
         widget.HelpText = dto.HelpText;
@@ -111,10 +134,30 @@ public class WidgetService : IWidgetService
         return true;
     }
 
-    public async Task<WidgetExecutionDto> ExecuteAsync(int id, string userId)
+    public async Task<WidgetExecutionDto> ExecuteAsync(int id, string userId, int? scheduleId = null)
     {
         var widget = await _widgetRepo.GetByIdAsync(id);
         if (widget == null) throw new KeyNotFoundException($"Widget {id} not found");
+
+        // Archive config when triggered by a schedule that has ArchiveConfigOnRun = true
+        if (scheduleId.HasValue)
+        {
+            var schedule = await _scheduleRepo.GetByIdAsync(scheduleId.Value);
+            if (schedule != null && schedule.ArchiveConfigOnRun)
+            {
+                await _archiveRepo.CreateAsync(new WidgetConfigArchive
+                {
+                    WidgetId = id,
+                    Configuration = widget.Configuration,
+                    ChartConfig = widget.ChartConfig,
+                    HtmlTemplate = widget.HtmlTemplate,
+                    TriggerSource = "Schedule",
+                    ScheduleId = scheduleId,
+                    ArchivedBy = userId,
+                    ArchivedAt = DateTime.UtcNow
+                });
+            }
+        }
 
         var execution = new WidgetExecution
         {
