@@ -76,6 +76,7 @@ public class IdeaBoardService : IIdeaBoardService
         try
         {
             var client = _httpClientFactory.CreateClient();
+            client.Timeout = TimeSpan.FromSeconds(30);
             var payload = new
             {
                 postId = post.Id,
@@ -89,7 +90,13 @@ public class IdeaBoardService : IIdeaBoardService
             var response = await client.PostAsync(sub.WebhookUrl,
                 new StringContent(json, Encoding.UTF8, "application/json"));
 
-            var resultContent = await response.Content.ReadAsStringAsync();
+            // Read at most 64 KB of the response body to avoid memory issues
+            using var stream = await response.Content.ReadAsStreamAsync();
+            using var reader = new StreamReader(stream);
+            var buffer = new char[65536];
+            var read = await reader.ReadAsync(buffer, 0, buffer.Length);
+            var resultContent = new string(buffer, 0, read);
+
             await _repo.CreateResultAsync(new IdeaResult
             {
                 IdeaPostId = post.Id,

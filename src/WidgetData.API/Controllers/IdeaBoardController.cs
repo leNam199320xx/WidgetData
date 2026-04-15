@@ -45,9 +45,8 @@ public class IdeaBoardController : ControllerBase
     public async Task<IActionResult> GetResults(int id)
         => Ok(await _service.GetResultsByPostIdAsync(id));
 
-    /// <summary>External subscribers POST their results here.</summary>
+    /// <summary>External subscribers POST their results here. Requires authentication.</summary>
     [HttpPost("posts/{id}/results")]
-    [AllowAnonymous]
     public async Task<IActionResult> SubmitResult(int id, [FromQuery] int subscriptionId, [FromBody] CreateIdeaResultDto dto)
     {
         var result = await _service.SubmitResultAsync(id, subscriptionId, dto);

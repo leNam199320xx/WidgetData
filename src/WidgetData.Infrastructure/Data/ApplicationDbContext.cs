@@ -125,6 +125,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasOne(r => r.IdeaSubscription)
             .WithMany(s => s.Results)
             .HasForeignKey(r => r.IdeaSubscriptionId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
