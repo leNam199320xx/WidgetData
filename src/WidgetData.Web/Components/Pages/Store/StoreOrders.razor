@@ -1,0 +1,265 @@
+@page "/store/orders"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+
+<PageTitle>Quản lý đơn hàng - WidgetData</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">
+    <MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Class="mr-2" />
+    Quản lý đơn hàng
+</MudText>
+
+@* Summary badges *@
+<MudGrid Class="mb-4">
+    @foreach (var s in _statusSummary)
+    {
+        <MudItem xs="6" sm="3">
+            <MudPaper Class="pa-3 text-center" Elevation="2"
+                      Style="@($"border-top: 3px solid {s.Color}; cursor: pointer")"
+                      @onclick="() => _filterStatus = (_filterStatus == s.Status ? null : s.Status)">
+                <MudText Typo="Typo.h5">@_orders.Count(o => o.Status == s.Status)</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@s.Status</MudText>
+            </MudPaper>
+        </MudItem>
+    }
+</MudGrid>
+
+@* Filters *@
+<MudPaper Class="pa-3 mb-4" Elevation="1">
+    <MudGrid AlignItems="AlignItems.Center">
+        <MudItem xs="12" sm="5">
+            <MudTextField @bind-Value="_search" Label="Tìm kiếm (mã đơn, khách hàng...)"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Variant="Variant.Outlined" Immediate="true" Clearable="true" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudSelect @bind-Value="_filterStatus" Label="Trạng thái" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+                <MudSelectItem Value="@("Chờ xử lý")">Chờ xử lý</MudSelectItem>
+                <MudSelectItem Value="@("Đang giao")">Đang giao</MudSelectItem>
+                <MudSelectItem Value="@("Hoàn thành")">Hoàn thành</MudSelectItem>
+                <MudSelectItem Value="@("Đã hủy")">Đã hủy</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="2">
+            <MudSelect @bind-Value="_filterPayment" Label="Thanh toán" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+                <MudSelectItem Value="@("Đã thanh toán")">Đã thanh toán</MudSelectItem>
+                <MudSelectItem Value="@("Chưa thanh toán")">Chưa thanh toán</MudSelectItem>
+                <MudSelectItem Value="@("COD")">COD</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="2" Class="d-flex justify-end">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateOrder">
+                Tạo đơn hàng
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@* Create Order Form *@
+@if (_showCreateForm)
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="3">
+        <MudText Typo="Typo.h6" Class="mb-3">➕ Tạo đơn hàng mới</MudText>
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_newOrder.Customer" Label="Tên khách hàng" Required="true" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_newOrder.Phone" Label="Số điện thoại" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_newOrder.Address" Label="Địa chỉ giao hàng" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudNumericField @bind-Value="_newOrder.Total" Label="Tổng tiền (₫)" Variant="Variant.Outlined" Format="N0" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudSelect @bind-Value="_newOrder.Payment" Label="Hình thức thanh toán" Variant="Variant.Outlined">
+                    <MudSelectItem Value="@("Đã thanh toán")">Chuyển khoản</MudSelectItem>
+                    <MudSelectItem Value="@("COD")">COD</MudSelectItem>
+                    <MudSelectItem Value="@("Chưa thanh toán")">Thanh toán sau</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudTextField @bind-Value="_newOrder.Notes" Label="Ghi chú" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveOrder" Class="mr-2">Tạo đơn</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick="() => _showCreateForm = false">Hủy</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+}
+
+@* Orders Table *@
+<MudTable T="OrderModel" Items="FilteredOrders" Dense="true" Hover="true" Elevation="2" OnRowClick="@((TableRowClickEventArgs<OrderModel> e) => ToggleDetail(e.Item))">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Danh sách đơn hàng</MudText>
+        <MudSpacer />
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@FilteredOrders.Count() đơn hàng</MudText>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Mã đơn</MudTh>
+        <MudTh>Khách hàng</MudTh>
+        <MudTh>Sản phẩm</MudTh>
+        <MudTh>Ngày đặt</MudTh>
+        <MudTh>Tổng tiền</MudTh>
+        <MudTh>Thanh toán</MudTh>
+        <MudTh>Trạng thái</MudTh>
+        <MudTh>Thao tác</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd><MudLink>@context.Id</MudLink></MudTd>
+        <MudTd>
+            <MudText Typo="Typo.body2"><strong>@context.Customer</strong></MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">@context.Phone</MudText>
+        </MudTd>
+        <MudTd>
+            <MudText Typo="Typo.body2">@context.Items sản phẩm</MudText>
+        </MudTd>
+        <MudTd>@context.OrderDate.ToString("dd/MM/yyyy HH:mm")</MudTd>
+        <MudTd><strong>₫ @context.Total.ToString("N0")</strong></MudTd>
+        <MudTd>
+            <MudChip T="string" Size="Size.Small" Color="@GetPaymentColor(context.Payment)">@context.Payment</MudChip>
+        </MudTd>
+        <MudTd>
+            <MudChip T="string" Color="@GetOrderStatusColor(context.Status)" Size="Size.Small">@context.Status</MudChip>
+        </MudTd>
+        <MudTd>
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true">
+                <MudMenuItem OnClick="@(() => UpdateStatus(context, "Chờ xử lý"))">Chờ xử lý</MudMenuItem>
+                <MudMenuItem OnClick="@(() => UpdateStatus(context, "Đang giao"))">Đang giao</MudMenuItem>
+                <MudMenuItem OnClick="@(() => UpdateStatus(context, "Hoàn thành"))">Hoàn thành</MudMenuItem>
+                <MudMenuItem OnClick="@(() => UpdateStatus(context, "Đã hủy"))">Đã hủy</MudMenuItem>
+            </MudMenu>
+        </MudTd>
+    </RowTemplate>
+    <ChildRowContent>
+        @if (_expandedOrderId == context.Id)
+        {
+            <MudTd colspan="8">
+                <MudPaper Class="pa-3 ma-2" Elevation="0" Style="background: #f5f5f5; border-radius: 8px">
+                    <MudGrid>
+                        <MudItem xs="12" sm="6">
+                            <MudText Typo="Typo.body2"><strong>📍 Địa chỉ:</strong> @context.Address</MudText>
+                            <MudText Typo="Typo.body2"><strong>📝 Ghi chú:</strong> @(context.Notes ?? "Không có")</MudText>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudTable Items="context.OrderLines" Dense="true" Elevation="0">
+                                <HeaderContent>
+                                    <MudTh>Sản phẩm</MudTh>
+                                    <MudTh>SL</MudTh>
+                                    <MudTh>Đơn giá</MudTh>
+                                    <MudTh>Thành tiền</MudTh>
+                                </HeaderContent>
+                                <RowTemplate Context="line">
+                                    <MudTd>@line.ProductName</MudTd>
+                                    <MudTd>@line.Qty</MudTd>
+                                    <MudTd>₫ @line.UnitPrice.ToString("N0")</MudTd>
+                                    <MudTd>₫ @(line.Qty * line.UnitPrice).ToString("N0")</MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            </MudTd>
+        }
+    </ChildRowContent>
+</MudTable>
+
+@code {
+    class OrderLine { public string ProductName { get; set; } = ""; public int Qty { get; set; } public decimal UnitPrice { get; set; } }
+    class OrderModel
+    {
+        public string Id { get; set; } = "";
+        public string Customer { get; set; } = "";
+        public string Phone { get; set; } = "";
+        public string Address { get; set; } = "";
+        public int Items { get; set; }
+        public DateTime OrderDate { get; set; }
+        public decimal Total { get; set; }
+        public string Payment { get; set; } = "";
+        public string Status { get; set; } = "";
+        public string? Notes { get; set; }
+        public List<OrderLine> OrderLines { get; set; } = [];
+    }
+    class NewOrderForm { public string Customer { get; set; } = ""; public string Phone { get; set; } = ""; public string Address { get; set; } = ""; public decimal Total { get; set; } public string Payment { get; set; } = "COD"; public string Notes { get; set; } = ""; }
+    record StatusSummary(string Status, string Color);
+
+    List<OrderModel> _orders =
+    [
+        new() { Id = "#DH2025001", Customer = "Nguyễn Văn An", Phone = "0901234567", Address = "123 Nguyễn Huệ, Q1, TP.HCM", Items = 2, OrderDate = DateTime.Now.AddHours(-2), Total = 850000, Payment = "Đã thanh toán", Status = "Hoàn thành", Notes = "Giao trong giờ hành chính",
+            OrderLines = [new() { ProductName = "Áo thun nam Premium", Qty = 2, UnitPrice = 280000 }, new() { ProductName = "Nón lưỡi trai", Qty = 1, UnitPrice = 120000 }] },
+        new() { Id = "#DH2025002", Customer = "Trần Thị Bình", Phone = "0912345678", Address = "45 Lê Lợi, Q3, TP.HCM", Items = 1, OrderDate = DateTime.Now.AddHours(-5), Total = 1200000, Payment = "COD", Status = "Đang giao",
+            OrderLines = [new() { ProductName = "Túi xách nữ da PU", Qty = 1, UnitPrice = 380000 }, new() { ProductName = "Váy đầm hoa nhí", Qty = 2, UnitPrice = 420000 }] },
+        new() { Id = "#DH2025003", Customer = "Lê Minh Cường", Phone = "0923456789", Address = "78 Trần Hưng Đạo, Q5, TP.HCM", Items = 3, OrderDate = DateTime.Now.AddHours(-8), Total = 450000, Payment = "Chưa thanh toán", Status = "Chờ xử lý", Notes = "Khách VIP",
+            OrderLines = [new() { ProductName = "Kính mắt UV400", Qty = 3, UnitPrice = 95000 }, new() { ProductName = "Nón lưỡi trai", Qty = 1, UnitPrice = 120000 }] },
+        new() { Id = "#DH2025004", Customer = "Phạm Thu Dung", Phone = "0934567890", Address = "12 Đinh Tiên Hoàng, Q Bình Thạnh", Items = 4, OrderDate = DateTime.Now.AddDays(-1), Total = 2350000, Payment = "Đã thanh toán", Status = "Hoàn thành",
+            OrderLines = [new() { ProductName = "Giày sneaker trắng", Qty = 1, UnitPrice = 650000 }, new() { ProductName = "Quần jean slim fit", Qty = 2, UnitPrice = 450000 }, new() { ProductName = "Áo sơ mi nam", Qty = 2, UnitPrice = 350000 }] },
+        new() { Id = "#DH2025005", Customer = "Hoàng Văn Em", Phone = "0945678901", Address = "56 Phạm Văn Đồng, Q Gò Vấp", Items = 1, OrderDate = DateTime.Now.AddDays(-1).AddHours(-3), Total = 750000, Payment = "COD", Status = "Đang giao",
+            OrderLines = [new() { ProductName = "Áo khoác jean unisex", Qty = 1, UnitPrice = 520000 }, new() { ProductName = "Nón lưỡi trai", Qty = 1, UnitPrice = 120000 }] },
+        new() { Id = "#DH2025006", Customer = "Vũ Thị Fang", Phone = "0956789012", Address = "89 Nguyễn Văn Cừ, Q10", Items = 2, OrderDate = DateTime.Now.AddDays(-2), Total = 980000, Payment = "Đã thanh toán", Status = "Đã hủy", Notes = "Khách đổi ý",
+            OrderLines = [new() { ProductName = "Váy đầm hoa nhí", Qty = 2, UnitPrice = 420000 }, new() { ProductName = "Dép sandal", Qty = 1, UnitPrice = 180000 }] },
+        new() { Id = "#DH2025007", Customer = "Đặng Minh Giang", Phone = "0967890123", Address = "34 Bùi Thị Xuân, Q Tân Bình", Items = 2, OrderDate = DateTime.Now.AddDays(-2).AddHours(-5), Total = 560000, Payment = "COD", Status = "Chờ xử lý",
+            OrderLines = [new() { ProductName = "Dép sandal nữ", Qty = 2, UnitPrice = 180000 }, new() { ProductName = "Kính mắt UV400", Qty = 2, UnitPrice = 95000 }] },
+        new() { Id = "#DH2025008", Customer = "Bùi Lan Hương", Phone = "0978901234", Address = "67 Cộng Hòa, Q Tân Bình", Items = 1, OrderDate = DateTime.Now.AddDays(-3), Total = 1350000, Payment = "Đã thanh toán", Status = "Hoàn thành",
+            OrderLines = [new() { ProductName = "Túi xách nữ da PU", Qty = 1, UnitPrice = 380000 }, new() { ProductName = "Giày sneaker trắng", Qty = 1, UnitPrice = 650000 }] },
+    ];
+
+    readonly List<StatusSummary> _statusSummary =
+    [
+        new("Chờ xử lý", "#ff9800"),
+        new("Đang giao", "#2196f3"),
+        new("Hoàn thành", "#4caf50"),
+        new("Đã hủy", "#f44336"),
+    ];
+
+    bool _showCreateForm;
+    string? _filterStatus;
+    string? _filterPayment;
+    string _search = "";
+    string? _expandedOrderId;
+    NewOrderForm _newOrder = new();
+    int _nextOrderNum = 9;
+
+    IEnumerable<OrderModel> FilteredOrders => _orders
+        .Where(o => string.IsNullOrEmpty(_search) || o.Id.Contains(_search, StringComparison.OrdinalIgnoreCase) || o.Customer.Contains(_search, StringComparison.OrdinalIgnoreCase))
+        .Where(o => string.IsNullOrEmpty(_filterStatus) || o.Status == _filterStatus)
+        .Where(o => string.IsNullOrEmpty(_filterPayment) || o.Payment == _filterPayment)
+        .OrderByDescending(o => o.OrderDate);
+
+    void OpenCreateOrder() { _newOrder = new NewOrderForm(); _showCreateForm = true; }
+
+    void SaveOrder()
+    {
+        _orders.Insert(0, new OrderModel
+        {
+            Id = $"#DH202500{_nextOrderNum++}", Customer = _newOrder.Customer, Phone = _newOrder.Phone,
+            Address = _newOrder.Address, Items = 0, OrderDate = DateTime.Now, Total = _newOrder.Total,
+            Payment = _newOrder.Payment, Status = "Chờ xử lý", Notes = _newOrder.Notes, OrderLines = []
+        });
+        _showCreateForm = false;
+    }
+
+    void UpdateStatus(OrderModel order, string status) => order.Status = status;
+
+    void ToggleDetail(OrderModel order) => _expandedOrderId = _expandedOrderId == order.Id ? null : order.Id;
+
+    static Color GetOrderStatusColor(string status) => status switch
+    {
+        "Hoàn thành" => Color.Success,
+        "Đang giao" => Color.Info,
+        "Chờ xử lý" => Color.Warning,
+        "Đã hủy" => Color.Error,
+        _ => Color.Default
+    };
+
+    static Color GetPaymentColor(string payment) => payment switch
+    {
+        "Đã thanh toán" => Color.Success,
+        "COD" => Color.Info,
+        "Chưa thanh toán" => Color.Warning,
+        _ => Color.Default
+    };
+}

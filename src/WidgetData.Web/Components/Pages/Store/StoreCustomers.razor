@@ -1,0 +1,251 @@
+@page "/store/customers"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+
+<PageTitle>Quản lý khách hàng - WidgetData</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">
+    <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-2" />
+    Quản lý khách hàng
+</MudText>
+
+@* Summary Cards *@
+<MudGrid Class="mb-4">
+    <MudItem xs="12" sm="4">
+        <MudCard Elevation="2" Style="border-left: 4px solid #2196f3">
+            <MudCardContent>
+                <MudText Typo="Typo.h5" Color="Color.Primary">@_customers.Count</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Tổng khách hàng</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="4">
+        <MudCard Elevation="2" Style="border-left: 4px solid #4caf50">
+            <MudCardContent>
+                <MudText Typo="Typo.h5" Color="Color.Success">@_customers.Count(c => c.Type == "VIP")</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Khách VIP</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="4">
+        <MudCard Elevation="2" Style="border-left: 4px solid #ff9800">
+            <MudCardContent>
+                <MudText Typo="Typo.h5" Color="Color.Warning">@_customers.Count(c => c.LastPurchase >= DateTime.Now.AddDays(-7))</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Mua hàng tuần này</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@* Add/Edit Form *@
+@if (_showForm)
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="3">
+        <MudText Typo="Typo.h6" Class="mb-3">@(_editingId == null ? "➕ Thêm khách hàng" : "✏️ Chỉnh sửa khách hàng")</MudText>
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_form.Name" Label="Họ tên" Required="true" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_form.Phone" Label="Số điện thoại" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_form.Email" Label="Email" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_form.Address" Label="Địa chỉ" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudSelect @bind-Value="_form.Type" Label="Loại khách" Variant="Variant.Outlined">
+                    <MudSelectItem Value="@("Thường")">Thường</MudSelectItem>
+                    <MudSelectItem Value="@("Silver")">Silver</MudSelectItem>
+                    <MudSelectItem Value="@("Gold")">Gold</MudSelectItem>
+                    <MudSelectItem Value="@("VIP")">VIP</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="8">
+                <MudTextField @bind-Value="_form.Notes" Label="Ghi chú" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveCustomer" Class="mr-2">Lưu</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick="() => _showForm = false">Hủy</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+}
+
+@* Delete Confirm *@
+@if (_deletingItem != null)
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="3" Style="border-left: 4px solid #f44336">
+        <MudText Typo="Typo.h6" Color="Color.Error">Xác nhận xóa</MudText>
+        <MudText Class="mb-3">Xóa khách hàng <strong>@_deletingItem.Name</strong>?</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DoDelete" Class="mr-2">Xóa</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="() => _deletingItem = null">Hủy</MudButton>
+    </MudPaper>
+}
+
+@* Filters *@
+<MudPaper Class="pa-3 mb-4" Elevation="1">
+    <MudGrid AlignItems="AlignItems.Center">
+        <MudItem xs="12" sm="5">
+            <MudTextField @bind-Value="_search" Label="Tìm kiếm (tên, SĐT, email...)"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Variant="Variant.Outlined" Immediate="true" Clearable="true" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudSelect @bind-Value="_filterType" Label="Loại khách" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+                <MudSelectItem Value="@("Thường")">Thường</MudSelectItem>
+                <MudSelectItem Value="@("Silver")">Silver</MudSelectItem>
+                <MudSelectItem Value="@("Gold")">Gold</MudSelectItem>
+                <MudSelectItem Value="@("VIP")">VIP</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4" Class="d-flex justify-end">
+            @if (!_showForm)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="OpenAddForm">
+                    Thêm khách hàng
+                </MudButton>
+            }
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@* Customer Table *@
+<MudTable Items="FilteredCustomers" Dense="true" Hover="true" Elevation="2">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Danh sách khách hàng</MudText>
+        <MudSpacer />
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@FilteredCustomers.Count() khách</MudText>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Họ tên</MudTh>
+        <MudTh>Liên hệ</MudTh>
+        <MudTh>Địa chỉ</MudTh>
+        <MudTh>Loại</MudTh>
+        <MudTh>Số đơn</MudTh>
+        <MudTh>Tổng chi</MudTh>
+        <MudTh>Lần cuối mua</MudTh>
+        <MudTh>Thao tác</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>
+            <div class="d-flex align-center gap-2">
+                <MudAvatar Color="@GetAvatarColor(context.Type)" Size="Size.Small">@context.Name[0]</MudAvatar>
+                <div>
+                    <MudText Typo="Typo.body2"><strong>@context.Name</strong></MudText>
+                    @if (!string.IsNullOrEmpty(context.Notes))
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@context.Notes</MudText>
+                    }
+                </div>
+            </div>
+        </MudTd>
+        <MudTd>
+            <MudText Typo="Typo.body2">📞 @context.Phone</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">✉️ @context.Email</MudText>
+        </MudTd>
+        <MudTd><MudText Typo="Typo.caption">@context.Address</MudText></MudTd>
+        <MudTd>
+            <MudChip T="string" Color="@GetTypeColor(context.Type)" Size="Size.Small">@context.Type</MudChip>
+        </MudTd>
+        <MudTd>@context.TotalOrders đơn</MudTd>
+        <MudTd><MudText Color="Color.Primary">₫ @context.TotalSpent.ToString("N0")</MudText></MudTd>
+        <MudTd>
+            <MudText Typo="Typo.body2">@context.LastPurchase.ToString("dd/MM/yyyy")</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">@GetDaysAgo(context.LastPurchase)</MudText>
+        </MudTd>
+        <MudTd>
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" Size="Size.Small" OnClick="() => OpenEditForm(context)" />
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="() => _deletingItem = context" />
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    class CustomerModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Phone { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Address { get; set; } = "";
+        public string Type { get; set; } = "Thường";
+        public int TotalOrders { get; set; }
+        public decimal TotalSpent { get; set; }
+        public DateTime LastPurchase { get; set; }
+        public string? Notes { get; set; }
+    }
+    class CustomerForm { public string Name { get; set; } = ""; public string Phone { get; set; } = ""; public string Email { get; set; } = ""; public string Address { get; set; } = ""; public string Type { get; set; } = "Thường"; public string Notes { get; set; } = ""; }
+
+    List<CustomerModel> _customers =
+    [
+        new() { Id = 1, Name = "Nguyễn Văn An", Phone = "0901234567", Email = "an.nguyen@email.com", Address = "123 Nguyễn Huệ, Q1, TP.HCM", Type = "VIP", TotalOrders = 24, TotalSpent = 18500000, LastPurchase = DateTime.Now.AddHours(-2), Notes = "Khách thân thiết" },
+        new() { Id = 2, Name = "Trần Thị Bình", Phone = "0912345678", Email = "binh.tran@email.com", Address = "45 Lê Lợi, Q3, TP.HCM", Type = "Gold", TotalOrders = 15, TotalSpent = 9800000, LastPurchase = DateTime.Now.AddHours(-5) },
+        new() { Id = 3, Name = "Lê Minh Cường", Phone = "0923456789", Email = "cuong.le@email.com", Address = "78 Trần Hưng Đạo, Q5, TP.HCM", Type = "Silver", TotalOrders = 8, TotalSpent = 4200000, LastPurchase = DateTime.Now.AddHours(-8) },
+        new() { Id = 4, Name = "Phạm Thu Dung", Phone = "0934567890", Email = "dung.pham@email.com", Address = "12 Đinh Tiên Hoàng, Bình Thạnh", Type = "VIP", TotalOrders = 32, TotalSpent = 25600000, LastPurchase = DateTime.Now.AddDays(-1), Notes = "Mua sỉ định kỳ" },
+        new() { Id = 5, Name = "Hoàng Văn Em", Phone = "0945678901", Email = "em.hoang@email.com", Address = "56 Phạm Văn Đồng, Q Gò Vấp", Type = "Thường", TotalOrders = 3, TotalSpent = 980000, LastPurchase = DateTime.Now.AddDays(-1) },
+        new() { Id = 6, Name = "Vũ Thị Fang", Phone = "0956789012", Email = "fang.vu@email.com", Address = "89 Nguyễn Văn Cừ, Q10", Type = "Thường", TotalOrders = 2, TotalSpent = 560000, LastPurchase = DateTime.Now.AddDays(-3) },
+        new() { Id = 7, Name = "Đặng Minh Giang", Phone = "0967890123", Email = "giang.dang@email.com", Address = "34 Bùi Thị Xuân, Q Tân Bình", Type = "Silver", TotalOrders = 7, TotalSpent = 3150000, LastPurchase = DateTime.Now.AddDays(-5) },
+        new() { Id = 8, Name = "Bùi Lan Hương", Phone = "0978901234", Email = "huong.bui@email.com", Address = "67 Cộng Hòa, Q Tân Bình", Type = "Gold", TotalOrders = 18, TotalSpent = 12400000, LastPurchase = DateTime.Now.AddDays(-2), Notes = "Hay mua quần áo nữ" },
+        new() { Id = 9, Name = "Đinh Quốc Hùng", Phone = "0989012345", Email = "hung.dinh@email.com", Address = "23 Nguyễn Thị Minh Khai, Q1", Type = "Gold", TotalOrders = 11, TotalSpent = 7800000, LastPurchase = DateTime.Now.AddDays(-4) },
+        new() { Id = 10, Name = "Lý Kim Lan", Phone = "0990123456", Email = "lan.ly@email.com", Address = "90 Hai Bà Trưng, Q1", Type = "VIP", TotalOrders = 28, TotalSpent = 21000000, LastPurchase = DateTime.Now.AddDays(-1), Notes = "Khách doanh nghiệp" },
+    ];
+
+    bool _showForm;
+    int? _editingId;
+    CustomerModel? _deletingItem;
+    CustomerForm _form = new();
+    string _search = "";
+    string? _filterType;
+    int _nextId = 11;
+
+    IEnumerable<CustomerModel> FilteredCustomers => _customers
+        .Where(c => string.IsNullOrEmpty(_search) || c.Name.Contains(_search, StringComparison.OrdinalIgnoreCase) || c.Phone.Contains(_search) || c.Email.Contains(_search, StringComparison.OrdinalIgnoreCase))
+        .Where(c => string.IsNullOrEmpty(_filterType) || c.Type == _filterType)
+        .OrderByDescending(c => c.TotalSpent);
+
+    void OpenAddForm() { _editingId = null; _form = new CustomerForm(); _showForm = true; }
+
+    void OpenEditForm(CustomerModel c) { _editingId = c.Id; _form = new CustomerForm { Name = c.Name, Phone = c.Phone, Email = c.Email, Address = c.Address, Type = c.Type, Notes = c.Notes ?? "" }; _showForm = true; }
+
+    void SaveCustomer()
+    {
+        if (_editingId == null)
+            _customers.Add(new CustomerModel { Id = _nextId++, Name = _form.Name, Phone = _form.Phone, Email = _form.Email, Address = _form.Address, Type = _form.Type, Notes = _form.Notes, TotalOrders = 0, TotalSpent = 0, LastPurchase = DateTime.Now });
+        else
+        {
+            var c = _customers.First(x => x.Id == _editingId);
+            c.Name = _form.Name; c.Phone = _form.Phone; c.Email = _form.Email; c.Address = _form.Address; c.Type = _form.Type; c.Notes = _form.Notes;
+        }
+        _showForm = false;
+    }
+
+    void DoDelete() { if (_deletingItem != null) { _customers.Remove(_deletingItem); _deletingItem = null; } }
+
+    static string GetDaysAgo(DateTime dt)
+    {
+        var diff = (DateTime.Now - dt).TotalDays;
+        if (diff < 1) return "Hôm nay";
+        if (diff < 2) return "Hôm qua";
+        return $"{(int)diff} ngày trước";
+    }
+
+    static Color GetTypeColor(string type) => type switch
+    {
+        "VIP" => Color.Error,
+        "Gold" => Color.Warning,
+        "Silver" => Color.Primary,
+        _ => Color.Default
+    };
+
+    static Color GetAvatarColor(string type) => type switch
+    {
+        "VIP" => Color.Error,
+        "Gold" => Color.Warning,
+        "Silver" => Color.Primary,
+        _ => Color.Secondary
+    };
+}

@@ -1,0 +1,246 @@
+@page "/store/inventory"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+
+<PageTitle>Quản lý kho hàng - WidgetData</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">
+    <MudIcon Icon="@Icons.Material.Filled.Warehouse" Class="mr-2" />
+    Quản lý kho hàng
+</MudText>
+
+@* Summary *@
+<MudGrid Class="mb-4">
+    <MudItem xs="12" sm="3">
+        <MudCard Elevation="2" Style="border-left: 4px solid #2196f3">
+            <MudCardContent>
+                <MudText Typo="Typo.h5" Color="Color.Primary">@_items.Count</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Tổng SKU</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="3">
+        <MudCard Elevation="2" Style="border-left: 4px solid #4caf50">
+            <MudCardContent>
+                <MudText Typo="Typo.h5" Color="Color.Success">@_items.Sum(i => i.InStock)</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Tổng tồn kho</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="3">
+        <MudCard Elevation="2" Style="border-left: 4px solid #ff9800">
+            <MudCardContent>
+                <MudText Typo="Typo.h5" Color="Color.Warning">@_items.Count(i => i.InStock > 0 && i.InStock <= i.MinStock)</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Sắp hết hàng</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="3">
+        <MudCard Elevation="2" Style="border-left: 4px solid #f44336">
+            <MudCardContent>
+                <MudText Typo="Typo.h5" Color="Color.Error">@_items.Count(i => i.InStock == 0)</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Hết hàng</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@* Restock Form *@
+@if (_restockItem != null)
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="3" Style="border-left: 4px solid #4caf50">
+        <MudText Typo="Typo.h6" Class="mb-3">📦 Nhập hàng: @_restockItem.Name</MudText>
+        <MudGrid AlignItems="AlignItems.Center">
+            <MudItem xs="12" sm="3">
+                <MudText Typo="Typo.body2">Tồn kho hiện tại: <strong>@_restockItem.InStock</strong></MudText>
+            </MudItem>
+            <MudItem xs="12" sm="3">
+                <MudNumericField @bind-Value="_restockQty" Label="Số lượng nhập" Variant="Variant.Outlined" Min="1" Margin="Margin.Dense" />
+            </MudItem>
+            <MudItem xs="12" sm="3">
+                <MudNumericField @bind-Value="_restockCost" Label="Giá nhập/sản phẩm" Variant="Variant.Outlined" Min="0" Format="N0" Margin="Margin.Dense" />
+            </MudItem>
+            <MudItem xs="12" sm="3">
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="DoRestock" Class="mr-2">Xác nhận nhập</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick="() => _restockItem = null">Hủy</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+}
+
+@* Filters *@
+<MudPaper Class="pa-3 mb-4" Elevation="1">
+    <MudGrid AlignItems="AlignItems.Center">
+        <MudItem xs="12" sm="5">
+            <MudTextField @bind-Value="_search" Label="Tìm SKU, tên sản phẩm..."
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Variant="Variant.Outlined" Immediate="true" Clearable="true" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudSelect @bind-Value="_filterWarehouse" Label="Kho" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+                <MudSelectItem Value="@("Kho TP.HCM")">Kho TP.HCM</MudSelectItem>
+                <MudSelectItem Value="@("Kho Hà Nội")">Kho Hà Nội</MudSelectItem>
+                <MudSelectItem Value="@("Kho Đà Nẵng")">Kho Đà Nẵng</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudCheckBox @bind-Value="_showLowStockOnly" Label="Chỉ hiện hàng sắp hết / hết hàng" Color="Color.Warning" />
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@* Inventory Table *@
+<MudTable Items="FilteredItems" Dense="true" Hover="true" Elevation="2">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Tồn kho sản phẩm</MudText>
+        <MudSpacer />
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@FilteredItems.Count() mục</MudText>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>SKU</MudTh>
+        <MudTh>Sản phẩm</MudTh>
+        <MudTh>Danh mục</MudTh>
+        <MudTh>Kho</MudTh>
+        <MudTh>Tồn kho</MudTh>
+        <MudTh>Đặt chờ</MudTh>
+        <MudTh>Có thể bán</MudTh>
+        <MudTh>Tồn tối thiểu</MudTh>
+        <MudTh>Mức tồn</MudTh>
+        <MudTh>Thao tác</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd><MudText Typo="Typo.caption" Color="Color.Secondary">@context.Sku</MudText></MudTd>
+        <MudTd>
+            <MudText Typo="Typo.body2"><strong>@context.Name</strong></MudText>
+        </MudTd>
+        <MudTd><MudChip T="string" Size="Size.Small" Color="Color.Default">@context.Category</MudChip></MudTd>
+        <MudTd><MudText Typo="Typo.caption">@context.Warehouse</MudText></MudTd>
+        <MudTd><strong>@context.InStock</strong></MudTd>
+        <MudTd><MudText Color="Color.Warning">@context.Reserved</MudText></MudTd>
+        <MudTd>
+            <MudText Color="@(context.Available <= 0 ? Color.Error : Color.Success)">
+                <strong>@context.Available</strong>
+            </MudText>
+        </MudTd>
+        <MudTd>@context.MinStock</MudTd>
+        <MudTd>
+            @{
+                var pct = context.MinStock > 0 ? Math.Min(100.0, context.InStock * 100.0 / (context.MinStock * 3)) : 100;
+                var color = context.InStock == 0 ? Color.Error : (context.InStock <= context.MinStock ? Color.Warning : Color.Success);
+            }
+            <div class="d-flex align-center gap-2">
+                <MudProgressLinear Color="@color" Value="@pct" Rounded="true" Size="Size.Small" Style="min-width: 80px" />
+                @if (context.InStock == 0)
+                {
+                    <MudChip T="string" Color="Color.Error" Size="Size.Small">Hết</MudChip>
+                }
+                else if (context.InStock <= context.MinStock)
+                {
+                    <MudChip T="string" Color="Color.Warning" Size="Size.Small">Thấp</MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Color="Color.Success" Size="Size.Small">OK</MudChip>
+                }
+            </div>
+        </MudTd>
+        <MudTd>
+            <MudButton Variant="Variant.Outlined" Color="Color.Success" Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.AddBox" OnClick="() => OpenRestock(context)">
+                Nhập hàng
+            </MudButton>
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+@* Stock Movement Log *@
+<MudText Typo="Typo.h6" Class="mt-6 mb-2">
+    <MudIcon Icon="@Icons.Material.Filled.History" Class="mr-1" />
+    Lịch sử nhập/xuất kho gần đây
+</MudText>
+<MudTable Items="_movements" Dense="true" Hover="true" Elevation="2">
+    <HeaderContent>
+        <MudTh>Thời gian</MudTh>
+        <MudTh>Sản phẩm</MudTh>
+        <MudTh>Loại</MudTh>
+        <MudTh>Số lượng</MudTh>
+        <MudTh>Ghi chú</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>@context.Date.ToString("dd/MM/yyyy HH:mm")</MudTd>
+        <MudTd>@context.ProductName</MudTd>
+        <MudTd>
+            <MudChip T="string" Color="@(context.Type == "Nhập" ? Color.Success : Color.Warning)" Size="Size.Small">@context.Type</MudChip>
+        </MudTd>
+        <MudTd>
+            <MudText Color="@(context.Type == "Nhập" ? Color.Success : Color.Warning)">
+                @(context.Type == "Nhập" ? "+" : "-")@context.Qty
+            </MudText>
+        </MudTd>
+        <MudTd>@context.Note</MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    class InventoryItem
+    {
+        public int Id { get; set; }
+        public string Sku { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Category { get; set; } = "";
+        public string Warehouse { get; set; } = "";
+        public int InStock { get; set; }
+        public int Reserved { get; set; }
+        public int Available => Math.Max(0, InStock - Reserved);
+        public int MinStock { get; set; }
+    }
+    class StockMovement { public DateTime Date { get; set; } public string ProductName { get; set; } = ""; public string Type { get; set; } = ""; public int Qty { get; set; } public string Note { get; set; } = ""; }
+
+    List<InventoryItem> _items =
+    [
+        new() { Id = 1, Sku = "ATN-001", Name = "Áo thun nam Premium", Category = "Thời trang nam", Warehouse = "Kho TP.HCM", InStock = 142, Reserved = 12, MinStock = 20 },
+        new() { Id = 2, Sku = "QJN-001", Name = "Quần jean slim fit", Category = "Thời trang nam", Warehouse = "Kho TP.HCM", InStock = 88, Reserved = 8, MinStock = 15 },
+        new() { Id = 3, Sku = "GSN-001", Name = "Giày sneaker trắng", Category = "Giày dép", Warehouse = "Kho TP.HCM", InStock = 45, Reserved = 5, MinStock = 10 },
+        new() { Id = 4, Sku = "TXN-001", Name = "Túi xách nữ da PU", Category = "Túi xách", Warehouse = "Kho TP.HCM", InStock = 5, Reserved = 3, MinStock = 10 },
+        new() { Id = 5, Sku = "NLT-001", Name = "Nón lưỡi trai", Category = "Phụ kiện", Warehouse = "Kho TP.HCM", InStock = 200, Reserved = 18, MinStock = 30 },
+        new() { Id = 6, Sku = "ATN-002", Name = "Áo sơ mi nam công sở", Category = "Thời trang nam", Warehouse = "Kho Hà Nội", InStock = 0, Reserved = 0, MinStock = 15 },
+        new() { Id = 7, Sku = "VDN-001", Name = "Váy đầm nữ hoa nhí", Category = "Thời trang nữ", Warehouse = "Kho TP.HCM", InStock = 67, Reserved = 6, MinStock = 10 },
+        new() { Id = 8, Sku = "DAG-001", Name = "Dép sandal nữ quai hậu", Category = "Giày dép", Warehouse = "Kho TP.HCM", InStock = 3, Reserved = 2, MinStock = 10 },
+        new() { Id = 9, Sku = "KTN-001", Name = "Kính mắt UV400", Category = "Phụ kiện", Warehouse = "Kho Đà Nẵng", InStock = 150, Reserved = 10, MinStock = 20 },
+        new() { Id = 10, Sku = "ATN-003", Name = "Áo khoác jean unisex", Category = "Thời trang nam", Warehouse = "Kho Hà Nội", InStock = 0, Reserved = 0, MinStock = 10 },
+    ];
+
+    List<StockMovement> _movements =
+    [
+        new() { Date = DateTime.Now.AddHours(-1), ProductName = "Áo thun nam Premium", Type = "Xuất", Qty = 4, Note = "Đơn #DH2025001" },
+        new() { Date = DateTime.Now.AddHours(-3), ProductName = "Quần jean slim fit", Type = "Nhập", Qty = 50, Note = "Nhập từ nhà cung cấp A" },
+        new() { Date = DateTime.Now.AddHours(-5), ProductName = "Giày sneaker trắng", Type = "Xuất", Qty = 2, Note = "Đơn #DH2025002" },
+        new() { Date = DateTime.Now.AddDays(-1), ProductName = "Túi xách nữ da PU", Type = "Xuất", Qty = 3, Note = "Đơn #DH2025004" },
+        new() { Date = DateTime.Now.AddDays(-1), ProductName = "Váy đầm nữ hoa nhí", Type = "Nhập", Qty = 30, Note = "Nhập từ nhà cung cấp B" },
+        new() { Date = DateTime.Now.AddDays(-2), ProductName = "Dép sandal nữ", Type = "Xuất", Qty = 5, Note = "Đơn #DH2025007" },
+    ];
+
+    InventoryItem? _restockItem;
+    int _restockQty = 1;
+    decimal _restockCost;
+    string _search = "";
+    string? _filterWarehouse;
+    bool _showLowStockOnly;
+
+    IEnumerable<InventoryItem> FilteredItems => _items
+        .Where(i => string.IsNullOrEmpty(_search) || i.Name.Contains(_search, StringComparison.OrdinalIgnoreCase) || i.Sku.Contains(_search, StringComparison.OrdinalIgnoreCase))
+        .Where(i => string.IsNullOrEmpty(_filterWarehouse) || i.Warehouse == _filterWarehouse)
+        .Where(i => !_showLowStockOnly || i.InStock <= i.MinStock);
+
+    void OpenRestock(InventoryItem item) { _restockItem = item; _restockQty = item.MinStock * 2; _restockCost = 0; }
+
+    void DoRestock()
+    {
+        if (_restockItem != null)
+        {
+            _restockItem.InStock += _restockQty;
+            _movements.Insert(0, new StockMovement { Date = DateTime.Now, ProductName = _restockItem.Name, Type = "Nhập", Qty = _restockQty, Note = $"Nhập kho thủ công, giá: ₫{_restockCost:N0}" });
+            _restockItem = null;
+        }
+    }
+}
