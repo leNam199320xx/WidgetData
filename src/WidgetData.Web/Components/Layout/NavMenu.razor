@@ -3,6 +3,16 @@
 @inject IStringLocalizer<SharedResource> L
 
 <MudNavMenu>
+    <MudNavGroup Title="🛍️ Cửa hàng bán hàng" Icon="@Icons.Material.Filled.Store" Expanded="true">
+        <MudNavLink Href="/store" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Tổng quan</MudNavLink>
+        <MudNavLink Href="/store/products" Icon="@Icons.Material.Filled.Inventory2">Sản phẩm</MudNavLink>
+        <MudNavLink Href="/store/orders" Icon="@Icons.Material.Filled.ShoppingCart">Đơn hàng</MudNavLink>
+        <MudNavLink Href="/store/customers" Icon="@Icons.Material.Filled.People">Khách hàng</MudNavLink>
+        <MudNavLink Href="/store/inventory" Icon="@Icons.Material.Filled.Warehouse">Kho hàng</MudNavLink>
+        <MudNavLink Href="/store/promotions" Icon="@Icons.Material.Filled.LocalOffer">Khuyến mãi</MudNavLink>
+        <MudNavLink Href="/store/sales-report" Icon="@Icons.Material.Filled.BarChart">Báo cáo bán hàng</MudNavLink>
+    </MudNavGroup>
+    <MudDivider Class="my-2" />
     <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">@L["Nav_Dashboard"]</MudNavLink>
     <MudNavLink Href="/reports" Icon="@Icons.Material.Filled.Assessment">@L["Nav_Reports"]</MudNavLink>
     <MudNavLink Href="/pages" Icon="@Icons.Material.Filled.GridView">@L["Nav_DashboardPages"]</MudNavLink>
