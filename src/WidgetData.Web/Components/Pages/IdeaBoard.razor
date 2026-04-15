@@ -1,0 +1,210 @@
+@page "/widgets/{WidgetId:int}/idea-board"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@inject WidgetData.Web.Services.ApiService ApiService
+@inject ISnackbar Snackbar
+
+<PageTitle>Idea Board – WidgetData</PageTitle>
+
+<MudBreadcrumbs Items="_breadcrumbs" Class="mb-2" />
+<MudText Typo="Typo.h4" Class="mb-4">
+    <MudIcon Icon="@Icons.Material.Filled.Lightbulb" Class="mr-2" />
+    Idea Board
+    @if (_widgetName != null)
+    {
+        <MudText Typo="Typo.subtitle1" Color="Color.Secondary" Inline="true"> — @_widgetName</MudText>
+    }
+</MudText>
+
+<MudGrid>
+    @* ── Left: post form ────────────────────────────────────────── *@
+    <MudItem xs="12" md="5">
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-3">
+                <MudIcon Icon="@Icons.Material.Filled.AddCircle" Class="mr-1" />
+                Đăng ý tưởng mới
+            </MudText>
+            <MudTextField @bind-Value="_postForm.Title" Label="Tiêu đề" Variant="Variant.Outlined"
+                          HelperText="Tên ngắn gọn của ý tưởng / thông tin bạn muốn gửi"
+                          Required="true" Class="mb-3" />
+            <MudTextField @bind-Value="_postForm.Content" Label="Nội dung" Variant="Variant.Outlined"
+                          Lines="4" HelperText="Chi tiết ý tưởng, có thể để trống" Class="mb-3" />
+            <MudTextField @bind-Value="_postForm.Labels" Label="Nhãn (labels)" Variant="Variant.Outlined"
+                          HelperText='Phân cách bằng dấu phẩy, VD: "billing,support,feedback"' Class="mb-4" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Send"
+                       OnClick="SubmitPost" Disabled="_submitting">
+                @if (_submitting)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                }
+                Gửi ý tưởng
+            </MudButton>
+        </MudPaper>
+    </MudItem>
+
+    @* ── Right: feed ────────────────────────────────────────────── *@
+    <MudItem xs="12" md="7">
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-3">
+                <MudText Typo="Typo.h6">
+                    <MudIcon Icon="@Icons.Material.Filled.DynamicFeed" Class="mr-1" />
+                    Băng chuyền ý tưởng
+                </MudText>
+                <MudSpacer />
+                <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Primary"
+                               OnClick="LoadPostsAsync" Title="Làm mới" />
+            </MudStack>
+
+            @if (_posts == null)
+            {
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+            }
+            else if (!_posts.Any())
+            {
+                <MudAlert Severity="Severity.Info">Chưa có ý tưởng nào. Hãy gửi ý tưởng đầu tiên!</MudAlert>
+            }
+            else
+            {
+                <MudTimeline TimelinePosition="TimelinePosition.Start" Class="pa-0">
+                    @foreach (var post in _posts)
+                    {
+                        <MudTimelineItem Color="@StatusColor(post.Status)" Size="Size.Small">
+                            <ItemContent>
+                                <MudPaper Class="pa-3 mb-1" Elevation="1">
+                                    <MudStack Row="true" AlignItems="AlignItems.Start">
+                                        <MudStack Style="flex:1">
+                                            <MudText Typo="Typo.subtitle2">@post.Title</MudText>
+                                            @if (!string.IsNullOrEmpty(post.Content))
+                                            {
+                                                <MudText Typo="Typo.body2" Color="Color.Secondary">@post.Content</MudText>
+                                            }
+                                            @if (!string.IsNullOrEmpty(post.Labels))
+                                            {
+                                                <MudStack Row="true" Spacing="1" Class="flex-wrap">
+                                                    @foreach (var lbl in post.Labels.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                                                    {
+                                                        <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined">@lbl</MudChip>
+                                                    }
+                                                </MudStack>
+                                            }
+                                            <MudText Typo="Typo.caption" Color="Color.Tertiary">
+                                                @post.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm") — @post.CreatedBy
+                                                <MudChip T="string" Size="Size.Small" Color="@StatusColor(post.Status)" Class="ml-1">@post.Status</MudChip>
+                                            </MudText>
+                                        </MudStack>
+                                        <MudIconButton Icon="@Icons.Material.Filled.ExpandMore"
+                                                       Title="Xem kết quả"
+                                                       OnClick="() => ToggleResults(post)" />
+                                    </MudStack>
+
+                                    @* Results *@
+                                    @if (_expandedPostId == post.Id)
+                                    {
+                                        <MudDivider Class="my-2" />
+                                        @if (post.Results.Any())
+                                        {
+                                            <MudText Typo="Typo.caption" Class="mb-1"><strong>Kết quả từ người xử lý:</strong></MudText>
+                                            @foreach (var r in post.Results)
+                                            {
+                                                <MudPaper Class="pa-2 mb-1" Elevation="0" Style="background:#f5f5f5">
+                                                    <MudText Typo="Typo.caption">
+                                                        <strong>@(r.SubscriptionName ?? $"Sub #{r.IdeaSubscriptionId}")</strong>
+                                                        <MudChip T="string" Size="Size.Small"
+                                                                 Color="@ResultStatusColor(r.Status)" Class="ml-1">@r.Status</MudChip>
+                                                    </MudText>
+                                                    <MudText Typo="Typo.body2">@r.ResultContent</MudText>
+                                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                                        @r.CreatedAt.ToLocalTime().ToString("HH:mm:ss")
+                                                    </MudText>
+                                                </MudPaper>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Chưa có kết quả nào.</MudText>
+                                        }
+                                    }
+                                </MudPaper>
+                            </ItemContent>
+                        </MudTimelineItem>
+                    }
+                </MudTimeline>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter] public int WidgetId { get; set; }
+
+    string? _widgetName;
+    IList<IdeaPostDto>? _posts;
+    CreateIdeaPostDto _postForm = new();
+    bool _submitting;
+    int? _expandedPostId;
+
+    List<BreadcrumbItem> _breadcrumbs = new()
+    {
+        new("Widgets", "/widgets"),
+        new("Idea Board", null, true)
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _postForm.WidgetId = WidgetId;
+        var widget = await ApiService.GetWidgetByIdAsync(WidgetId);
+        _widgetName = widget?.FriendlyLabel ?? widget?.Name;
+        await LoadPostsAsync();
+    }
+
+    async Task LoadPostsAsync()
+    {
+        var posts = await ApiService.GetIdeaPostsByWidgetAsync(WidgetId);
+        _posts = posts?.ToList() ?? new List<IdeaPostDto>();
+    }
+
+    async Task SubmitPost()
+    {
+        if (string.IsNullOrWhiteSpace(_postForm.Title))
+        {
+            Snackbar.Add("Vui lòng nhập tiêu đề.", Severity.Warning);
+            return;
+        }
+        _submitting = true;
+        try
+        {
+            var result = await ApiService.CreateIdeaPostAsync(_postForm);
+            if (result != null)
+            {
+                Snackbar.Add("Đã gửi ý tưởng thành công!", Severity.Success);
+                _postForm = new CreateIdeaPostDto { WidgetId = WidgetId };
+                await LoadPostsAsync();
+            }
+            else
+            {
+                Snackbar.Add("Gửi thất bại. Vui lòng thử lại.", Severity.Error);
+            }
+        }
+        finally { _submitting = false; }
+    }
+
+    void ToggleResults(IdeaPostDto post)
+        => _expandedPostId = _expandedPostId == post.Id ? null : post.Id;
+
+    static Color StatusColor(string status) => status switch
+    {
+        "Dispatched" => Color.Success,
+        "Pending" => Color.Warning,
+        _ => Color.Default
+    };
+
+    static Color ResultStatusColor(string status) => status switch
+    {
+        "Delivered" => Color.Success,
+        "Received" => Color.Info,
+        "Error" => Color.Error,
+        _ => Color.Default
+    };
+}

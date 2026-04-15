@@ -191,6 +191,16 @@ public class ApiService
         return await response.Content.ReadAsByteArrayAsync();
     }
 
+    // Idea Board
+    public Task<IdeaPostDto?> CreateIdeaPostAsync(CreateIdeaPostDto dto) => PostAsync<IdeaPostDto>("api/idea-board/posts", dto);
+    public Task<IdeaPostDto?> GetIdeaPostAsync(int id) => GetAsync<IdeaPostDto>($"api/idea-board/posts/{id}");
+    public Task<IEnumerable<IdeaPostDto>?> GetIdeaPostsByWidgetAsync(int widgetId) => GetAsync<IEnumerable<IdeaPostDto>>($"api/idea-board/widgets/{widgetId}/posts");
+    public Task<IEnumerable<IdeaResultDto>?> GetIdeaResultsAsync(int postId) => GetAsync<IEnumerable<IdeaResultDto>>($"api/idea-board/posts/{postId}/results");
+    public Task<IEnumerable<IdeaSubscriptionDto>?> GetIdeaSubscriptionsAsync(int widgetId) => GetAsync<IEnumerable<IdeaSubscriptionDto>>($"api/idea-board/widgets/{widgetId}/subscriptions");
+    public Task<IdeaSubscriptionDto?> CreateIdeaSubscriptionAsync(CreateIdeaSubscriptionDto dto) => PostAsync<IdeaSubscriptionDto>("api/idea-board/subscriptions", dto);
+    public Task<IdeaSubscriptionDto?> UpdateIdeaSubscriptionAsync(int id, UpdateIdeaSubscriptionDto dto) => PutAsync<IdeaSubscriptionDto>($"api/idea-board/subscriptions/{id}", dto);
+    public Task<bool> DeleteIdeaSubscriptionAsync(int id) => DeleteAsync($"api/idea-board/subscriptions/{id}");
+
     // Reports
     public Task<IEnumerable<WidgetGroupDto>?> GetReportPagesAsync() => GetAsync<IEnumerable<WidgetGroupDto>>("api/reports/pages");
     public Task<ReportPageDto?> GetReportPageAsync(int id) => GetAsync<ReportPageDto>($"api/reports/pages/{id}");

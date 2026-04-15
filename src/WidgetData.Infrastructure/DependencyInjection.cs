@@ -24,6 +24,7 @@ public static class DependencyInjection
         services.AddScoped<IScheduleRepository, ScheduleRepository>();
         services.AddScoped<IExecutionRepository, ExecutionRepository>();
         services.AddScoped<IWidgetConfigArchiveRepository, WidgetConfigArchiveRepository>();
+        services.AddScoped<IIdeaBoardRepository, IdeaBoardRepository>();
 
         services.AddScoped<IWidgetService, WidgetService>();
         services.AddScoped<IDataSourceService, DataSourceService>();
@@ -35,6 +36,7 @@ public static class DependencyInjection
         services.AddScoped<IExportService, ExportService>();
         services.AddScoped<IDeliveryService, DeliveryService>();
         services.AddScoped<IWidgetConfigArchiveService, WidgetConfigArchiveService>();
+        services.AddScoped<IIdeaBoardService, IdeaBoardService>();
 
         services.AddHttpClient();
         services.AddScoped<DataSeeder>();

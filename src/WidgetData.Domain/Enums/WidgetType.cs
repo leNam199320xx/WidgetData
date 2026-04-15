@@ -5,5 +5,6 @@ public enum WidgetType
     Chart,
     Table,
     Metric,
-    Map
+    Map,
+    Form
 }
