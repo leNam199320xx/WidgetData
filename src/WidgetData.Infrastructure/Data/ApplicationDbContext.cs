@@ -20,6 +20,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<DeliveryTarget> DeliveryTargets => Set<DeliveryTarget>();
     public DbSet<DeliveryExecution> DeliveryExecutions => Set<DeliveryExecution>();
     public DbSet<WidgetConfigArchive> WidgetConfigArchives => Set<WidgetConfigArchive>();
+    public DbSet<IdeaPost> IdeaPosts => Set<IdeaPost>();
+    public DbSet<IdeaSubscription> IdeaSubscriptions => Set<IdeaSubscription>();
+    public DbSet<IdeaResult> IdeaResults => Set<IdeaResult>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -98,6 +101,30 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasOne(a => a.Widget)
             .WithMany()
             .HasForeignKey(a => a.WidgetId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<IdeaPost>()
+            .HasOne(p => p.Widget)
+            .WithMany()
+            .HasForeignKey(p => p.WidgetId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<IdeaSubscription>()
+            .HasOne(s => s.Widget)
+            .WithMany()
+            .HasForeignKey(s => s.WidgetId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<IdeaResult>()
+            .HasOne(r => r.IdeaPost)
+            .WithMany(p => p.Results)
+            .HasForeignKey(r => r.IdeaPostId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<IdeaResult>()
+            .HasOne(r => r.IdeaSubscription)
+            .WithMany(s => s.Results)
+            .HasForeignKey(r => r.IdeaSubscriptionId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

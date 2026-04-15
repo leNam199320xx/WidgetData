@@ -58,6 +58,7 @@ else if (_widget != null)
                             <MudSelectItem Value="@WidgetType.Chart">📈 Biểu đồ</MudSelectItem>
                             <MudSelectItem Value="@WidgetType.Metric">🔢 Chỉ số</MudSelectItem>
                             <MudSelectItem Value="@WidgetType.Map">🗺️ Bản đồ</MudSelectItem>
+                            <MudSelectItem Value="@WidgetType.Form">📝 Form (Idea Board)</MudSelectItem>
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="12" sm="3">
@@ -283,7 +284,116 @@ else if (_widget != null)
             </MudPaper>
         </MudStep>
 
-        @* Bước 5: Lịch sử cấu hình (Config Archive) *@
+        @* Bước 5: Idea Board (chỉ hiển thị khi widget type = Form) *@
+        @if (_form.WidgetType == WidgetType.Form)
+        {
+            <MudStep Title="Idea Board" Icon="@Icons.Material.Filled.Lightbulb">
+                <MudPaper Class="pa-4" Elevation="0">
+                    <MudText Typo="Typo.h6" Class="mb-2">Bước 5: Cấu hình Idea Board</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                        Quản lý các <strong>đăng ký nhãn</strong> (subscriptions). Mỗi lần người dùng gửi ý tưởng với một nhãn,
+                        hệ thống sẽ tự động đẩy thông tin đến tất cả điểm đăng ký phù hợp.
+                    </MudText>
+
+                    <MudButton Variant="Variant.Text" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.OpenInNew"
+                               Href="@($"/widgets/{Id}/idea-board")" Target="_blank" Class="mb-3">
+                        Mở Idea Board
+                    </MudButton>
+
+                    @if (_ideaSubscriptions == null)
+                    {
+                        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                    }
+                    else if (_ideaSubscriptions.Any())
+                    {
+                        <MudTable Items="_ideaSubscriptions" Dense="true" Class="mb-3">
+                            <HeaderContent>
+                                <MudTh>Tên</MudTh>
+                                <MudTh>Nhãn theo dõi</MudTh>
+                                <MudTh>Webhook URL</MudTh>
+                                <MudTh>Trạng thái</MudTh>
+                                <MudTh>Thao tác</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd>@context.Name</MudTd>
+                                <MudTd>
+                                    @if (!string.IsNullOrEmpty(context.LabelFilter))
+                                    {
+                                        @foreach (var lbl in context.LabelFilter.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined" Class="mr-1">@lbl</MudChip>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Tất cả</MudText>
+                                    }
+                                </MudTd>
+                                <MudTd>
+                                    <MudText Typo="Typo.caption">@(context.WebhookUrl ?? "— (nội bộ)")</MudText>
+                                </MudTd>
+                                <MudTd>
+                                    <MudChip T="string" Size="Size.Small" Color="@(context.IsActive ? Color.Success : Color.Default)">
+                                        @(context.IsActive ? "Bật" : "Tắt")
+                                    </MudChip>
+                                </MudTd>
+                                <MudTd>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                                   Size="Size.Small"
+                                                   OnClick="() => DeleteIdeaSubscription(context.Id)" />
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    }
+                    else
+                    {
+                        <MudText Color="Color.Secondary" Class="mb-3">Chưa có đăng ký nhãn nào.</MudText>
+                    }
+
+                    @if (_showSubForm)
+                    {
+                        <MudPaper Class="pa-4 mb-3" Elevation="2">
+                            <MudText Typo="Typo.subtitle1" Class="mb-2">Thêm đăng ký nhãn:</MudText>
+                            <MudGrid>
+                                <MudItem xs="12" sm="4">
+                                    <MudTextField @bind-Value="_subForm.Name" Label="Tên" Variant="Variant.Outlined"
+                                                  HelperText="VD: Nhóm hỗ trợ" />
+                                </MudItem>
+                                <MudItem xs="12" sm="4">
+                                    <MudTextField @bind-Value="_subForm.LabelFilter" Label="Nhãn theo dõi" Variant="Variant.Outlined"
+                                                  HelperText='Để trống = nhận tất cả. VD: "billing,refund"' />
+                                </MudItem>
+                                <MudItem xs="12" sm="4">
+                                    <MudTextField @bind-Value="_subForm.WebhookUrl" Label="Webhook URL (tùy chọn)" Variant="Variant.Outlined"
+                                                  HelperText="URL nhận POST. Để trống = xử lý nội bộ" />
+                                </MudItem>
+                                <MudItem xs="12" sm="3">
+                                    <MudCheckBox @bind-Value="_subForm.IsActive" Label="Kích hoạt" Color="Color.Primary" />
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                               OnClick="SaveIdeaSubscription" Disabled="_savingSub" Class="mr-2">
+                                        @if (_savingSub) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                                        Lưu
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Outlined" OnClick="() => _showSubForm = false">Hủy</MudButton>
+                                </MudItem>
+                            </MudGrid>
+                        </MudPaper>
+                    }
+                    else
+                    {
+                        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add"
+                                   OnClick="() => _showSubForm = true">
+                            + Thêm đăng ký nhãn
+                        </MudButton>
+                    }
+                </MudPaper>
+            </MudStep>
+        }
+
+        @* Bước 5/6: Lịch sử cấu hình (Config Archive) *@
         <MudStep Title="Lịch sử cấu hình" Icon="@Icons.Material.Filled.Archive">
             <MudPaper Class="pa-4" Elevation="0">
                 <MudText Typo="Typo.h6" Class="mb-2">Lịch sử cấu hình (Config Archive)</MudText>
@@ -377,6 +487,11 @@ else if (_widget != null)
     IEnumerable<WidgetConfigArchiveDto>? _configArchives;
     bool _savingArchive;
 
+    IEnumerable<IdeaSubscriptionDto>? _ideaSubscriptions;
+    bool _showSubForm;
+    bool _savingSub;
+    CreateIdeaSubscriptionDto _subForm = new();
+
     List<BreadcrumbItem> _breadcrumbs = new()
     {
         new("Widgets", "/widgets"),
@@ -391,7 +506,8 @@ else if (_widget != null)
             LoadGroupsAsync(),
             LoadSchedulesAsync(),
             LoadDeliveryTargetsAsync(),
-            LoadConfigArchivesAsync()
+            LoadConfigArchivesAsync(),
+            LoadIdeaSubscriptionsAsync()
         );
     }
 
@@ -622,4 +738,32 @@ else if (_widget != null)
         DeliveryType.Txt => "TXT",
         _ => t.ToString()
     };
+
+    async Task LoadIdeaSubscriptionsAsync()
+    {
+        try { _ideaSubscriptions = await ApiService.GetIdeaSubscriptionsAsync(Id) ?? Array.Empty<IdeaSubscriptionDto>(); }
+        catch { _ideaSubscriptions = Array.Empty<IdeaSubscriptionDto>(); }
+    }
+
+    async Task SaveIdeaSubscription()
+    {
+        _savingSub = true;
+        try
+        {
+            _subForm.WidgetId = Id;
+            var result = await ApiService.CreateIdeaSubscriptionAsync(_subForm);
+            Snackbar.Add(result != null ? "Đã thêm đăng ký nhãn!" : "Thêm thất bại.", result != null ? Severity.Success : Severity.Error);
+            _showSubForm = false;
+            _subForm = new CreateIdeaSubscriptionDto();
+            await LoadIdeaSubscriptionsAsync();
+        }
+        finally { _savingSub = false; }
+    }
+
+    async Task DeleteIdeaSubscription(int subId)
+    {
+        var result = await ApiService.DeleteIdeaSubscriptionAsync(subId);
+        Snackbar.Add(result ? "Đã xóa đăng ký nhãn." : "Xóa thất bại.", result ? Severity.Success : Severity.Error);
+        await LoadIdeaSubscriptionsAsync();
+    }
 }
