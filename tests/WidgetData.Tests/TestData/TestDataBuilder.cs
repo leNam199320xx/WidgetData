@@ -9,6 +9,59 @@ namespace WidgetData.Tests.TestData;
 /// </summary>
 public static class TestDataBuilder
 {
+    // ─── WidgetGroup ──────────────────────────────────────────────────────────
+
+    public static WidgetGroup CreateWidgetGroup(int id = 1, string name = "Nhóm Test", bool isActive = true) =>
+        new()
+        {
+            Id = id,
+            Name = name,
+            Description = "Nhóm widget dùng để test",
+            IsActive = isActive,
+            CreatedBy = "user1",
+            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        };
+
+    public static CreateWidgetDto CreateWidgetDtoWithMeta(
+        string name = "Widget Form Test",
+        string friendlyLabel = "Báo cáo tháng",
+        string helpText = "Hiển thị doanh thu theo tháng",
+        int dataSourceId = 1) =>
+        new()
+        {
+            Name = name,
+            FriendlyLabel = friendlyLabel,
+            HelpText = helpText,
+            WidgetType = WidgetType.Table,
+            Description = "Widget test có FriendlyLabel và HelpText",
+            DataSourceId = dataSourceId,
+            Configuration = "{\"query\":\"SELECT month, revenue FROM sales\"}",
+            ChartConfig = null,
+            CacheEnabled = false,
+            CacheTtlMinutes = 15
+        };
+
+    public static Widget CreateWidgetWithMeta(int id = 1, int dataSourceId = 1,
+        string friendlyLabel = "Báo cáo tháng", string helpText = "Hiển thị doanh thu") =>
+        new()
+        {
+            Id = id,
+            Name = "widget_doanh_thu_thang",
+            FriendlyLabel = friendlyLabel,
+            HelpText = helpText,
+            WidgetType = WidgetType.Table,
+            Description = "Widget bảng dữ liệu doanh thu",
+            DataSourceId = dataSourceId,
+            Configuration = "{\"query\":\"SELECT month, revenue FROM sales\"}",
+            IsActive = true,
+            CacheEnabled = false,
+            CacheTtlMinutes = 15,
+            CreatedBy = "user1",
+            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            DataSource = CreateDataSource(dataSourceId)
+        };
+
+
     // ─── DataSource ──────────────────────────────────────────────────────────
 
     public static DataSource CreateDataSource(int id = 1, string name = "Test DB", bool isActive = true) =>
