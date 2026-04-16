@@ -1,0 +1,48 @@
+{
+  "title": "Home Dashboard",
+  "layout": "grid",
+  "columns": 3,
+  "auth": {
+    "required": true
+  },
+  "widgets": [
+    {
+      "id": 1,
+      "title": "Monthly Revenue",
+      "colSpan": 2,
+      "autoRefreshSeconds": 120,
+      "parameters": {
+        "start_date": "2026-01-01",
+        "end_date": "2026-12-31"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Top Products",
+      "colSpan": 1,
+      "autoRefreshSeconds": 300,
+      "parameters": {}
+    },
+    {
+      "id": 3,
+      "title": "New Orders Today",
+      "colSpan": 1,
+      "autoRefreshSeconds": 60,
+      "parameters": {}
+    },
+    {
+      "id": 4,
+      "title": "Customer Segments",
+      "colSpan": 1,
+      "autoRefreshSeconds": 600,
+      "parameters": {}
+    },
+    {
+      "id": 5,
+      "title": "Inventory Alert",
+      "colSpan": 1,
+      "autoRefreshSeconds": 0,
+      "parameters": {}
+    }
+  ]
+}

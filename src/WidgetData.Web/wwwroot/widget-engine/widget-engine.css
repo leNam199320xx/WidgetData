@@ -1,0 +1,228 @@
+/* WidgetEngine – base styles
+ * Minimal, BEM-style classes prefixed with "we-".
+ * Override freely in your own stylesheet.
+ */
+
+/* ── Reset ──────────────────────────────────────────────── */
+.we-widget *, .we-login-box * {
+  box-sizing: border-box;
+}
+
+/* ── Widget container ───────────────────────────────────── */
+.we-widget {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  color: #1a202c;
+  overflow: auto;
+}
+
+/* ── Widget title ───────────────────────────────────────── */
+.we-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #2d3748;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 8px;
+}
+
+/* ── Widget body ────────────────────────────────────────── */
+.we-body {
+  overflow: auto;
+}
+
+/* ── Loading state ──────────────────────────────────────── */
+.we-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #718096;
+  padding: 24px 0;
+}
+
+.we-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #cbd5e0;
+  border-top-color: #4299e1;
+  border-radius: 50%;
+  animation: we-spin 0.7s linear infinite;
+}
+
+@keyframes we-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Error state ────────────────────────────────────────── */
+.we-error {
+  color: #c53030;
+  background: #fff5f5;
+  border: 1px solid #feb2b2;
+  border-radius: 4px;
+  padding: 10px 14px;
+}
+
+.we-error-code {
+  font-size: 12px;
+  color: #e53e3e;
+  margin-left: 6px;
+}
+
+/* ── Empty state ────────────────────────────────────────── */
+.we-empty {
+  color: #a0aec0;
+  text-align: center;
+  padding: 24px 0;
+}
+
+/* ── Default table ──────────────────────────────────────── */
+.we-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.we-table th {
+  text-align: left;
+  background: #f7fafc;
+  color: #4a5568;
+  font-weight: 600;
+  padding: 8px 10px;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.we-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #edf2f7;
+  vertical-align: top;
+}
+
+.we-table tr:last-child td {
+  border-bottom: none;
+}
+
+.we-table tr:hover td {
+  background: #f7fafc;
+}
+
+/* ── Page grid ──────────────────────────────────────────── */
+.we-page-title {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0 0 20px;
+}
+
+/* Grid layout (default) */
+.we-layout-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--we-columns, 3), 1fr);
+  gap: 16px;
+}
+
+/* Flex layout */
+.we-layout-flex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.we-layout-flex .we-cell {
+  flex: 1 1 280px;
+}
+
+/* Free layout */
+.we-layout-free {
+  position: relative;
+}
+
+/* Cell */
+.we-cell {
+  min-width: 0; /* prevent grid blowout */
+}
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .we-layout-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .we-cell[style*="grid-column"],
+  .we-cell[style*="grid-row"] {
+    grid-column: unset !important;
+    grid-row: unset !important;
+  }
+}
+
+/* ── Login box ──────────────────────────────────────────── */
+.we-login-box {
+  max-width: 360px;
+  margin: 60px auto;
+  padding: 32px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-family: system-ui, -apple-system, sans-serif;
+  box-shadow: 0 4px 12px rgba(0,0,0,.08);
+}
+
+.we-login-title {
+  margin: 0 0 24px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.we-login-form label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 4px;
+}
+
+.we-login-form input {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  outline: none;
+  margin-bottom: 14px;
+  transition: border-color .15s;
+}
+
+.we-login-form input:focus {
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66,153,225,.2);
+}
+
+.we-login-form button {
+  width: 100%;
+  padding: 9px;
+  background: #4299e1;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.we-login-form button:hover {
+  background: #3182ce;
+}
+
+.we-login-error {
+  margin-top: 10px;
+  color: #c53030;
+  font-size: 13px;
+}
