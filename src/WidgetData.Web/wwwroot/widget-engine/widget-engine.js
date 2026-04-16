@@ -210,7 +210,7 @@
       if (!_state.tokenExpiresAt || !_state.refreshToken) return;
 
       const msUntilExpiry = _state.tokenExpiresAt - Date.now();
-      const refreshIn = Math.max(msUntilExpiry - 60_000, 0); // 1 min before expiry
+      const refreshIn = Math.max(msUntilExpiry - 60_000, 1_000); // at least 1 s, 1 min before expiry
       _state.refreshTimerId = setTimeout(async () => {
         try { await Auth._tryRefresh(); } catch (_) { /* swallow */ }
       }, refreshIn);
@@ -403,7 +403,7 @@
    *  }
    * ======================================================= */
   const Renderer = {
-    _timers: {},
+    _timers: new WeakMap(),
 
     /**
      * Render a widget into a given DOM element.
@@ -512,20 +512,26 @@
     },
 
     _scheduleAutoRefresh(container, cfg) {
-      const key = container.id || Math.random().toString(36).slice(2);
-      if (Renderer._timers[key]) clearInterval(Renderer._timers[key]);
+      const existing = Renderer._timers.get(container);
+      if (existing) clearInterval(existing);
       if (cfg.autoRefreshSeconds && cfg.autoRefreshSeconds > 0) {
-        Renderer._timers[key] = setInterval(() => {
+        const id = setInterval(() => {
           Renderer.render(container, cfg);
         }, cfg.autoRefreshSeconds * 1000);
+        Renderer._timers.set(container, id);
       }
     },
 
-    /** Stop the auto-refresh timer for a container. */
-    stopAutoRefresh(containerId) {
-      if (Renderer._timers[containerId]) {
-        clearInterval(Renderer._timers[containerId]);
-        delete Renderer._timers[containerId];
+    /** Stop the auto-refresh timer for a container element or id string. */
+    stopAutoRefresh(containerOrId) {
+      const el = typeof containerOrId === 'string'
+        ? document.getElementById(containerOrId)
+        : containerOrId;
+      if (!el) return;
+      const id = Renderer._timers.get(el);
+      if (id) {
+        clearInterval(id);
+        Renderer._timers.delete(el);
       }
     },
   };
@@ -724,9 +730,9 @@
       return Renderer.render(el, widgetConfig);
     },
 
-    /** Stop auto-refresh for a container. */
-    stopAutoRefresh(containerId) {
-      Renderer.stopAutoRefresh(containerId);
+    /** Stop auto-refresh for a container (element or id string). */
+    stopAutoRefresh(containerOrId) {
+      Renderer.stopAutoRefresh(containerOrId);
     },
 
     WidgetEngineError,
