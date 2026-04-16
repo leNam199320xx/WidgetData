@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cửa hàng – WidgetData</title>
+  <link rel="stylesheet" href="store.css">
+</head>
+<body>
+
+  <!-- ── Header ──────────────────────────────────────────── -->
+  <header id="site-header">
+    <div class="header-inner">
+      <a class="logo" href="#/">🛍️ Cửa hàng</a>
+
+      <div class="search-bar">
+        <input id="search-input" type="search" placeholder="Tìm kiếm sản phẩm..." autocomplete="off" aria-label="Tìm kiếm">
+        <button id="search-btn" aria-label="Tìm kiếm">🔍</button>
+      </div>
+
+      <nav class="header-nav">
+        <a href="#/products">Sản phẩm</a>
+        <a href="#/search">Tìm kiếm</a>
+        <a href="#/cart" class="cart-btn" id="cart-btn">
+          🛒 Giỏ hàng
+          <span id="cart-count" class="cart-badge" style="display:none">0</span>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ── Breadcrumb ──────────────────────────────────────── -->
+  <nav id="breadcrumb" class="breadcrumb" aria-label="Breadcrumb"></nav>
+
+  <!-- ── Main content ────────────────────────────────────── -->
+  <main id="app" class="container"></main>
+
+  <!-- ── Toast ───────────────────────────────────────────── -->
+  <div id="toast" class="toast" role="alert" aria-live="polite"></div>
+
+  <!-- ── Footer ──────────────────────────────────────────── -->
+  <footer>
+    <div class="footer-inner">
+      <p>© 2026 Cửa hàng WidgetData &nbsp;·&nbsp; Dữ liệu thực từ <strong>sales.db</strong> qua <code>GET /api/store/products</code></p>
+    </div>
+  </footer>
+
+  <script src="store.js"></script>
+</body>
+</html>
