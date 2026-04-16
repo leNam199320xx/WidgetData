@@ -37,6 +37,7 @@ public static class DependencyInjection
         services.AddScoped<IDeliveryService, DeliveryService>();
         services.AddScoped<IWidgetConfigArchiveService, WidgetConfigArchiveService>();
         services.AddScoped<IIdeaBoardService, IdeaBoardService>();
+        services.AddScoped<IPageHtmlService, PageHtmlService>();
 
         services.AddHttpClient();
         services.AddScoped<DataSeeder>();
