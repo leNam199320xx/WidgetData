@@ -14,6 +14,9 @@ namespace WidgetData.API.Controllers;
 [AllowAnonymous]
 public class StoreController : ControllerBase
 {
+    private static readonly HashSet<string> ValidPaymentMethods =
+        new(StringComparer.OrdinalIgnoreCase) { "cash", "bank_transfer", "credit_card" };
+
     private readonly string _cs;
 
     public StoreController()
@@ -260,7 +263,7 @@ public class StoreController : ControllerBase
             }
 
             // Insert payment record
-            var validMethod = dto.PaymentMethod is "cash" or "bank_transfer" or "credit_card"
+            var validMethod = ValidPaymentMethods.Contains(dto.PaymentMethod)
                 ? dto.PaymentMethod : "cash";
             using var payCmd = conn.CreateCommand();
             payCmd.Transaction = tx;
