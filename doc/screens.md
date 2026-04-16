@@ -21,6 +21,14 @@ Các màn hình được capture từ demo chạy thực tế với dữ liệu 
 | Dashboard Pages | ![Dashboard Pages](screenshots/12_dashboard_pages.png) |
 | Dashboard Page Builder | ![Page Builder](screenshots/12a_page_builder.png) |
 | Widget HTML Designer | ![HTML Designer](screenshots/13_widget_html_designer.png) |
+| Config Archives | ![Config Archives](screenshots/14_config_archives.png) |
+| 🛍️ Store – Tổng quan | ![Store Dashboard](screenshots/15_store_dashboard.png) |
+| 🛍️ Store – Sản phẩm | ![Store Products](screenshots/16_store_products.png) |
+| 🛍️ Store – Đơn hàng | ![Store Orders](screenshots/17_store_orders.png) |
+| 🛍️ Store – Khách hàng | ![Store Customers](screenshots/18_store_customers.png) |
+| 🛍️ Store – Kho hàng | ![Store Inventory](screenshots/19_store_inventory.png) |
+| 🛍️ Store – Khuyến mãi | ![Store Promotions](screenshots/20_store_promotions.png) |
+| 🛍️ Store – Báo cáo bán hàng | ![Store Sales Report](screenshots/21_store_sales_report.png) |
 
 ---
 
@@ -47,14 +55,15 @@ Các màn hình được capture từ demo chạy thực tế với dữ liệu 
 
 ## 📋 Tổng quan
 
-Widget Data có **20 màn hình chính** được tổ chức thành 6 nhóm:
+Widget Data có **27 màn hình chính** được tổ chức thành 7 nhóm:
 
 1. **Dashboard & Overview** (2 screens)
 2. **Widget Management** (5 screens – bao gồm HTML Designer)
 3. **Data Sources** (3 screens)
 4. **Scheduling & Execution** (2 screens)
-5. **Reports & Pages** (4 screens – mới)
+5. **Reports & Pages** (4 screens)
 6. **Administration** (4 screens)
+7. **🛍️ Cửa hàng bán hàng** (7 screens – Tổng quan, Sản phẩm, Đơn hàng, Khách hàng, Kho hàng, Khuyến mãi, Báo cáo bán hàng)
 
 ---
 
