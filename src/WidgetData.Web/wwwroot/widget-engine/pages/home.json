@@ -1,48 +1,59 @@
 {
-  "title": "Home Dashboard",
-  "layout": "grid",
-  "columns": 3,
-  "auth": {
-    "required": true
-  },
+  "title": "WidgetData – Nền tảng dữ liệu thông minh",
+  "layout": "flex",
+  "auth": { "required": false },
   "widgets": [
     {
-      "id": 1,
-      "title": "Monthly Revenue",
-      "colSpan": 2,
-      "autoRefreshSeconds": 120,
-      "parameters": {
-        "start_date": "2026-01-01",
-        "end_date": "2026-12-31"
-      }
+      "staticData": {
+        "badge": "🚀 Ra mắt phiên bản 2.0",
+        "headline": "Dữ liệu thông minh cho trang bán hàng của bạn",
+        "subheadline": "WidgetData giúp bạn nhúng biểu đồ, số liệu, và bảng dữ liệu trực tiếp vào landing page và trang giới thiệu sản phẩm — không cần lập trình phức tạp.",
+        "cta_primary": "Dùng thử miễn phí",
+        "cta_secondary": "Xem demo"
+      },
+      "template": "<div class=\"we-hero\"><span class=\"we-hero-badge\">{{badge}}</span><h1 class=\"we-hero-headline\">{{headline}}</h1><p class=\"we-hero-subheadline\">{{subheadline}}</p><div class=\"we-hero-actions\"><a class=\"we-btn we-btn-primary\" href=\"#\">{{cta_primary}}</a><a class=\"we-btn we-btn-outline\" href=\"#\">{{cta_secondary}}</a></div></div>"
     },
     {
-      "id": 2,
-      "title": "Top Products",
-      "colSpan": 1,
-      "autoRefreshSeconds": 300,
-      "parameters": {}
+      "staticData": {
+        "val1": "10,000+", "lbl1": "Khách hàng",
+        "val2": "99.9%",   "lbl2": "Uptime",
+        "val3": "50ms",    "lbl3": "Tốc độ tải",
+        "val4": "24/7",    "lbl4": "Hỗ trợ"
+      },
+      "template": "<div style=\"background:#fff;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0\"><div class=\"we-stats\"><div class=\"we-stat\"><span class=\"we-stat-value\">{{val1}}</span><span class=\"we-stat-label\">{{lbl1}}</span></div><div class=\"we-stat\"><span class=\"we-stat-value\">{{val2}}</span><span class=\"we-stat-label\">{{lbl2}}</span></div><div class=\"we-stat\"><span class=\"we-stat-value\">{{val3}}</span><span class=\"we-stat-label\">{{lbl3}}</span></div><div class=\"we-stat\"><span class=\"we-stat-value\">{{val4}}</span><span class=\"we-stat-label\">{{lbl4}}</span></div></div></div>"
     },
     {
-      "id": 3,
-      "title": "New Orders Today",
-      "colSpan": 1,
-      "autoRefreshSeconds": 60,
-      "parameters": {}
+      "staticData": {
+        "title": "Tại sao chọn WidgetData?",
+        "subtitle": "Giải pháp toàn diện để hiển thị dữ liệu kinh doanh trên mọi trang web của bạn.",
+        "rows": [
+          { "icon": "📊", "name": "Widget đa dạng",      "desc": "Biểu đồ, bảng, số liệu — hơn 20 loại widget sẵn sàng sử dụng ngay." },
+          { "icon": "⚡", "name": "Hiệu năng cao",       "desc": "Cache thông minh, tải dữ liệu song song, cập nhật real-time khi cần." },
+          { "icon": "🎨", "name": "Tuỳ biến hoàn toàn",  "desc": "Template HTML tự do, CSS theo brand của bạn, không phụ thuộc framework." },
+          { "icon": "🔒", "name": "Bảo mật tích hợp",    "desc": "JWT, refresh token tự động, phân quyền theo từng widget." },
+          { "icon": "📱", "name": "Responsive chuẩn",    "desc": "Hiển thị hoàn hảo trên desktop, tablet và mobile không cần chỉnh sửa thêm." },
+          { "icon": "🔌", "name": "Kết nối mọi nguồn",   "desc": "SQL Server, MySQL, PostgreSQL, REST API, và nhiều nguồn dữ liệu khác." }
+        ]
+      },
+      "template": "<div class=\"we-section we-section-center\"><h2 class=\"we-section-title\">{{title}}</h2><p class=\"we-section-subtitle\">{{subtitle}}</p><div class=\"we-features\">{{#each rows}}<div class=\"we-feature-card\"><span class=\"we-feature-icon\">{{icon}}</span><h3 class=\"we-feature-title\">{{name}}</h3><p class=\"we-feature-desc\">{{desc}}</p></div>{{/each}}</div></div>"
     },
     {
-      "id": 4,
-      "title": "Customer Segments",
-      "colSpan": 1,
-      "autoRefreshSeconds": 600,
-      "parameters": {}
+      "staticData": {
+        "rows": [
+          { "quote": "WidgetData giúp chúng tôi nhúng dữ liệu doanh số trực tiếp vào landing page mà không cần thuê dev backend riêng.", "name": "Nguyễn Minh Tuấn", "role": "CEO, ShopViet", "avatar": "👨‍💼" },
+          { "quote": "Tốc độ tải nhanh và template linh hoạt — đây là công cụ không thể thiếu cho team marketing của chúng tôi.",        "name": "Trần Thị Lan",    "role": "Marketing Lead, TechMart", "avatar": "👩‍💻" },
+          { "quote": "Tích hợp trong 30 phút, dữ liệu real-time ngay trên trang giới thiệu sản phẩm. Tuyệt vời!",                        "name": "Lê Văn Hùng",    "role": "CTO, DataStore", "avatar": "🧑‍🔧" }
+        ]
+      },
+      "template": "<div class=\"we-section we-section-center\" style=\"background:#f0f4f8\"><h2 class=\"we-section-title\">Khách hàng nói gì về chúng tôi?</h2><div class=\"we-testimonials\">{{#each rows}}<div class=\"we-testimonial\"><p class=\"we-testimonial-quote\">{{quote}}</p><div class=\"we-testimonial-author\"><div class=\"we-testimonial-avatar\">{{avatar}}</div><div><div class=\"we-testimonial-name\">{{name}}</div><div class=\"we-testimonial-role\">{{role}}</div></div></div></div>{{/each}}</div></div>"
     },
     {
-      "id": 5,
-      "title": "Inventory Alert",
-      "colSpan": 1,
-      "autoRefreshSeconds": 0,
-      "parameters": {}
+      "staticData": {
+        "title": "Sẵn sàng bắt đầu?",
+        "subtitle": "Dùng thử miễn phí 14 ngày. Không cần thẻ tín dụng.",
+        "cta": "Tạo tài khoản miễn phí"
+      },
+      "template": "<div class=\"we-section\"><div class=\"we-cta-banner\"><h2 class=\"we-cta-title\">{{title}}</h2><p class=\"we-cta-subtitle\">{{subtitle}}</p><a class=\"we-btn we-btn-cta\" href=\"#\">{{cta}}</a></div></div>"
     }
   ]
 }

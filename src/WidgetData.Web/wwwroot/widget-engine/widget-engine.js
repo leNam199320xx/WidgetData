@@ -1,11 +1,19 @@
 /**
- * WidgetEngine – Lightweight JavaScript library for loading & rendering widgets
- * from the WidgetData server.  Zero dependencies, plain ES2020.
+ * WidgetEngine – Lightweight JavaScript library for building landing pages,
+ * product showcase pages, and sales pages powered by the WidgetData server.
+ * Zero dependencies, plain ES2020.
  *
- * Usage:
- *   WidgetEngine.init({ baseUrl: 'https://localhost:7001/api', autoRefresh: true });
- *   await WidgetEngine.auth.login('admin@widgetdata.com', 'Admin@123');
- *   await WidgetEngine.page.load('pages/home.json', document.getElementById('app'));
+ * Two rendering modes:
+ *   Static content (no API needed):
+ *     WidgetEngine.render('#hero', {
+ *       staticData: { headline: 'Ship faster', cta: 'Get started' },
+ *       template: '<h1>{{headline}}</h1><a href="/signup">{{cta}}</a>'
+ *     });
+ *
+ *   API-backed live data (requires WidgetData server):
+ *     WidgetEngine.init({ baseUrl: 'https://api.example.com/api' });
+ *     await WidgetEngine.auth.login('user@example.com', 'password');
+ *     await WidgetEngine.page.load('pages/products.json', document.getElementById('app'));
  */
 (function (global) {
   'use strict';
@@ -407,6 +415,12 @@
 
     /**
      * Render a widget into a given DOM element.
+     *
+     * Supports two modes:
+     *   1. Static content  – supply `staticData` (object or array) + `template` in config;
+     *                        no API call is made.  Great for landing pages, product cards, etc.
+     *   2. API-backed data – supply `id` to fetch data from the WidgetData server.
+     *
      * @param {HTMLElement} container
      * @param {object}      widgetConfig
      */
@@ -416,33 +430,37 @@
       container.classList.add('we-widget');
       container.setAttribute('data-widget-id', widgetConfig.id || '');
 
-      // Show loading state
-      Renderer._setLoading(container, true);
+      // Static-content widgets skip the loading spinner for a snappier feel
+      if (!Renderer._isStatic(widgetConfig)) {
+        Renderer._setLoading(container, true);
+      }
 
       try {
-        // 1. Fetch data
-        const result = await Renderer._fetchData(widgetConfig);
+        // 1. Resolve data + template
+        let html;
+        if (Renderer._isStatic(widgetConfig)) {
+          html = Renderer._renderStatic(widgetConfig);
+        } else {
+          const result = await Renderer._fetchData(widgetConfig);
+          const tpl = widgetConfig.template
+            || result.htmlTemplate
+            || Renderer._defaultTemplate(result.columns);
+          const rows = result.data || [];
+          const ctx = Utils.merge({ rows }, Renderer._flattenFirst(rows), widgetConfig.extraContext || {});
+          html = Template.render(tpl, ctx);
 
-        // 2. Resolve template (server-provided htmlTemplate or inline config)
-        const tpl = widgetConfig.template
-          || result.htmlTemplate
-          || Renderer._defaultTemplate(result.columns);
-
-        // 3. Render template
-        const rows = result.data || [];
-        const ctx = Utils.merge({ rows }, Renderer._flattenFirst(rows), widgetConfig.extraContext || {});
-        const html = Template.render(tpl, ctx);
-
-        // 4. Inject into DOM
-        Renderer._setContent(container, html, widgetConfig.title);
-
-        // 5. Callback
-        if (typeof widgetConfig.onData === 'function') {
-          widgetConfig.onData(rows, result.columns, result);
+          if (typeof widgetConfig.onData === 'function') {
+            widgetConfig.onData(rows, result.columns, result);
+          }
         }
 
-        // 6. Schedule auto-refresh
-        Renderer._scheduleAutoRefresh(container, widgetConfig);
+        // 2. Inject into DOM
+        Renderer._setContent(container, html, widgetConfig.title);
+
+        // 3. Schedule auto-refresh (API widgets only)
+        if (!Renderer._isStatic(widgetConfig)) {
+          Renderer._scheduleAutoRefresh(container, widgetConfig);
+        }
 
       } catch (err) {
         Renderer._setError(container, err);
@@ -450,6 +468,26 @@
           widgetConfig.onError(err);
         }
       }
+    },
+
+    /** Returns true when the widget uses local staticData instead of an API call. */
+    _isStatic(cfg) {
+      return cfg.staticData !== undefined;
+    },
+
+    /**
+     * Render a static widget from its inline `staticData` + `template`.
+     * `staticData` can be:
+     *   – an object  → used directly as the template context
+     *   – an array   → passed as `{ rows: [...] }` (same as API-backed widgets)
+     */
+    _renderStatic(cfg) {
+      const tpl = cfg.template || '';
+      const raw = cfg.staticData;
+      const ctx = Array.isArray(raw)
+        ? Utils.merge({ rows: raw }, Renderer._flattenFirst(raw), cfg.extraContext || {})
+        : Utils.merge(raw, cfg.extraContext || {});
+      return Template.render(tpl, ctx);
     },
 
     /** Fetch widget data from the server. */
@@ -497,10 +535,13 @@
     },
 
     _setContent(container, html, title) {
-      const titleHtml = title
-        ? `<div class="we-title">${Utils.escapeHtml(title)}</div>`
-        : '';
-      container.innerHTML = `${titleHtml}<div class="we-body">${html}</div>`;
+      if (title) {
+        container.innerHTML = `<div class="we-title">${Utils.escapeHtml(title)}</div><div class="we-body">${html}</div>`;
+      } else {
+        // No title wrapper – used by full-bleed landing page sections
+        container.innerHTML = html;
+        container.classList.add('we-widget--raw');
+      }
     },
 
     _setError(container, err) {

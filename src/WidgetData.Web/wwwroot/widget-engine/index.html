@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Widget Data – Home</title>
+  <title>WidgetData – Nền tảng dữ liệu thông minh</title>
 
   <!-- WidgetEngine styles -->
   <link rel="stylesheet" href="widget-engine/widget-engine.css">
@@ -12,103 +12,57 @@
 </head>
 <body>
 
-  <!-- ── Header ── -->
+  <!-- ── Header / Navigation ── -->
   <header>
-    <span class="logo">📊 Widget Data</span>
+    <span class="logo">📊 WidgetData</span>
 
     <nav>
-      <a href="#" data-page="pages/home.json" onclick="switchPage(this, event)">Home</a>
-      <a href="#" data-page="pages/dashboard.json" onclick="switchPage(this, event)">Sales Dashboard</a>
+      <a href="#" data-page="pages/home.json"     onclick="switchPage(this, event)">Trang chủ</a>
+      <a href="#" data-page="pages/products.json" onclick="switchPage(this, event)">Sản phẩm</a>
+      <a href="#" data-page="pages/pricing.json"  onclick="switchPage(this, event)">Bảng giá</a>
     </nav>
 
-    <div class="user-info" id="user-info" hidden>
-      <span id="user-email"></span>
-      <button id="btn-logout" onclick="logout()">Logout</button>
+    <div class="header-right">
+      <a class="nav-cta" href="#" data-page="pages/products.json" onclick="switchPage(this, event)">Dùng thử miễn phí</a>
     </div>
   </header>
 
   <!-- ── Main ── -->
   <main>
-    <!-- Page switcher tabs (hidden until logged in) -->
-    <div class="page-tabs" id="page-tabs" hidden>
-      <button class="page-tab active" data-page="pages/home.json" onclick="switchTab(this)">Home</button>
-      <button class="page-tab" data-page="pages/dashboard.json" onclick="switchTab(this)">Sales Dashboard</button>
-    </div>
-
-    <!-- Dynamic content area -->
     <div id="app"></div>
   </main>
+
+  <!-- ── Footer ── -->
+  <footer>
+    <p>© 2026 WidgetData. Mọi quyền được bảo lưu.</p>
+  </footer>
 
   <!-- ── WidgetEngine library ── -->
   <script src="widget-engine/widget-engine.js"></script>
 
   <script>
     /* =======================================================
-     * App bootstrap
+     * App bootstrap – landing / product / sales pages
+     * No auth required for public content.
      * ===================================================== */
-    const API_BASE_URL = 'https://localhost:7001/api';
 
-    // 1. Initialise the engine (reads token from sessionStorage if present)
-    WidgetEngine.init({
-      baseUrl: API_BASE_URL,
-      autoRefresh: true,
-      token: sessionStorage.getItem('we_token') || undefined,
-      refreshToken: sessionStorage.getItem('we_refresh') || undefined,
-      tokenExpiresAt: sessionStorage.getItem('we_expires') || undefined,
-    });
+    // Init without baseUrl – public pages use staticData only.
+    WidgetEngine.init({ baseUrl: '' });
 
-    // Persist token on login
-    const _origLogin = WidgetEngine.auth.login.bind(WidgetEngine.auth);
-    WidgetEngine.auth.login = async function(email, password) {
-      const data = await _origLogin(email, password);
-      sessionStorage.setItem('we_token', data.token);
-      sessionStorage.setItem('we_refresh', data.refreshToken || '');
-      sessionStorage.setItem('we_expires', data.expiresAt || '');
-      showUserBar(email);
-      return data;
-    };
+    // Load the home landing page on startup
+    WidgetEngine.page.load('pages/home.json', document.getElementById('app'));
 
-    // 2. Load the home page
-    WidgetEngine.page.load('pages/home.json', document.getElementById('app'))
-      .then(() => {
-        if (WidgetEngine.auth.isAuthenticated()) showPageTabs();
-      });
-
-    /* =======================================================
-     * UI helpers
-     * ===================================================== */
-    function showUserBar(email) {
-      document.getElementById('user-email').textContent = email;
-      document.getElementById('user-info').hidden = false;
-      showPageTabs();
-    }
-
-    function showPageTabs() {
-      document.getElementById('page-tabs').hidden = false;
-    }
-
-    function logout() {
-      WidgetEngine.auth.logout();
-      sessionStorage.removeItem('we_token');
-      sessionStorage.removeItem('we_refresh');
-      sessionStorage.removeItem('we_expires');
-      document.getElementById('user-info').hidden = true;
-      document.getElementById('page-tabs').hidden = true;
-      WidgetEngine.page.load('pages/home.json', document.getElementById('app'));
-    }
-
+    /* --- Navigation ---------------------------------------- */
     function switchPage(link, e) {
       e.preventDefault();
-      const pageUrl = link.dataset.page;
-      WidgetEngine.page.load(pageUrl, document.getElementById('app'))
-        .then(() => { if (WidgetEngine.auth.isAuthenticated()) showPageTabs(); });
+      document.querySelectorAll('header nav a, header .nav-cta').forEach(a => a.classList.remove('active'));
+      link.classList.add('active');
+      WidgetEngine.page.load(link.dataset.page, document.getElementById('app'))
+        .then(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
     }
 
-    function switchTab(btn) {
-      document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
-      btn.classList.add('active');
-      WidgetEngine.page.load(btn.dataset.page, document.getElementById('app'));
-    }
+    // Mark initial active link
+    document.querySelector('header nav a[data-page="pages/home.json"]')?.classList.add('active');
   </script>
 
 </body>
