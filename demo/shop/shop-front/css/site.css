@@ -1,0 +1,129 @@
+/* ── Global Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #f7fafc;
+  color: #1a202c;
+  min-height: 100vh;
+}
+
+/* ── Header / Nav ── */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  height: 60px;
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+
+header .logo {
+  font-weight: 800;
+  font-size: 17px;
+  color: #1a202c;
+  letter-spacing: -.3px;
+  text-decoration: none;
+}
+
+header nav {
+  display: flex;
+  gap: 4px;
+}
+
+header nav a {
+  color: #4a5568;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  transition: background .15s, color .15s;
+}
+
+header nav a:hover,
+header nav a.active {
+  background: #ebf8ff;
+  color: #2b6cb0;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-link {
+  color: #4a5568;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: background .15s;
+}
+
+.nav-link:hover {
+  background: #f0f4f8;
+  color: #1a202c;
+}
+
+.nav-cta {
+  display: inline-block;
+  padding: 8px 20px;
+  background: #4299e1;
+  color: #fff !important;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background .15s, transform .1s;
+}
+
+.nav-cta:hover {
+  background: #3182ce !important;
+  transform: translateY(-1px);
+}
+
+/* ── Main ── */
+main {
+  min-height: calc(100vh - 60px - 56px);
+}
+
+/* Sections rendered directly in #app */
+#app > .we-widget {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+}
+
+/* ── Footer ── */
+footer {
+  text-align: center;
+  padding: 16px 24px;
+  font-size: 13px;
+  color: #a0aec0;
+  border-top: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+footer a {
+  color: #4a5568;
+  text-decoration: none;
+}
+
+footer a:hover { text-decoration: underline; }
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  header { padding: 0 16px; }
+  header nav a { padding: 6px 10px; font-size: 13px; }
+  .nav-cta { padding: 7px 14px; font-size: 13px; }
+}

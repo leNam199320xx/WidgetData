@@ -75,14 +75,13 @@ public class PermissionService : IPermissionService
             .Select(p => p.WidgetId)
             .ToListAsync();
 
-        var groupIds = await _context.UserGroupPermissions
+        // Single JOIN query replaces two separate round-trips
+        var groupWidgetIds = await _context.UserGroupPermissions
             .Where(p => p.UserId == userId && p.CanView)
-            .Select(p => p.GroupId)
-            .ToListAsync();
-
-        var groupWidgetIds = await _context.WidgetGroupMembers
-            .Where(m => groupIds.Contains(m.WidgetGroupId))
-            .Select(m => m.WidgetId)
+            .Join(_context.WidgetGroupMembers,
+                ugp => ugp.GroupId,
+                wgm => wgm.WidgetGroupId,
+                (ugp, wgm) => wgm.WidgetId)
             .ToListAsync();
 
         return directIds.Union(groupWidgetIds).Distinct();

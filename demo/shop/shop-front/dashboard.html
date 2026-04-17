@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard – WidgetData</title>
+  <link rel="stylesheet" href="lib/widget-engine.css">
+  <link rel="stylesheet" href="css/site.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body class="dashboard-page">
+
+  <!-- ── App Shell ── -->
+  <div id="shell" style="display:none">
+
+    <header class="dash-header">
+      <span class="logo">📊 WidgetData</span>
+      <nav>
+        <a href="index.html">🏠 Trang chủ</a>
+        <a href="#" class="active">📊 Dashboard</a>
+      </nav>
+      <div class="header-right">
+        <span id="user-name" class="user-badge"></span>
+        <button class="btn-logout" onclick="logout()">Đăng xuất</button>
+      </div>
+    </header>
+
+    <!-- ── Sidebar ── -->
+    <div class="dash-layout">
+      <aside class="sidebar">
+        <nav class="sidebar-nav">
+          <p class="sidebar-section">Báo cáo</p>
+          <a href="#" class="active" data-page="pages/dashboard.json" onclick="loadPage(this, event)">
+            📈 Sales Dashboard
+          </a>
+          <a href="#" data-page="pages/revenue.json" onclick="loadPage(this, event)">
+            💰 Doanh thu
+          </a>
+          <a href="#" data-page="pages/orders.json" onclick="loadPage(this, event)">
+            📦 Đơn hàng
+          </a>
+
+          <p class="sidebar-section">Demo API</p>
+          <a href="#" id="btn-run-widget" onclick="runSingleWidget(event)">
+            ⚡ Chạy widget đơn
+          </a>
+          <a href="#" id="btn-api-test" onclick="showApiTest(event)">
+            🔌 Kiểm tra kết nối
+          </a>
+        </nav>
+      </aside>
+
+      <!-- ── Main content ── -->
+      <main class="dash-main">
+        <!-- Alert bar -->
+        <div id="alert-bar" class="alert-bar" style="display:none"></div>
+
+        <!-- Page container -->
+        <div id="dash-app"></div>
+      </main>
+    </div>
+
+  </div><!-- /#shell -->
+
+  <!-- ══════════════════════════════════
+       Login form – shown when not authenticated
+  ══════════════════════════════════ -->
+  <div id="login-screen">
+    <div class="login-card">
+      <div class="login-logo">📊</div>
+      <h1 class="login-title">WidgetData Dashboard</h1>
+      <p class="login-subtitle">Đăng nhập để xem dashboard dữ liệu live từ API.</p>
+
+      <div id="login-error" class="login-error" style="display:none"></div>
+
+      <form id="login-form" onsubmit="doLogin(event)">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input id="email" type="email" value="admin@widgetdata.com"
+                 placeholder="admin@widgetdata.com" autocomplete="username" required />
+        </div>
+        <div class="form-group">
+          <label for="password">Mật khẩu</label>
+          <input id="password" type="password" value="Admin@123"
+                 placeholder="••••••••" autocomplete="current-password" required />
+        </div>
+        <div class="form-group">
+          <label for="api-url">API URL</label>
+          <input id="api-url" type="url" value="http://localhost:5114/api"
+                 placeholder="http://localhost:5114/api" />
+          <small>Địa chỉ của WidgetData.API đang chạy.</small>
+        </div>
+        <button type="submit" id="login-btn" class="btn-login">Đăng nhập</button>
+      </form>
+
+      <div class="login-hint">
+        <strong>Demo credentials:</strong> admin@widgetdata.com / Admin@123
+      </div>
+    </div>
+  </div><!-- /#login-screen -->
+
+  <script src="lib/widget-engine.js"></script>
+  <script>
+  /* ============================================================
+   *  Dashboard bootstrap
+   *  All API calls go through WidgetEngine (auth-aware).
+   * ============================================================ */
+
+  const API_URL_KEY  = 'wd_api_url';
+  const TOKEN_KEY    = 'wd_token';
+  const REFRESH_KEY  = 'wd_refresh';
+  const EXPIRES_KEY  = 'wd_expires';
+  const USER_KEY     = 'wd_user';
+
+  /* ── Restore session from localStorage ── */
+  (function restoreSession() {
+    const token   = localStorage.getItem(TOKEN_KEY);
+    const refresh = localStorage.getItem(REFRESH_KEY);
+    const expires = localStorage.getItem(EXPIRES_KEY);
+    const apiUrl  = localStorage.getItem(API_URL_KEY) || 'http://localhost:5114/api';
+
+    if (token) {
+      WidgetEngine.init({ baseUrl: apiUrl, token, refreshToken: refresh, tokenExpiresAt: expires });
+      showShell();
+    } else {
+      document.getElementById('api-url').value = apiUrl;
+      showLogin();
+    }
+  })();
+
+  /* ── Login ── */
+  async function doLogin(e) {
+    e.preventDefault();
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const apiUrl   = document.getElementById('api-url').value.trim().replace(/\/$/, '');
+    const btn      = document.getElementById('login-btn');
+
+    btn.disabled   = true;
+    btn.textContent = 'Đang đăng nhập…';
+    hideLoginError();
+
+    try {
+      WidgetEngine.init({ baseUrl: apiUrl });
+      const data = await WidgetEngine.auth.login(email, password);
+
+      // Persist
+      localStorage.setItem(API_URL_KEY, apiUrl);
+      localStorage.setItem(TOKEN_KEY,   data.token);
+      if (data.refreshToken) localStorage.setItem(REFRESH_KEY, data.refreshToken);
+      if (data.expiresAt)    localStorage.setItem(EXPIRES_KEY, data.expiresAt);
+      if (data.user)         localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+
+      showShell();
+    } catch (err) {
+      showLoginError(err.message || 'Đăng nhập thất bại. Kiểm tra email, mật khẩu và API URL.');
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = 'Đăng nhập';
+    }
+  }
+
+  function logout() {
+    WidgetEngine.auth.logout();
+    [TOKEN_KEY, REFRESH_KEY, EXPIRES_KEY, USER_KEY].forEach(k => localStorage.removeItem(k));
+    showLogin();
+  }
+
+  /* ── Shell / Login switching ── */
+  function showShell() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('shell').style.display        = 'block';
+
+    // Show username
+    try {
+      const user = JSON.parse(localStorage.getItem(USER_KEY) || '{}');
+      document.getElementById('user-name').textContent = user.fullName || user.email || 'User';
+    } catch (_) {}
+
+    // Load initial page
+    loadPageByUrl('pages/dashboard.json');
+  }
+
+  function showLogin() {
+    document.getElementById('shell').style.display        = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+  }
+
+  function showLoginError(msg) {
+    const el = document.getElementById('login-error');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function hideLoginError() {
+    document.getElementById('login-error').style.display = 'none';
+  }
+
+  /* ── Sidebar navigation ── */
+  function loadPage(link, e) {
+    e.preventDefault();
+    document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+    link.classList.add('active');
+    loadPageByUrl(link.dataset.page);
+  }
+
+  async function loadPageByUrl(url) {
+    const root = document.getElementById('dash-app');
+    hideAlert();
+    try {
+      await WidgetEngine.page.load(url, root);
+    } catch (err) {
+      showAlert('error', `Không thể tải trang: ${err.message}`);
+    }
+  }
+
+  /* ── Demo: run a single widget by ID ── */
+  async function runSingleWidget(e) {
+    e.preventDefault();
+    const idStr = prompt('Nhập Widget ID để chạy (ví dụ: 1):', '1');
+    if (!idStr) return;
+    const id = parseInt(idStr, 10);
+    if (isNaN(id)) { showAlert('error', 'ID không hợp lệ'); return; }
+
+    const root = document.getElementById('dash-app');
+    root.innerHTML = '';
+    hideAlert();
+
+    try {
+      showAlert('info', `Đang thực thi widget #${id}…`);
+      const container = document.createElement('div');
+      container.className = 'demo-widget-wrap';
+      root.appendChild(container);
+
+      await WidgetEngine.render(container, {
+        id,
+        title: `Widget #${id}`,
+        forceRefresh: true,
+      });
+      hideAlert();
+    } catch (err) {
+      showAlert('error', `Lỗi: ${err.message}`);
+    }
+  }
+
+  /* ── Demo: API connection test ── */
+  async function showApiTest(e) {
+    e.preventDefault();
+    const root = document.getElementById('dash-app');
+    root.innerHTML = '<div class="api-test-panel"><h2>🔌 Kiểm tra kết nối API</h2><div id="test-results"></div></div>';
+    const results = document.getElementById('test-results');
+
+    const tests = [
+      { label: 'Dashboard Stats',  fn: () => WidgetEngine.dashboard.stats() },
+      { label: 'Danh sách Widget', fn: () => WidgetEngine.widgets.list({ page: 1, pageSize: 5 }) },
+      { label: 'Data Sources',     fn: () => WidgetEngine.dataSources.list({ page: 1, pageSize: 5 }) },
+      { label: 'Schedules',        fn: () => WidgetEngine.schedules.list({ page: 1, pageSize: 5 }) },
+    ];
+
+    for (const t of tests) {
+      const row = document.createElement('div');
+      row.className = 'test-row';
+      row.innerHTML = `<span class="test-label">${t.label}</span><span class="test-status pending">…</span><pre class="test-data"></pre>`;
+      results.appendChild(row);
+
+      const statusEl = row.querySelector('.test-status');
+      const dataEl   = row.querySelector('.test-data');
+      try {
+        const data = await t.fn();
+        statusEl.textContent = '✅ OK';
+        statusEl.className   = 'test-status ok';
+        dataEl.textContent   = JSON.stringify(data, null, 2).slice(0, 400) + '…';
+      } catch (err) {
+        statusEl.textContent = `❌ ${err.message}`;
+        statusEl.className   = 'test-status error';
+      }
+    }
+  }
+
+  /* ── Alert helpers ── */
+  function showAlert(type, msg) {
+    const bar = document.getElementById('alert-bar');
+    bar.className     = `alert-bar alert-${type}`;
+    bar.textContent   = msg;
+    bar.style.display = 'block';
+  }
+
+  function hideAlert() {
+    document.getElementById('alert-bar').style.display = 'none';
+  }
+
+  </script>
+</body>
+</html>

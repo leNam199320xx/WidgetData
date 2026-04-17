@@ -1,0 +1,43 @@
+@inherits LayoutComponentBase
+@using MudBlazor
+
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1" Color="Color.Dark">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
+                       OnClick="@(() => _drawerOpen = !_drawerOpen)" />
+        <MudIcon Icon="@Icons.Material.Filled.Store" Class="mr-2" />
+        <MudText Typo="Typo.h6">Cửa hàng bán hàng</MudText>
+        <MudSpacer />
+        <MudTooltip Text="Về trang quản trị">
+            <MudIconButton Icon="@Icons.Material.Filled.AdminPanelSettings"
+                           Color="Color.Inherit" Href="/" />
+        </MudTooltip>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
+        <MudNavMenu Class="mt-2">
+            <MudNavLink Href="/store" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Tổng quan</MudNavLink>
+            <MudNavLink Href="/store/products" Icon="@Icons.Material.Filled.Inventory2">Sản phẩm</MudNavLink>
+            <MudNavLink Href="/store/orders" Icon="@Icons.Material.Filled.ShoppingCart">Đơn hàng</MudNavLink>
+            <MudNavLink Href="/store/customers" Icon="@Icons.Material.Filled.People">Khách hàng</MudNavLink>
+            <MudNavLink Href="/store/inventory" Icon="@Icons.Material.Filled.Warehouse">Kho hàng</MudNavLink>
+            <MudNavLink Href="/store/promotions" Icon="@Icons.Material.Filled.LocalOffer">Khuyến mãi</MudNavLink>
+            <MudNavLink Href="/store/sales-report" Icon="@Icons.Material.Filled.BarChart">Báo cáo bán hàng</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    bool _drawerOpen = true;
+}

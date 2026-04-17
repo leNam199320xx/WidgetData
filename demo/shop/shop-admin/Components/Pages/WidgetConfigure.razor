@@ -1,0 +1,769 @@
+@page "/widgets/configure/{Id:int}"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@using WidgetData.Domain.Enums
+@using ShopAdmin.Services
+@inject ShopAdmin.Services.ApiService ApiService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<PageTitle>Cấu hình Widget - WidgetData</PageTitle>
+
+@if (_widget == null && _error == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else if (_error != null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+else if (_widget != null)
+{
+    <MudBreadcrumbs Items="_breadcrumbs" Class="mb-2" />
+    <MudText Typo="Typo.h4" Class="mb-1">
+        <MudIcon Icon="@Icons.Material.Filled.Settings" Class="mr-2" />
+        Cấu hình: @(_widget.FriendlyLabel ?? _widget.Name)
+    </MudText>
+    @if (!string.IsNullOrEmpty(_widget.HelpText))
+    {
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">@_widget.HelpText</MudText>
+    }
+
+    <MudStepper @bind-ActiveIndex="_activeStep" NonLinear="false">
+        @* Bước 1: Thông tin cơ bản *@
+        <MudStep Title="Thông tin" Icon="@Icons.Material.Filled.Info">
+            <MudPaper Class="pa-4" Elevation="0">
+                <MudText Typo="Typo.h6" Class="mb-3">Bước 1: Tên & Mô tả</MudText>
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_form.Name" Label="Tên kỹ thuật" Variant="Variant.Outlined"
+                                      HelperText="Tên dùng trong hệ thống, ví dụ: monthly_revenue_table" Required="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_form.FriendlyLabel" Label="Tên hiển thị (dễ đọc)" Variant="Variant.Outlined"
+                                      HelperText='Tên mà người dùng thông thường sẽ thấy, VD: "Báo cáo doanh thu tháng"' />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="_form.HelpText" Label="Mô tả ngắn gọn" Variant="Variant.Outlined" Lines="2"
+                                      HelperText='Giải thích widget này dùng để làm gì, VD: "Hiển thị doanh thu theo tháng của từng khu vực"' />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_form.Description" Label="Mô tả chi tiết (tùy chọn)" Variant="Variant.Outlined" Lines="3" />
+                    </MudItem>
+                    <MudItem xs="12" sm="3">
+                        <MudSelect @bind-Value="_form.WidgetType" Label="Loại hiển thị" Variant="Variant.Outlined"
+                                   HelperText="Chọn cách hiển thị dữ liệu">
+                            <MudSelectItem Value="@WidgetType.Table">📋 Bảng dữ liệu</MudSelectItem>
+                            <MudSelectItem Value="@WidgetType.Chart">📈 Biểu đồ</MudSelectItem>
+                            <MudSelectItem Value="@WidgetType.Metric">🔢 Chỉ số</MudSelectItem>
+                            <MudSelectItem Value="@WidgetType.Map">🗺️ Bản đồ</MudSelectItem>
+                            <MudSelectItem Value="@WidgetType.Form">📝 Form (Idea Board)</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="3">
+                        <MudCheckBox @bind-Value="_formIsActive" Label="Kích hoạt widget này" Color="Color.Primary" />
+                    </MudItem>
+                    @if (_groups != null && _groups.Any())
+                    {
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.subtitle2" Class="mb-1">
+                                Thuộc nhóm:
+                                <MudTooltip Text="Gán widget này vào một hoặc nhiều nhóm để quản lý và phân quyền theo nhóm">
+                                    <MudIcon Icon="@Icons.Material.Filled.HelpOutline" Size="Size.Small" />
+                                </MudTooltip>
+                            </MudText>
+                            <MudChipSet T="int" MultiSelection="true" SelectedValues="_selectedGroupIds"
+                                        SelectedValuesChanged="@((IReadOnlyCollection<int> ids) => _selectedGroupIds = ids.ToHashSet())">
+                                @foreach (var g in _groups)
+                                {
+                                    <MudChip T="int" Value="@g.Id" Variant="Variant.Outlined" Size="Size.Small"
+                                             Color="@(_selectedGroupIds.Contains(g.Id) ? Color.Primary : Color.Default)">
+                                        @g.Name
+                                    </MudChip>
+                                }
+                            </MudChipSet>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudPaper>
+        </MudStep>
+
+        @* Bước 2: Nguồn dữ liệu *@
+        <MudStep Title="Dữ liệu" Icon="@Icons.Material.Filled.Storage">
+            <MudPaper Class="pa-4" Elevation="0">
+                <MudText Typo="Typo.h6" Class="mb-3">Bước 2: Nguồn dữ liệu</MudText>
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect @bind-Value="_form.DataSourceId" Label="Chọn nguồn dữ liệu" Variant="Variant.Outlined"
+                                   HelperText="Đây là nơi widget lấy dữ liệu để hiển thị" Required="true">
+                            @if (_dataSources != null)
+                            {
+                                @foreach (var ds in _dataSources)
+                                {
+                                    <MudSelectItem Value="@ds.Id">@ds.Name</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="_form.Configuration" Label="Câu truy vấn / Cấu hình dữ liệu"
+                                      Variant="Variant.Outlined" Lines="4"
+                                      Placeholder='{"query": "SELECT * FROM bang_du_lieu WHERE trang_thai = 1"}'
+                                      HelperText='Nhập câu SQL hoặc cấu hình dạng JSON. Ví dụ: {"query": "SELECT month, revenue FROM sales"}' />
+                    </MudItem>
+                    @if (_form.WidgetType == WidgetType.Chart)
+                    {
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="_form.ChartConfig" Label="Cấu hình biểu đồ"
+                                          Variant="Variant.Outlined" Lines="3"
+                                          Placeholder='{"type": "line", "xAxis": "thang", "yAxis": "doanh_thu"}'
+                                          HelperText='Chọn loại biểu đồ và các trục. Ví dụ: {"type": "bar", "xAxis": "thang", "yAxis": "gia_tri"}' />
+                        </MudItem>
+                    }
+                    <MudItem xs="12" sm="4">
+                        <MudCheckBox @bind-Value="_form.CacheEnabled" Label="Lưu cache (tăng tốc độ)" Color="Color.Primary">
+                        </MudCheckBox>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Bật để tránh truy vấn lại ngay lập tức</MudText>
+                    </MudItem>
+                    @if (_form.CacheEnabled)
+                    {
+                        <MudItem xs="12" sm="4">
+                            <MudNumericField @bind-Value="_form.CacheTtlMinutes" Label="Thời gian cache (phút)"
+                                             Variant="Variant.Outlined" Min="1" Max="1440"
+                                             HelperText="Dữ liệu sẽ được làm mới sau bao nhiêu phút" />
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudPaper>
+        </MudStep>
+
+        @* Bước 3: Lịch chạy tự động *@
+        <MudStep Title="Lịch chạy" Icon="@Icons.Material.Filled.Schedule">
+            <MudPaper Class="pa-4" Elevation="0">
+                <MudText Typo="Typo.h6" Class="mb-3">Bước 3: Lịch chạy tự động</MudText>
+                <MudAlert Severity="Severity.Info" Class="mb-4">
+                    Thiết lập lịch để widget tự động lấy dữ liệu mới theo định kỳ.
+                    Truy cập trang <MudLink Href="/schedules">Lịch chạy</MudLink> để quản lý chi tiết.
+                </MudAlert>
+                @if (_schedules != null && _schedules.Any())
+                {
+                    <MudList T="WidgetScheduleDto" Dense="true">
+                        @foreach (var sched in _schedules)
+                        {
+                            <MudListItem T="WidgetScheduleDto" Icon="@Icons.Material.Filled.Timer">
+                                <MudText>
+                                    <strong>@CronHelper.Describe(sched.CronExpression)</strong>
+                                    <MudChip T="string" Size="Size.Small" Color="@(sched.IsEnabled ? Color.Success : Color.Default)" Class="ml-2">
+                                        @(sched.IsEnabled ? "Đang chạy" : "Tắt")
+                                    </MudChip>
+                                </MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    Cron: <code>@sched.CronExpression</code> — Múi giờ: @sched.Timezone
+                                </MudText>
+                                @if (sched.NextRunAt.HasValue)
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                        Lần chạy tiếp theo: @sched.NextRunAt.Value.ToString("dd/MM/yyyy HH:mm")
+                                    </MudText>
+                                }
+                            </MudListItem>
+                        }
+                    </MudList>
+                }
+                else
+                {
+                    <MudText Color="Color.Secondary">Chưa có lịch chạy nào. Tạo lịch trên trang Schedules.</MudText>
+                }
+            </MudPaper>
+        </MudStep>
+
+        @* Bước 4: Xuất & gửi kết quả *@
+        <MudStep Title="Xuất kết quả" Icon="@Icons.Material.Filled.Send">
+            <MudPaper Class="pa-4" Elevation="0">
+                <MudText Typo="Typo.h6" Class="mb-3">Bước 4: Xuất & Gửi kết quả</MudText>
+
+                @* Download trực tiếp *@
+                <MudText Typo="Typo.subtitle1" Class="mb-2">Tải xuống ngay:</MudText>
+                <MudButtonGroup Variant="Variant.Outlined" Color="Color.Primary" Class="mb-4 flex-wrap gap-2">
+                    <MudButton StartIcon="@Icons.Material.Filled.TableChart" OnClick="@(() => DownloadExport("csv"))">CSV</MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.GridOn" OnClick="@(() => DownloadExport("excel"))">Excel</MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="@(() => DownloadExport("pdf"))">PDF</MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.Code" OnClick="@(() => DownloadExport("html"))">HTML</MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.TextSnippet" OnClick="@(() => DownloadExport("txt"))">TXT</MudButton>
+                </MudButtonGroup>
+
+                <MudDivider Class="mb-3" />
+
+                @* Delivery Targets *@
+                <MudText Typo="Typo.subtitle1" Class="mb-2">Điểm gửi tự động:</MudText>
+                @if (_deliveryTargets != null && _deliveryTargets.Any())
+                {
+                    <MudTable Items="_deliveryTargets" Dense="true" Class="mb-3">
+                        <HeaderContent>
+                            <MudTh>Tên</MudTh>
+                            <MudTh>Loại</MudTh>
+                            <MudTh>Trạng thái</MudTh>
+                            <MudTh>Thao tác</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@context.Name</MudTd>
+                            <MudTd>
+                                <MudIcon Icon="@GetDeliveryIcon(context.Type)" Size="Size.Small" Class="mr-1" />
+                                @GetDeliveryLabel(context.Type)
+                            </MudTd>
+                            <MudTd>
+                                <MudChip T="string" Size="Size.Small" Color="@(context.IsEnabled ? Color.Success : Color.Default)">
+                                    @(context.IsEnabled ? "Bật" : "Tắt")
+                                </MudChip>
+                            </MudTd>
+                            <MudTd>
+                                <MudIconButton Icon="@Icons.Material.Filled.Send" Color="Color.Primary" Size="Size.Small"
+                                               OnClick="() => TriggerDelivery(context)" Title="Gửi ngay" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                               OnClick="() => DeleteDeliveryTarget(context.Id)" />
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+                else
+                {
+                    <MudText Color="Color.Secondary" Class="mb-3">Chưa có điểm gửi nào.</MudText>
+                }
+
+                @if (_showDeliveryForm)
+                {
+                    <MudPaper Class="pa-4 mb-3" Elevation="2">
+                        <MudText Typo="Typo.subtitle1" Class="mb-2">Thêm điểm gửi mới:</MudText>
+                        <MudGrid>
+                            <MudItem xs="12" sm="4">
+                                <MudTextField @bind-Value="_deliveryForm.Name" Label="Tên điểm gửi" Variant="Variant.Outlined"
+                                              HelperText="VD: Gửi email báo cáo hàng tuần" />
+                            </MudItem>
+                            <MudItem xs="12" sm="4">
+                                <MudSelect Value="_deliveryForm.Type" Label="Hình thức gửi" Variant="Variant.Outlined"
+                                           ValueChanged="@((DeliveryType t) => OnDeliveryTypeChanged(t))" T="DeliveryType">
+                                    <MudSelectItem Value="@DeliveryType.Email">📧 Email</MudSelectItem>
+                                    <MudSelectItem Value="@DeliveryType.Sftp">📂 SFTP</MudSelectItem>
+                                    <MudSelectItem Value="@DeliveryType.Ssh">🖥️ SSH</MudSelectItem>
+                                    <MudSelectItem Value="@DeliveryType.HttpApi">🌐 HTTP API</MudSelectItem>
+                                    <MudSelectItem Value="@DeliveryType.Telegram">💬 Telegram</MudSelectItem>
+                                    <MudSelectItem Value="@DeliveryType.Zalo">💬 Zalo</MudSelectItem>
+                                    <MudSelectItem Value="@DeliveryType.Csv">📄 File CSV</MudSelectItem>
+                                    <MudSelectItem Value="@DeliveryType.Excel">📊 File Excel</MudSelectItem>
+                                    <MudSelectItem Value="@DeliveryType.Pdf">📕 File PDF</MudSelectItem>
+                                    <MudSelectItem Value="@DeliveryType.HtmlFile">🌐 File HTML</MudSelectItem>
+                                    <MudSelectItem Value="@DeliveryType.Txt">📝 File TXT</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">@GetDeliveryConfigDescription()</MudText>
+                                <MudTextField @bind-Value="_deliveryForm.Configuration" Label="Cấu hình JSON"
+                                              Variant="Variant.Outlined" Lines="4"
+                                              Placeholder="@GetDeliveryConfigTemplate()"
+                                              HelperText="Nhập JSON cấu hình theo mẫu bên trên. Xem ví dụ ở chỗ hướng dẫn." />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveDeliveryTarget"
+                                           Disabled="_savingDelivery" Class="mr-2">
+                                    @if (_savingDelivery) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                                    Lưu
+                                </MudButton>
+                                <MudButton Variant="Variant.Outlined" OnClick="() => _showDeliveryForm = false">Hủy</MudButton>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                }
+                else
+                {
+                    <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="OpenAddDeliveryForm">
+                        + Thêm điểm gửi
+                    </MudButton>
+                }
+            </MudPaper>
+        </MudStep>
+
+        @* Bước 5: Idea Board (chỉ hiển thị khi widget type = Form) *@
+        @if (_form.WidgetType == WidgetType.Form)
+        {
+            <MudStep Title="Idea Board" Icon="@Icons.Material.Filled.Lightbulb">
+                <MudPaper Class="pa-4" Elevation="0">
+                    <MudText Typo="Typo.h6" Class="mb-2">Bước 5: Cấu hình Idea Board</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                        Quản lý các <strong>đăng ký nhãn</strong> (subscriptions). Mỗi lần người dùng gửi ý tưởng với một nhãn,
+                        hệ thống sẽ tự động đẩy thông tin đến tất cả điểm đăng ký phù hợp.
+                    </MudText>
+
+                    <MudButton Variant="Variant.Text" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.OpenInNew"
+                               Href="@($"/widgets/{Id}/idea-board")" Target="_blank" Class="mb-3">
+                        Mở Idea Board
+                    </MudButton>
+
+                    @if (_ideaSubscriptions == null)
+                    {
+                        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                    }
+                    else if (_ideaSubscriptions.Any())
+                    {
+                        <MudTable Items="_ideaSubscriptions" Dense="true" Class="mb-3">
+                            <HeaderContent>
+                                <MudTh>Tên</MudTh>
+                                <MudTh>Nhãn theo dõi</MudTh>
+                                <MudTh>Webhook URL</MudTh>
+                                <MudTh>Trạng thái</MudTh>
+                                <MudTh>Thao tác</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd>@context.Name</MudTd>
+                                <MudTd>
+                                    @if (!string.IsNullOrEmpty(context.LabelFilter))
+                                    {
+                                        @foreach (var lbl in context.LabelFilter.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined" Class="mr-1">@lbl</MudChip>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Tất cả</MudText>
+                                    }
+                                </MudTd>
+                                <MudTd>
+                                    <MudText Typo="Typo.caption">@(context.WebhookUrl ?? "— (nội bộ)")</MudText>
+                                </MudTd>
+                                <MudTd>
+                                    <MudChip T="string" Size="Size.Small" Color="@(context.IsActive ? Color.Success : Color.Default)">
+                                        @(context.IsActive ? "Bật" : "Tắt")
+                                    </MudChip>
+                                </MudTd>
+                                <MudTd>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                                   Size="Size.Small"
+                                                   OnClick="() => DeleteIdeaSubscription(context.Id)" />
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    }
+                    else
+                    {
+                        <MudText Color="Color.Secondary" Class="mb-3">Chưa có đăng ký nhãn nào.</MudText>
+                    }
+
+                    @if (_showSubForm)
+                    {
+                        <MudPaper Class="pa-4 mb-3" Elevation="2">
+                            <MudText Typo="Typo.subtitle1" Class="mb-2">Thêm đăng ký nhãn:</MudText>
+                            <MudGrid>
+                                <MudItem xs="12" sm="4">
+                                    <MudTextField @bind-Value="_subForm.Name" Label="Tên" Variant="Variant.Outlined"
+                                                  HelperText="VD: Nhóm hỗ trợ" />
+                                </MudItem>
+                                <MudItem xs="12" sm="4">
+                                    <MudTextField @bind-Value="_subForm.LabelFilter" Label="Nhãn theo dõi" Variant="Variant.Outlined"
+                                                  HelperText='Để trống = nhận tất cả. VD: "billing,refund"' />
+                                </MudItem>
+                                <MudItem xs="12" sm="4">
+                                    <MudTextField @bind-Value="_subForm.WebhookUrl" Label="Webhook URL (tùy chọn)" Variant="Variant.Outlined"
+                                                  HelperText="URL nhận POST. Để trống = xử lý nội bộ" />
+                                </MudItem>
+                                <MudItem xs="12" sm="3">
+                                    <MudCheckBox @bind-Value="_subForm.IsActive" Label="Kích hoạt" Color="Color.Primary" />
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                               OnClick="SaveIdeaSubscription" Disabled="_savingSub" Class="mr-2">
+                                        @if (_savingSub) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                                        Lưu
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Outlined" OnClick="() => _showSubForm = false">Hủy</MudButton>
+                                </MudItem>
+                            </MudGrid>
+                        </MudPaper>
+                    }
+                    else
+                    {
+                        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add"
+                                   OnClick="() => _showSubForm = true">
+                            + Thêm đăng ký nhãn
+                        </MudButton>
+                    }
+                </MudPaper>
+            </MudStep>
+        }
+
+        @* Bước 5/6: Lịch sử cấu hình (Config Archive) *@
+        <MudStep Title="Lịch sử cấu hình" Icon="@Icons.Material.Filled.Archive">
+            <MudPaper Class="pa-4" Elevation="0">
+                <MudText Typo="Typo.h6" Class="mb-2">Lịch sử cấu hình (Config Archive)</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                    Mỗi lần lưu thay đổi cấu hình, hệ thống tự động tạo một bản snapshot.
+                    Bạn có thể tạo bản lưu thủ công, hoặc khôi phục cấu hình từ bản cũ.
+                    Các lịch chạy có tuỳ chọn <strong>Lưu archive mỗi lần chạy</strong> cũng sẽ tạo snapshot tự động.
+                </MudText>
+
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+                           StartIcon="@Icons.Material.Filled.AddCircleOutline"
+                           OnClick="CreateManualArchive" Disabled="_savingArchive" Class="mb-4">
+                    @if (_savingArchive) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" /> }
+                    Lưu snapshot ngay bây giờ
+                </MudButton>
+
+                @if (_configArchives == null)
+                {
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                }
+                else if (!_configArchives.Any())
+                {
+                    <MudAlert Severity="Severity.Info">Chưa có bản archive nào.</MudAlert>
+                }
+                else
+                {
+                    <MudTable Items="_configArchives" Dense="true" Hover="true" Striped="true">
+                        <HeaderContent>
+                            <MudTh>Thời gian</MudTh>
+                            <MudTh>Nguồn</MudTh>
+                            <MudTh>Người lưu</MudTh>
+                            <MudTh>Ghi chú</MudTh>
+                            <MudTh>Thao tác</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@context.ArchivedAt.ToString("dd/MM/yyyy HH:mm:ss")</MudTd>
+                            <MudTd>
+                                <MudChip T="string" Size="Size.Small"
+                                         Color="@ArchiveTriggerColor(context.TriggerSource)">
+                                    @ArchiveTriggerLabel(context.TriggerSource)
+                                </MudChip>
+                                @if (context.ScheduleId.HasValue)
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary"> (Lịch #@context.ScheduleId)</MudText>
+                                }
+                            </MudTd>
+                            <MudTd>@(context.ArchivedBy ?? "—")</MudTd>
+                            <MudTd>@(context.Note ?? "—")</MudTd>
+                            <MudTd>
+                                <MudIconButton Icon="@Icons.Material.Filled.RestoreFromTrash" Color="Color.Warning"
+                                               Size="Size.Small" Title="Khôi phục cấu hình này"
+                                               OnClick="() => RestoreArchive(context)" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                               Size="Size.Small" Title="Xóa bản archive này"
+                                               OnClick="() => DeleteArchive(context.Id)" />
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+            </MudPaper>
+        </MudStep>
+    </MudStepper>
+
+    <MudDivider Class="my-4" />
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save"
+               OnClick="SaveWidget" Disabled="_saving" Class="mr-2">
+        @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+        Lưu cấu hình
+    </MudButton>
+    <MudButton Variant="Variant.Outlined" OnClick="@(() => Nav.NavigateTo("/widgets"))">Quay lại</MudButton>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    WidgetDto? _widget;
+    IEnumerable<DataSourceDto>? _dataSources;
+    IEnumerable<WidgetGroupDto>? _groups;
+    IEnumerable<WidgetScheduleDto>? _schedules;
+    IEnumerable<DeliveryTargetDto>? _deliveryTargets;
+    string? _error;
+    bool _saving;
+    int _activeStep;
+    bool _formIsActive = true;
+    HashSet<int> _selectedGroupIds = new();
+    UpdateWidgetDto _form = new();
+    bool _showDeliveryForm;
+    bool _savingDelivery;
+    CreateDeliveryTargetDto _deliveryForm = new();
+
+    IEnumerable<WidgetConfigArchiveDto>? _configArchives;
+    bool _savingArchive;
+
+    IEnumerable<IdeaSubscriptionDto>? _ideaSubscriptions;
+    bool _showSubForm;
+    bool _savingSub;
+    CreateIdeaSubscriptionDto _subForm = new();
+
+    List<BreadcrumbItem> _breadcrumbs = new()
+    {
+        new("Widgets", "/widgets"),
+        new("Cấu hình", null, true)
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(
+            LoadWidgetAsync(),
+            LoadDataSourcesAsync(),
+            LoadGroupsAsync(),
+            LoadSchedulesAsync(),
+            LoadDeliveryTargetsAsync(),
+            LoadConfigArchivesAsync(),
+            LoadIdeaSubscriptionsAsync()
+        );
+    }
+
+    async Task LoadWidgetAsync()
+    {
+        try
+        {
+            _widget = await ApiService.GetWidgetByIdAsync(Id);
+            if (_widget == null) { _error = "Widget không tồn tại."; return; }
+            _form = new UpdateWidgetDto
+            {
+                Name = _widget.Name,
+                FriendlyLabel = _widget.FriendlyLabel,
+                HelpText = _widget.HelpText,
+                WidgetType = _widget.WidgetType,
+                Description = _widget.Description,
+                DataSourceId = _widget.DataSourceId,
+                Configuration = _widget.Configuration,
+                ChartConfig = _widget.ChartConfig,
+                CacheEnabled = _widget.CacheEnabled,
+                CacheTtlMinutes = _widget.CacheTtlMinutes,
+                IsActive = _widget.IsActive,
+                GroupIds = _widget.GroupIds.ToList()
+            };
+            _formIsActive = _widget.IsActive;
+            _selectedGroupIds = _widget.GroupIds.ToHashSet();
+        }
+        catch (Exception ex) { _error = $"Lỗi: {ex.Message}"; }
+    }
+
+    async Task LoadDataSourcesAsync()
+    {
+        try { _dataSources = await ApiService.GetDataSourcesAsync() ?? Array.Empty<DataSourceDto>(); }
+        catch { _dataSources = Array.Empty<DataSourceDto>(); }
+    }
+
+    async Task LoadGroupsAsync()
+    {
+        try { _groups = await ApiService.GetWidgetGroupsAsync() ?? Array.Empty<WidgetGroupDto>(); }
+        catch { _groups = Array.Empty<WidgetGroupDto>(); }
+    }
+
+    async Task LoadSchedulesAsync()
+    {
+        try
+        {
+            var all = await ApiService.GetSchedulesAsync() ?? Array.Empty<WidgetScheduleDto>();
+            _schedules = all.Where(s => s.WidgetId == Id);
+        }
+        catch { _schedules = Array.Empty<WidgetScheduleDto>(); }
+    }
+
+    async Task LoadDeliveryTargetsAsync()
+    {
+        try { _deliveryTargets = await ApiService.GetDeliveryTargetsAsync(Id) ?? Array.Empty<DeliveryTargetDto>(); }
+        catch { _deliveryTargets = Array.Empty<DeliveryTargetDto>(); }
+    }
+
+    async Task LoadConfigArchivesAsync()
+    {
+        try { _configArchives = await ApiService.GetWidgetConfigArchivesAsync(Id) ?? Array.Empty<WidgetConfigArchiveDto>(); }
+        catch { _configArchives = Array.Empty<WidgetConfigArchiveDto>(); }
+    }
+
+    async Task CreateManualArchive()
+    {
+        _savingArchive = true;
+        try
+        {
+            var result = await ApiService.CreateWidgetConfigArchiveAsync(Id, new CreateWidgetConfigArchiveDto());
+            Snackbar.Add(result != null ? "Đã lưu snapshot cấu hình!" : "Lưu snapshot thất bại.", result != null ? Severity.Success : Severity.Error);
+            await LoadConfigArchivesAsync();
+        }
+        finally { _savingArchive = false; }
+    }
+
+    async Task RestoreArchive(WidgetConfigArchiveDto archive)
+    {
+        var result = await ApiService.RestoreWidgetConfigArchiveAsync(Id, archive.Id);
+        if (result != null)
+        {
+            _widget = result;
+            _form.Configuration = result.Configuration;
+            _form.ChartConfig = result.ChartConfig;
+            _form.HtmlTemplate = result.HtmlTemplate;
+            Snackbar.Add($"Đã khôi phục cấu hình từ {archive.ArchivedAt:dd/MM/yyyy HH:mm}!", Severity.Success);
+            await LoadConfigArchivesAsync();
+        }
+        else
+        {
+            Snackbar.Add("Khôi phục thất bại.", Severity.Error);
+        }
+    }
+
+    async Task DeleteArchive(int archiveId)
+    {
+        var result = await ApiService.DeleteWidgetConfigArchiveAsync(Id, archiveId);
+        Snackbar.Add(result ? "Đã xóa bản archive." : "Xóa thất bại.", result ? Severity.Success : Severity.Error);
+        await LoadConfigArchivesAsync();
+    }
+
+    static Color ArchiveTriggerColor(string trigger) => trigger switch
+    {
+        "OnSave" => Color.Info,
+        "Schedule" => Color.Secondary,
+        _ => Color.Default
+    };
+
+    static string ArchiveTriggerLabel(string trigger) => trigger switch
+    {
+        "OnSave" => "Lưu cấu hình",
+        "Schedule" => "Theo lịch",
+        _ => "Thủ công"
+    };
+
+    async Task SaveWidget()
+    {
+        _saving = true;
+        try
+        {
+            _form.IsActive = _formIsActive;
+            _form.GroupIds = _selectedGroupIds.ToList();
+            var result = await ApiService.UpdateWidgetAsync(Id, _form);
+            if (result != null)
+            {
+                _widget = result;
+                Snackbar.Add("Đã lưu cấu hình!", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Lưu thất bại.", Severity.Error);
+            }
+        }
+        finally { _saving = false; }
+    }
+
+    async Task DownloadExport(string format)
+    {
+        var data = await ApiService.ExportWidgetAsync(Id, format);
+        if (data == null) { Snackbar.Add("Xuất file thất bại.", Severity.Error); return; }
+        Snackbar.Add($"Đã tải file {format.ToUpper()}!", Severity.Success);
+    }
+
+    async Task TriggerDelivery(DeliveryTargetDto target)
+    {
+        var result = await ApiService.TriggerDeliveryAsync(Id, target.Id);
+        Snackbar.Add(result != null ? $"Đã gửi qua {GetDeliveryLabel(target.Type)}!" : "Gửi thất bại.", result != null ? Severity.Success : Severity.Error);
+        await LoadDeliveryTargetsAsync();
+    }
+
+    async Task DeleteDeliveryTarget(int targetId)
+    {
+        var result = await ApiService.DeleteDeliveryTargetAsync(targetId);
+        Snackbar.Add(result ? "Đã xóa!" : "Xóa thất bại.", result ? Severity.Success : Severity.Error);
+        await LoadDeliveryTargetsAsync();
+    }
+
+    void OpenAddDeliveryForm()
+    {
+        _deliveryForm = new CreateDeliveryTargetDto { WidgetId = Id };
+        _showDeliveryForm = true;
+    }
+
+    void OnDeliveryTypeChanged(DeliveryType t)
+    {
+        _deliveryForm.Type = t;
+        _deliveryForm.Configuration = null;
+    }
+
+    async Task SaveDeliveryTarget()
+    {
+        _savingDelivery = true;
+        try
+        {
+            var result = await ApiService.CreateDeliveryTargetAsync(_deliveryForm);
+            Snackbar.Add(result != null ? "Đã thêm điểm gửi!" : "Thêm thất bại.", result != null ? Severity.Success : Severity.Error);
+            _showDeliveryForm = false;
+            await LoadDeliveryTargetsAsync();
+        }
+        finally { _savingDelivery = false; }
+    }
+
+    string GetDeliveryConfigTemplate() => _deliveryForm.Type switch
+    {
+        DeliveryType.Email => "{\"host\":\"smtp.gmail.com\",\"port\":\"587\",\"ssl\":\"true\",\"username\":\"user@gmail.com\",\"password\":\"pass\",\"from\":\"from@gmail.com\",\"to\":\"to@example.com\",\"subject\":\"Widget Report\",\"format\":\"csv\"}",
+        DeliveryType.Sftp => "{\"host\":\"sftp.example.com\",\"port\":\"22\",\"username\":\"sftp_user\",\"password\":\"pass\",\"path\":\"/upload\",\"format\":\"csv\"}",
+        DeliveryType.Ssh => "{\"host\":\"server.example.com\",\"port\":\"22\",\"username\":\"ssh_user\",\"password\":\"pass\",\"command\":\"cat > /tmp/report.csv\",\"format\":\"csv\"}",
+        DeliveryType.HttpApi => "{\"url\":\"https://api.example.com/upload\",\"method\":\"POST\",\"apiKey\":\"your-api-key\",\"format\":\"csv\"}",
+        DeliveryType.Telegram => "{\"botToken\":\"123456:ABC-DEF\",\"chatId\":\"-100123456\",\"caption\":\"Widget Report\",\"format\":\"csv\"}",
+        DeliveryType.Zalo => "{\"accessToken\":\"your-oa-token\",\"toUserId\":\"user-id\",\"message\":\"Widget report attached\"}",
+        _ => "{\"outputPath\":\"/var/exports\"}"
+    };
+
+    string GetDeliveryConfigDescription() => _deliveryForm.Type switch
+    {
+        DeliveryType.Email => "Cấu hình: host, port, ssl (true/false), username, password, from, to (dấu ; phân cách), subject, format (csv/excel/pdf)",
+        DeliveryType.Sftp => "Cấu hình: host, port (22), username, password, path (thư mục đích), format",
+        DeliveryType.Ssh => "Cấu hình: host, port, username, password, command (lệnh nhận dữ liệu), format",
+        DeliveryType.HttpApi => "Cấu hình: url (endpoint), method (POST/PUT), apiKey (tùy chọn), format",
+        DeliveryType.Telegram => "Cấu hình: botToken (từ @BotFather), chatId (ID chat hoặc nhóm), caption, format",
+        DeliveryType.Zalo => "Cấu hình: accessToken (Zalo OA), toUserId (ID người nhận), message",
+        _ => "Cấu hình: outputPath (thư mục lưu file)"
+    };
+
+    static string GetDeliveryIcon(DeliveryType t) => t switch
+    {
+        DeliveryType.Email => Icons.Material.Filled.Email,
+        DeliveryType.Sftp or DeliveryType.Ssh => Icons.Material.Filled.CloudUpload,
+        DeliveryType.HttpApi => Icons.Material.Filled.Api,
+        DeliveryType.Telegram or DeliveryType.Zalo => Icons.Material.Filled.Chat,
+        DeliveryType.Pdf => Icons.Material.Filled.PictureAsPdf,
+        DeliveryType.Excel => Icons.Material.Filled.GridOn,
+        _ => Icons.Material.Filled.FileDownload
+    };
+
+    static string GetDeliveryLabel(DeliveryType t) => t switch
+    {
+        DeliveryType.Email => "Email",
+        DeliveryType.Sftp => "SFTP",
+        DeliveryType.Ssh => "SSH",
+        DeliveryType.HttpApi => "HTTP API",
+        DeliveryType.Telegram => "Telegram",
+        DeliveryType.Zalo => "Zalo",
+        DeliveryType.HtmlFile => "HTML",
+        DeliveryType.Pdf => "PDF",
+        DeliveryType.Excel => "Excel",
+        DeliveryType.Csv => "CSV",
+        DeliveryType.Txt => "TXT",
+        _ => t.ToString()
+    };
+
+    async Task LoadIdeaSubscriptionsAsync()
+    {
+        try { _ideaSubscriptions = await ApiService.GetIdeaSubscriptionsAsync(Id) ?? Array.Empty<IdeaSubscriptionDto>(); }
+        catch { _ideaSubscriptions = Array.Empty<IdeaSubscriptionDto>(); }
+    }
+
+    async Task SaveIdeaSubscription()
+    {
+        _savingSub = true;
+        try
+        {
+            _subForm.WidgetId = Id;
+            var result = await ApiService.CreateIdeaSubscriptionAsync(_subForm);
+            Snackbar.Add(result != null ? "Đã thêm đăng ký nhãn!" : "Thêm thất bại.", result != null ? Severity.Success : Severity.Error);
+            _showSubForm = false;
+            _subForm = new CreateIdeaSubscriptionDto();
+            await LoadIdeaSubscriptionsAsync();
+        }
+        finally { _savingSub = false; }
+    }
+
+    async Task DeleteIdeaSubscription(int subId)
+    {
+        var result = await ApiService.DeleteIdeaSubscriptionAsync(subId);
+        Snackbar.Add(result ? "Đã xóa đăng ký nhãn." : "Xóa thất bại.", result ? Severity.Success : Severity.Error);
+        await LoadIdeaSubscriptionsAsync();
+    }
+}

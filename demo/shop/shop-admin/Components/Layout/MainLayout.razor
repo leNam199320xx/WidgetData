@@ -1,0 +1,55 @@
+@inherits LayoutComponentBase
+@using MudBlazor
+@inject NavigationManager NavManager
+@inject IStringLocalizer<SharedResource> L
+@inject ShopAdmin.Services.ApiService ApiService
+@inject ShopAdmin.Services.AuthStateProvider AuthStateProvider
+@inject IJSRuntime JS
+
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+        <MudText Typo="Typo.h6" Class="ml-3">WidgetData</MudText>
+        <MudSpacer />
+        <MudButton Href="@($"/culture?name=en&redirectUri={Uri.EscapeDataString(NavManager.Uri)}")"
+                   Variant="Variant.Text" Color="Color.Inherit" Size="Size.Small">EN</MudButton>
+        <MudButton Href="@($"/culture?name=vi&redirectUri={Uri.EscapeDataString(NavManager.Uri)}")"
+                   Variant="Variant.Text" Color="Color.Inherit" Size="Size.Small">VI</MudButton>
+        <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" />
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    bool _drawerOpen = true;
+    void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "jwt_token");
+                if (!string.IsNullOrEmpty(token))
+                {
+                    ApiService.SetToken(token);
+                    AuthStateProvider.SetUser(token);
+                }
+            }
+            catch { /* JS interop not available during prerender */ }
+        }
+    }
+}

@@ -8,10 +8,12 @@ namespace WidgetData.Infrastructure.Services;
 public class ScheduleService : IScheduleService
 {
     private readonly IScheduleRepository _repo;
+    private readonly IWidgetService _widgetService;
 
-    public ScheduleService(IScheduleRepository repo)
+    public ScheduleService(IScheduleRepository repo, IWidgetService widgetService)
     {
         _repo = repo;
+        _widgetService = widgetService;
     }
 
     public async Task<IEnumerable<WidgetScheduleDto>> GetAllAsync()
@@ -84,8 +86,19 @@ public class ScheduleService : IScheduleService
         var entity = await _repo.GetByIdAsync(id);
         if (entity == null) return null;
 
+        WidgetData.Domain.Enums.ExecutionStatus status;
+        try
+        {
+            await _widgetService.ExecuteAsync(entity.WidgetId, triggeredBy, id);
+            status = WidgetData.Domain.Enums.ExecutionStatus.Success;
+        }
+        catch
+        {
+            status = WidgetData.Domain.Enums.ExecutionStatus.Failed;
+        }
+
         entity.LastRunAt = DateTime.UtcNow;
-        entity.LastRunStatus = WidgetData.Domain.Enums.ExecutionStatus.Success;
+        entity.LastRunStatus = status;
         entity.UpdatedAt = DateTime.UtcNow;
         var updated = await _repo.UpdateAsync(entity);
         return MapToDto(updated);

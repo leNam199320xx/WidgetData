@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>ShopAdmin</RootNamespace>
+    <AssemblyName>ShopAdmin</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Platform source projects -->
+    <ProjectReference Include="..\..\..\src\WidgetData.Application\WidgetData.Application.csproj" />
+    <ProjectReference Include="..\..\..\src\WidgetData.ServiceDefaults\WidgetData.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.5" />
+    <PackageReference Include="MudBlazor" Version="9.3.0" />
+  </ItemGroup>
+
+</Project>

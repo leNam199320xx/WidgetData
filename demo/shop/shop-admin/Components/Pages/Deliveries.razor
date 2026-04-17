@@ -1,0 +1,134 @@
+@page "/deliveries"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@using WidgetData.Domain.Enums
+@inject ShopAdmin.Services.ApiService ApiService
+@inject ISnackbar Snackbar
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["Del_Title"] - WidgetData</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-2">
+    <MudIcon Icon="@Icons.Material.Filled.Send" Class="mr-2" />
+    @L["Del_Title"]
+</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+    @L["Del_Subtitle"]
+</MudText>
+
+@if (_widgets != null && _widgets.Any())
+{
+    <MudSelect Value="_selectedWidgetId" T="int" Label="@L["Del_SelectWidget"]" Variant="Variant.Outlined"
+               Class="mb-4" Style="max-width:400px" ValueChanged="@((int id) => OnWidgetChanged(id))">
+        <MudSelectItem Value="0">@L["Del_AllWidgets"]</MudSelectItem>
+        @foreach (var w in _widgets)
+        {
+            <MudSelectItem Value="@w.Id">@(w.FriendlyLabel ?? w.Name)</MudSelectItem>
+        }
+    </MudSelect>
+}
+
+@if (_executions == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else if (!_executions.Any())
+{
+    <MudAlert Severity="Severity.Info">@L["Del_NoHistory"]</MudAlert>
+}
+else
+{
+    <MudTable Items="_executions" Dense="true" Hover="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Widget</MudTh>
+            <MudTh>@L["Del_DeliveryTarget"]</MudTh>
+            <MudTh>@L["Status"]</MudTh>
+            <MudTh>@L["Del_Time"]</MudTh>
+            <MudTh>@L["Del_Message"]</MudTh>
+            <MudTh>@L["Del_SentBy"]</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@GetWidgetName(context.WidgetId)</MudTd>
+            <MudTd>@context.DeliveryTargetName</MudTd>
+            <MudTd>
+                <MudChip T="string" Color="@GetStatusColor(context.Status)" Size="Size.Small">
+                    @GetStatusLabel(context.Status)
+                </MudChip>
+            </MudTd>
+            <MudTd>@context.ExecutedAt.ToString("dd/MM/yyyy HH:mm:ss")</MudTd>
+            <MudTd>
+                @if (!string.IsNullOrEmpty(context.Message))
+                {
+                    <MudTooltip Text="@context.Message">
+                        <MudText Style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                            @context.Message
+                        </MudText>
+                    </MudTooltip>
+                }
+            </MudTd>
+            <MudTd>@context.TriggeredBy</MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    IEnumerable<WidgetDto>? _widgets;
+    IEnumerable<DeliveryExecutionDto>? _executions;
+    int _selectedWidgetId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _widgets = await ApiService.GetWidgetsAsync() ?? Array.Empty<WidgetDto>();
+        await LoadExecutionsAsync();
+    }
+
+    async Task OnWidgetChanged(int widgetId)
+    {
+        _selectedWidgetId = widgetId;
+        await LoadExecutionsAsync();
+    }
+
+    async Task LoadExecutionsAsync()
+    {
+        _executions = null;
+        StateHasChanged();
+        if (_selectedWidgetId > 0)
+        {
+            _executions = await ApiService.GetDeliveryExecutionsAsync(_selectedWidgetId) ?? Array.Empty<DeliveryExecutionDto>();
+        }
+        else if (_widgets != null)
+        {
+            var all = new List<DeliveryExecutionDto>();
+            foreach (var w in _widgets)
+            {
+                var execs = await ApiService.GetDeliveryExecutionsAsync(w.Id);
+                if (execs != null) all.AddRange(execs);
+            }
+            _executions = all.OrderByDescending(e => e.ExecutedAt);
+        }
+        else
+        {
+            _executions = Array.Empty<DeliveryExecutionDto>();
+        }
+    }
+
+    string GetWidgetName(int id) => _widgets?.FirstOrDefault(w => w.Id == id)?.FriendlyLabel
+        ?? _widgets?.FirstOrDefault(w => w.Id == id)?.Name ?? $"Widget {id}";
+
+    static Color GetStatusColor(ExecutionStatus s) => s switch
+    {
+        ExecutionStatus.Success => Color.Success,
+        ExecutionStatus.Failed => Color.Error,
+        ExecutionStatus.Running => Color.Info,
+        _ => Color.Default
+    };
+
+    string GetStatusLabel(ExecutionStatus s) => s switch
+    {
+        ExecutionStatus.Success => L["Del_Success"],
+        ExecutionStatus.Failed => L["Del_Failed"],
+        ExecutionStatus.Running => L["Del_Running"],
+        _ => s.ToString()
+    };
+}

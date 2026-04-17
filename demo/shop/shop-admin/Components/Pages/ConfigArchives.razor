@@ -1,0 +1,177 @@
+@page "/config-archives"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@inject ShopAdmin.Services.ApiService ApiService
+@inject ISnackbar Snackbar
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["CA_Title"] - WidgetData</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-1">
+    <MudIcon Icon="@Icons.Material.Filled.Archive" Class="mr-2" />
+    @L["CA_Title"]
+</MudText>
+<MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">
+    @L["CA_Subtitle"]
+</MudText>
+
+@* Restore Confirm *@
+@if (_restoringItem != null)
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="3" Style="border-left: 4px solid #ff9800">
+        <MudText Typo="Typo.h6" Color="Color.Warning">@L["CA_RestoreConfirm"]</MudText>
+        <MudText Class="mb-2">
+            @L["CA_RestoreText", _restoringItem.WidgetName, _restoringItem.ArchivedAt.ToString("g")]
+        </MudText>
+        @if (!string.IsNullOrEmpty(_restoringItem.Note))
+        {
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">@L["CA_RestoreNote", _restoringItem.Note]</MudText>
+        }
+        <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-3">
+            @L["CA_RestoreWarning"]
+        </MudAlert>
+        <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="DoRestore" Class="mr-2">@L["CA_Restore"]</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="() => _restoringItem = null">@L["Cancel"]</MudButton>
+    </MudPaper>
+}
+
+@* Delete Confirm *@
+@if (_deletingItem != null)
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="3" Style="border-left: 4px solid #f44336">
+        <MudText Typo="Typo.h6" Color="Color.Error">@L["CA_DeleteConfirm"]</MudText>
+        <MudText Class="mb-3">@L["CA_DeleteText", _deletingItem.WidgetName, _deletingItem.ArchivedAt.ToString("g")]</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DoDelete" Class="mr-2">@L["Delete"]</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="() => _deletingItem = null">@L["Cancel"]</MudButton>
+    </MudPaper>
+}
+
+@* Filter Bar *@
+@if (_archives != null)
+{
+    <MudPaper Elevation="1" Class="pa-3 mb-3">
+        <MudGrid>
+            <MudItem xs="12" sm="5">
+                <MudSelect @bind-Value="_filterWidgetId" Label="@L["CA_FilterByWidget"]" Variant="Variant.Outlined"
+                           Clearable="true" T="int?" Dense="true">
+                    @foreach (var name in _archives.Select(a => new { a.WidgetId, a.WidgetName }).DistinctBy(x => x.WidgetId))
+                    {
+                        <MudSelectItem T="int?" Value="@((int?)name.WidgetId)">@(name.WidgetName ?? name.WidgetId.ToString())</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="3">
+                <MudSelect @bind-Value="_filterTrigger" Label="@L["CA_Source"]" Variant="Variant.Outlined"
+                           Clearable="true" T="string?" Dense="true">
+                    <MudSelectItem T="string?" Value="@("Schedule")">@L["CA_BySchedule"]</MudSelectItem>
+                    <MudSelectItem T="string?" Value="@("Manual")">@L["CA_Manual"]</MudSelectItem>
+                    <MudSelectItem T="string?" Value="@("OnSave")">@L["CA_AutoOnSave"]</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="4" Class="d-flex align-center">
+                <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.FilterAlt"
+                           OnClick="ApplyFilter" Size="Size.Small">@L["CA_Filter"]</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudTable Items="_filteredArchives" Dense="true" Hover="true" Striped="true">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">@L["CA_List", _filteredArchives.Count()]</MudText>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>Widget</MudTh>
+            <MudTh>@L["CA_ArchiveTime"]</MudTh>
+            <MudTh>@L["CA_Source"]</MudTh>
+            <MudTh>@L["CA_ArchivedBy"]</MudTh>
+            <MudTh>@L["Note"]</MudTh>
+            <MudTh>@L["Actions"]</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>
+                <MudIcon Icon="@Icons.Material.Filled.Widgets" Size="Size.Small" Class="mr-1" Color="Color.Primary" />
+                @context.WidgetName
+            </MudTd>
+            <MudTd>@context.ArchivedAt.ToString("dd/MM/yyyy HH:mm:ss")</MudTd>
+            <MudTd>
+                @{
+                    var (color, icon) = context.TriggerSource switch
+                    {
+                        "Schedule" => (Color.Info, Icons.Material.Filled.Schedule),
+                        "OnSave" => (Color.Success, Icons.Material.Filled.Save),
+                        _ => (Color.Default, Icons.Material.Filled.Person)
+                    };
+                }
+                <MudChip T="string" Color="@color" Size="Size.Small" Icon="@icon">@context.TriggerSource</MudChip>
+            </MudTd>
+            <MudTd>@(context.ArchivedBy ?? "—")</MudTd>
+            <MudTd>
+                <MudTooltip Text="@(context.Note ?? "")">
+                    <MudText Style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        @(context.Note ?? "-")
+                    </MudText>
+                </MudTooltip>
+            </MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Restore" Color="Color.Warning" Size="Size.Small"
+                               OnClick="() => _restoringItem = context" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                               OnClick="() => _deletingItem = context" />
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Class="pa-4" Color="Color.Secondary">@L["CA_NoRecords"]</MudText>
+        </NoRecordsContent>
+    </MudTable>
+}
+else if (_error != null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+else
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+
+@code {
+    IEnumerable<WidgetConfigArchiveDto>? _archives;
+    WidgetConfigArchiveDto? _restoringItem;
+    WidgetConfigArchiveDto? _deletingItem;
+    string? _error;
+    int? _filterWidgetId;
+    string? _filterTrigger;
+
+    IEnumerable<WidgetConfigArchiveDto> _filteredArchives =>
+        (_archives ?? Enumerable.Empty<WidgetConfigArchiveDto>())
+            .Where(a => !_filterWidgetId.HasValue || a.WidgetId == _filterWidgetId.Value)
+            .Where(a => _filterTrigger == null || a.TriggerSource == _filterTrigger);
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    async Task LoadAsync()
+    {
+        try { _archives = await ApiService.GetAllConfigArchivesAsync() ?? Array.Empty<WidgetConfigArchiveDto>(); }
+        catch (Exception ex) { _error = L["CA_FailedToLoad", ex.Message].Value; _archives = Array.Empty<WidgetConfigArchiveDto>(); }
+    }
+
+    void ApplyFilter() => StateHasChanged();
+
+    async Task DoRestore()
+    {
+        if (_restoringItem == null) return;
+        var ok = await ApiService.RestoreWidgetConfigArchiveAsync(_restoringItem.WidgetId, _restoringItem.Id);
+        Snackbar.Add(ok != null ? L["CA_Restored"].Value : L["CA_RestoreFailed"].Value, ok != null ? Severity.Success : Severity.Error);
+        _restoringItem = null;
+        await LoadAsync();
+    }
+
+    async Task DoDelete()
+    {
+        if (_deletingItem == null) return;
+        var ok = await ApiService.DeleteWidgetConfigArchiveAsync(_deletingItem.WidgetId, _deletingItem.Id);
+        Snackbar.Add(ok ? L["CA_DeletedMsg"].Value : L["CA_DeleteFailed"].Value, ok ? Severity.Success : Severity.Error);
+        _deletingItem = null;
+        await LoadAsync();
+    }
+}

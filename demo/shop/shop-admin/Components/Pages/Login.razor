@@ -1,0 +1,83 @@
+@page "/login"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@inject ShopAdmin.Services.ApiService ApiService
+@inject ShopAdmin.Services.AuthStateProvider AuthStateProvider
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["Login_Title"] - WidgetData</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-16">
+    <MudCard>
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h5" Align="Align.Center">@L["Login_Title"]</MudText>
+                <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Secondary">@L["Login_Subtitle"]</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            @if (_error != null)
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+            }
+            <MudTextField @bind-Value="_email" Label="Email" Variant="Variant.Outlined" InputType="InputType.Email"
+                          Class="mb-3" Disabled="_loading" />
+            <MudTextField @bind-Value="_password" Label="@L["Login_Password"]" Variant="Variant.Outlined"
+                          InputType="@(_showPassword ? InputType.Text : InputType.Password)"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@(_showPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
+                          OnAdornmentClick="() => _showPassword = !_showPassword"
+                          Class="mb-4" Disabled="_loading" />
+        </MudCardContent>
+        <MudCardActions Class="px-4 pb-4">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true"
+                       OnClick="HandleLogin" Disabled="_loading">
+                @if (_loading)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                }
+                @L["Login_Title"]
+            </MudButton>
+        </MudCardActions>
+    </MudCard>
+</MudContainer>
+
+@code {
+    string _email = string.Empty;
+    string _password = string.Empty;
+    string? _error;
+    bool _loading;
+    bool _showPassword;
+
+    async Task HandleLogin()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            var result = await ApiService.LoginAsync(new LoginDto { Email = _email, Password = _password });
+            if (result?.Token != null)
+            {
+                await JS.InvokeVoidAsync("sessionStorage.setItem", "jwt_token", result.Token);
+                ApiService.SetToken(result.Token);
+                AuthStateProvider.SetUser(result.Token);
+                Nav.NavigateTo("/");
+            }
+            else
+            {
+                _error = L["Login_InvalidCredentials"].Value;
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = L["Login_Failed", ex.Message].Value;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}

@@ -1,0 +1,64 @@
+{
+  "title": "Sales Dashboard",
+  "layout": "grid",
+  "columns": 4,
+  "auth": {
+    "required": true
+  },
+  "widgets": [
+    {
+      "id": 10,
+      "title": "Revenue by Category",
+      "colSpan": 2,
+      "rowSpan": 1,
+      "autoRefreshSeconds": 300,
+      "parameters": {
+        "start_date": "2026-04-01"
+      }
+    },
+    {
+      "id": 11,
+      "title": "Daily Orders",
+      "colSpan": 2,
+      "autoRefreshSeconds": 60,
+      "parameters": {}
+    },
+    {
+      "id": 12,
+      "title": "Sales by Region",
+      "colSpan": 4,
+      "autoRefreshSeconds": 600,
+      "parameters": {}
+    },
+    {
+      "id": 13,
+      "title": "Total Revenue (MTD)",
+      "colSpan": 1,
+      "autoRefreshSeconds": 120,
+      "parameters": {},
+      "template": "<div class=\"we-metric\"><span class=\"we-metric-value\">{{formatNumber total_revenue 0}}</span><span class=\"we-metric-label\">VND</span></div>"
+    },
+    {
+      "id": 14,
+      "title": "Orders Pending",
+      "colSpan": 1,
+      "autoRefreshSeconds": 30,
+      "parameters": {},
+      "template": "<div class=\"we-metric\"><span class=\"we-metric-value\">{{pending_count}}</span><span class=\"we-metric-label\">Orders</span></div>"
+    },
+    {
+      "id": 15,
+      "title": "Conversion Rate",
+      "colSpan": 1,
+      "autoRefreshSeconds": 300,
+      "parameters": {}
+    },
+    {
+      "id": 16,
+      "title": "Top 5 Customers",
+      "colSpan": 1,
+      "autoRefreshSeconds": 600,
+      "parameters": {}
+    }
+  ]
+}

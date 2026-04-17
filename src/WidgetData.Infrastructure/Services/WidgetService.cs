@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using WidgetData.Application.DTOs;
 using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Entities;
@@ -16,16 +17,20 @@ public class WidgetService : IWidgetService
     private readonly ApplicationDbContext _context;
     private readonly IWidgetConfigArchiveRepository _archiveRepo;
     private readonly IScheduleRepository _scheduleRepo;
+    private readonly IAuditService _auditService;
+    private readonly ILogger<WidgetService> _logger;
 
     public WidgetService(IWidgetRepository widgetRepo, IExecutionRepository executionRepo,
         ApplicationDbContext context, IWidgetConfigArchiveRepository archiveRepo,
-        IScheduleRepository scheduleRepo)
+        IScheduleRepository scheduleRepo, IAuditService auditService, ILogger<WidgetService> logger)
     {
         _widgetRepo = widgetRepo;
         _executionRepo = executionRepo;
         _context = context;
         _archiveRepo = archiveRepo;
         _scheduleRepo = scheduleRepo;
+        _auditService = auditService;
+        _logger = logger;
     }
 
     public async Task<IEnumerable<WidgetDto>> GetAllAsync()
@@ -68,6 +73,9 @@ public class WidgetService : IWidgetService
         foreach (var groupId in distinctGroupIds)
             _context.WidgetGroupMembers.Add(new WidgetGroupMember { WidgetGroupId = groupId, WidgetId = created.Id });
         if (distinctGroupIds.Any()) await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Widget {WidgetId} '{Name}' created by user {UserId}", created.Id, created.Name, userId);
+        await _auditService.LogAsync("CreateWidget", "Widget", created.Id.ToString(), newValues: new { created.Name, created.DataSourceId }, userId: userId);
 
         var resultDto = MapToDto(created);
         resultDto.GroupIds = distinctGroupIds;
@@ -123,6 +131,10 @@ public class WidgetService : IWidgetService
 
         var resultDto = MapToDto(updated);
         await EnrichGroupIdsAsync(new List<WidgetDto> { resultDto });
+
+        _logger.LogInformation("Widget {WidgetId} '{Name}' updated", id, updated.Name);
+        await _auditService.LogAsync("UpdateWidget", "Widget", id.ToString(), newValues: new { updated.Name, updated.IsActive });
+
         return resultDto;
     }
 
@@ -131,6 +143,8 @@ public class WidgetService : IWidgetService
         var widget = await _widgetRepo.GetByIdAsync(id);
         if (widget == null) return false;
         await _widgetRepo.DeleteAsync(id);
+        _logger.LogInformation("Widget {WidgetId} '{Name}' deleted", id, widget.Name);
+        await _auditService.LogAsync("DeleteWidget", "Widget", id.ToString(), oldValues: new { widget.Name });
         return true;
     }
 
@@ -200,6 +214,17 @@ public class WidgetService : IWidgetService
                 var query = config?.GetValueOrDefault("query")?.ToString();
                 if (string.IsNullOrWhiteSpace(query))
                     return new { error = "No query configured for this widget" };
+
+                // Strip SQL comments before validation to prevent bypass (e.g. "/**/SELECT" or "-- comment\nDROP")
+                var trimmedQuery = query.TrimStart();
+                var strippedQuery = System.Text.RegularExpressions.Regex.Replace(trimmedQuery, @"(/\*[\s\S]*?\*/|--[^\r\n]*)", " ").TrimStart();
+
+                if (!strippedQuery.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
+                    return new { error = "Only SELECT queries are permitted for widget data retrieval" };
+
+                string[] disallowedKeywords = ["INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER", "EXEC", "EXECUTE", "TRUNCATE", "MERGE", "ATTACH", "DETACH"];
+                if (disallowedKeywords.Any(k => System.Text.RegularExpressions.Regex.IsMatch(strippedQuery, $@"\b{k}\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase)))
+                    return new { error = "Query contains disallowed SQL statements" };
 
                 using var conn = new Microsoft.Data.Sqlite.SqliteConnection(ds.ConnectionString);
                 await conn.OpenAsync();

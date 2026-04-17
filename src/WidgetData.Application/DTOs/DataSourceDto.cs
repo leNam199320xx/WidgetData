@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using WidgetData.Domain.Enums;
 
 namespace WidgetData.Application.DTOs;
@@ -23,17 +24,41 @@ public class DataSourceDto
 
 public class CreateDataSourceDto
 {
+    [Required]
+    [StringLength(200, MinimumLength = 1)]
     public string Name { get; set; } = string.Empty;
+
     public DataSourceType SourceType { get; set; }
+
+    [StringLength(1000)]
     public string? Description { get; set; }
+
+    [StringLength(1000)]
     public string? ConnectionString { get; set; }
+
+    [StringLength(253)]
     public string? Host { get; set; }
+
+    [Range(1, 65535)]
     public int? Port { get; set; }
+
+    [StringLength(200)]
     public string? DatabaseName { get; set; }
+
+    [StringLength(200)]
     public string? Username { get; set; }
+
+    [StringLength(500)]
     public string? Password { get; set; }
+
+    [Url]
+    [StringLength(2048)]
     public string? ApiEndpoint { get; set; }
+
+    [StringLength(500)]
     public string? ApiKey { get; set; }
+
+    [StringLength(2000)]
     public string? AdditionalConfig { get; set; }
 }
 

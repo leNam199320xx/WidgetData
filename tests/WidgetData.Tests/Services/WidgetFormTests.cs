@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
 using WidgetData.Application.DTOs;
+using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
 using WidgetData.Domain.Interfaces;
@@ -48,8 +50,10 @@ public class WidgetFormTests
         );
         _context.SaveChanges();
 
+        var auditServiceMock = new Mock<IAuditService>();
+        var loggerMock = new Mock<ILogger<WidgetService>>();
         _service = new WidgetService(_widgetRepoMock.Object, _executionRepoMock.Object, _context,
-            _archiveRepoMock.Object, _scheduleRepoMock.Object);
+            _archiveRepoMock.Object, _scheduleRepoMock.Object, auditServiceMock.Object, loggerMock.Object);
     }
 
     // ─── Bước 1: Thông tin - FriendlyLabel ───────────────────────────────────

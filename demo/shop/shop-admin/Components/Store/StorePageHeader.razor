@@ -1,0 +1,19 @@
+@using MudBlazor
+
+<MudText Typo="Typo.h4" Class="@(string.IsNullOrEmpty(Subtitle) ? "mb-4" : "mb-1")">
+    @if (!string.IsNullOrEmpty(Icon))
+    {
+        <MudIcon Icon="@Icon" Class="mr-2" />
+    }
+    @Title
+</MudText>
+@if (!string.IsNullOrEmpty(Subtitle))
+{
+    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">@Subtitle</MudText>
+}
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+}

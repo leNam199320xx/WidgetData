@@ -1,0 +1,273 @@
+@page "/users"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@inject ShopAdmin.Services.ApiService ApiService
+@inject ISnackbar Snackbar
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["Users_Title"] - WidgetData</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">@L["Users_Title"]</MudText>
+
+<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mb-4">
+    <MudTabPanel Text="@L["Users_TabList"]" Icon="@Icons.Material.Filled.People">
+        @if (_showForm)
+        {
+            <MudPaper Class="pa-4 mb-4" Elevation="3">
+                <MudText Typo="Typo.h6" Class="mb-3">@L["Users_AddUser"]</MudText>
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_form.Email" Label="Email" Required="true" Variant="Variant.Outlined" InputType="InputType.Email" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_form.DisplayName" Label="@L["Users_DisplayName"]" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_form.Password" Label="@L["Login_Password"]" Required="true" Variant="Variant.Outlined"
+                                      InputType="InputType.Password" HelperText="@L["Users_PasswordHelper"]" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveUser" Disabled="_saving" Class="mr-2">
+                            @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                            @L["Users_Create"]
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" OnClick="() => _showForm = false">@L["Cancel"]</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        }
+
+        @if (_users != null)
+        {
+            <MudTable Items="_users" Dense="true" Hover="true" Striped="true">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">@L["Users_UserList"]</MudText>
+                    <MudSpacer />
+                    @if (!_showForm)
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd"
+                                   OnClick="() => { _form = new(); _showForm = true; }">@L["Users_AddUser"]</MudButton>
+                    }
+                </ToolBarContent>
+                <HeaderContent>
+                    <MudTh>Email</MudTh>
+                    <MudTh>@L["Users_DisplayName"]</MudTh>
+                    <MudTh>@L["Users_Roles"]</MudTh>
+                    <MudTh>@L["Status"]</MudTh>
+                    <MudTh>@L["Users_LastLogin"]</MudTh>
+                    <MudTh>@L["Users_Permissions"]</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.Email</MudTd>
+                    <MudTd>@context.DisplayName</MudTd>
+                    <MudTd>
+                        @foreach (var role in context.Roles)
+                        {
+                            <MudChip T="string" Color="Color.Primary" Size="Size.Small" Class="mr-1">@role</MudChip>
+                        }
+                    </MudTd>
+                    <MudTd><MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Error)" Size="Size.Small">@(context.IsActive ? L["Active"] : L["Inactive"])</MudChip></MudTd>
+                    <MudTd>@(context.LastLoginAt.HasValue ? context.LastLoginAt.Value.ToString("g") : L["Users_NeverLoggedIn"].Value)</MudTd>
+                    <MudTd>
+                        <MudIconButton Icon="@Icons.Material.Filled.Security" Color="Color.Info" Size="Size.Small"
+                                       OnClick="() => ShowPermissions(context)" Title="@L["Users_Permissions"]" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else if (_error != null)
+        {
+            <MudAlert Severity="Severity.Error">@_error</MudAlert>
+        }
+        else
+        {
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        }
+    </MudTabPanel>
+
+    <MudTabPanel Text="@L["Users_TabPermissions"]" Icon="@Icons.Material.Filled.Security">
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+            @L["Users_PermissionsDesc"]
+        </MudText>
+
+        @if (_selectedUserForPerm != null)
+        {
+            <MudPaper Class="pa-4 mb-3" Elevation="2">
+                <MudText Typo="Typo.h6" Class="mb-2">
+                    @L["Users_PermOf", _selectedUserForPerm.Email]
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small"
+                                   OnClick="() => { _selectedUserForPerm = null; _userPermissions = null; }" />
+                </MudText>
+
+                @if (_assignForm)
+                {
+                    <MudPaper Class="pa-3 mb-3" Elevation="1">
+                        <MudGrid>
+                            <MudItem xs="12" sm="4">
+                                <MudSelect @bind-Value="_assignWidgetId" Label="@L["Users_SelectWidget"]" Variant="Variant.Outlined">
+                                    @if (_widgets != null)
+                                    {
+                                        @foreach (var w in _widgets)
+                                        {
+                                            <MudSelectItem Value="@w.Id">@(w.FriendlyLabel ?? w.Name)</MudSelectItem>
+                                        }
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="4" sm="2">
+                                <MudCheckBox @bind-Value="_assignCanView" Label="@L["Users_CanView"]" Color="Color.Primary" />
+                            </MudItem>
+                            <MudItem xs="4" sm="2">
+                                <MudCheckBox @bind-Value="_assignCanExecute" Label="@L["Users_CanExecute"]" Color="Color.Warning" />
+                            </MudItem>
+                            <MudItem xs="4" sm="2">
+                                <MudCheckBox @bind-Value="_assignCanEdit" Label="@L["Users_CanEdit"]" Color="Color.Error" />
+                            </MudItem>
+                            <MudItem xs="12" sm="2">
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AssignWidgetPerm"
+                                           Disabled="_assigningPerm" Size="Size.Small">
+                                    @if (_assigningPerm) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" /> }
+                                    @L["Users_AssignPerm"]
+                                </MudButton>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                }
+
+                <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small"
+                           OnClick="() => _assignForm = !_assignForm" Class="mb-3">
+                    @L["Users_AddWidgetPerm"]
+                </MudButton>
+
+                @if (_userPermissions != null && _userPermissions.Any())
+                {
+                    <MudTable Items="_userPermissions" Dense="true">
+                        <HeaderContent>
+                            <MudTh>@L["Users_WidgetOrGroup"]</MudTh>
+                            <MudTh>@L["Users_PermType"]</MudTh>
+                            <MudTh>@L["Users_CanView"]</MudTh>
+                            <MudTh>@L["Users_CanExecute"]</MudTh>
+                            <MudTh>@L["Users_CanEdit"]</MudTh>
+                            <MudTh>@L["Delete"]</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@(context.WidgetName ?? context.GroupName ?? "-")</MudTd>
+                            <MudTd>
+                                <MudChip T="string" Size="Size.Small" Color="@(context.WidgetId.HasValue ? Color.Primary : Color.Secondary)">
+                                    @(context.WidgetId.HasValue ? L["Users_Widget"] : L["Users_Group"])
+                                </MudChip>
+                            </MudTd>
+                            <MudTd><MudIcon Icon="@(context.CanView ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)" Color="@(context.CanView ? Color.Success : Color.Error)" Size="Size.Small" /></MudTd>
+                            <MudTd><MudIcon Icon="@(context.CanExecute ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)" Color="@(context.CanExecute ? Color.Success : Color.Error)" Size="Size.Small" /></MudTd>
+                            <MudTd><MudIcon Icon="@(context.CanEdit ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)" Color="@(context.CanEdit ? Color.Success : Color.Error)" Size="Size.Small" /></MudTd>
+                            <MudTd>
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                               OnClick="() => RemovePerm(context)" />
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+                else if (_userPermissions != null)
+                {
+                    <MudText Color="Color.Secondary">@L["Users_NoPermissions"]</MudText>
+                }
+                else
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                }
+            </MudPaper>
+        }
+        else
+        {
+            <MudText Color="Color.Secondary">@L["Users_SelectFromList"]</MudText>
+        }
+    </MudTabPanel>
+</MudTabs>
+
+@code {
+    IEnumerable<UserDto>? _users;
+    IEnumerable<WidgetDto>? _widgets;
+    string? _error;
+    bool _showForm;
+    bool _saving;
+    RegisterDto _form = new();
+
+    UserDto? _selectedUserForPerm;
+    IEnumerable<UserPermissionDto>? _userPermissions;
+    bool _assignForm;
+    bool _assigningPerm;
+    int _assignWidgetId;
+    bool _assignCanView = true;
+    bool _assignCanExecute;
+    bool _assignCanEdit;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(LoadAsync(), LoadWidgetsAsync());
+    }
+
+    async Task LoadAsync()
+    {
+        try { _users = await ApiService.GetUsersAsync() ?? Array.Empty<UserDto>(); }
+        catch (Exception ex) { _error = L["FailedToLoad", ex.Message].Value; _users = Array.Empty<UserDto>(); }
+    }
+
+    async Task LoadWidgetsAsync()
+    {
+        try { _widgets = await ApiService.GetWidgetsAsync() ?? Array.Empty<WidgetDto>(); }
+        catch { _widgets = Array.Empty<WidgetDto>(); }
+    }
+
+    async Task SaveUser()
+    {
+        _saving = true;
+        try
+        {
+            var result = await ApiService.CreateUserAsync(_form);
+            Snackbar.Add(result != null ? L["Users_Created"].Value : L["Users_FailedCreate"].Value, result != null ? Severity.Success : Severity.Error);
+            if (result != null) { _showForm = false; _form = new(); await LoadAsync(); }
+        }
+        finally { _saving = false; }
+    }
+
+    async Task ShowPermissions(UserDto user)
+    {
+        _selectedUserForPerm = user;
+        _userPermissions = null;
+        _assignForm = false;
+        StateHasChanged();
+        try { _userPermissions = await ApiService.GetUserPermissionsAsync(user.Id) ?? Array.Empty<UserPermissionDto>(); }
+        catch { _userPermissions = Array.Empty<UserPermissionDto>(); }
+    }
+
+    async Task AssignWidgetPerm()
+    {
+        if (_selectedUserForPerm == null || _assignWidgetId == 0) return;
+        _assigningPerm = true;
+        try
+        {
+            var dto = new AssignWidgetPermissionDto
+            {
+                UserId = _selectedUserForPerm.Id,
+                WidgetId = _assignWidgetId,
+                CanView = _assignCanView,
+                CanExecute = _assignCanExecute,
+                CanEdit = _assignCanEdit
+            };
+            var result = await ApiService.AssignWidgetPermissionAsync(dto);
+            Snackbar.Add(result != null ? L["Users_PermAssigned"].Value : L["Users_PermAssignFailed"].Value, result != null ? Severity.Success : Severity.Error);
+            if (result != null) { _assignForm = false; await ShowPermissions(_selectedUserForPerm); }
+        }
+        finally { _assigningPerm = false; }
+    }
+
+    async Task RemovePerm(UserPermissionDto perm)
+    {
+        bool ok = perm.WidgetId.HasValue
+            ? await ApiService.RemoveWidgetPermissionAsync(perm.Id)
+            : await ApiService.RemoveGroupPermissionAsync(perm.Id);
+        Snackbar.Add(ok ? L["Users_PermRemoved"].Value : L["Users_PermRemoveFailed"].Value, ok ? Severity.Success : Severity.Error);
+        if (ok && _selectedUserForPerm != null) await ShowPermissions(_selectedUserForPerm);
+    }
+}

@@ -172,19 +172,21 @@ public class DeliveryService : IDeliveryService
         var data = await _exportService.ExportAsync(widgetId, format);
         var fileName = _exportService.GetFileName(widgetId, format);
 
+        var to = cfg.GetValueOrDefault("to", "");
+        var cc = cfg.GetValueOrDefault("cc", "");
+        if (string.IsNullOrWhiteSpace(to) && string.IsNullOrWhiteSpace(cc))
+            throw new InvalidOperationException("Email delivery requires at least one recipient in 'to' or 'cc'.");
+
         var message = new MimeMessage();
         message.From.Add(MailboxAddress.Parse(cfg.GetValueOrDefault("from", "noreply@widgetdata.local")));
 
-        var to = cfg.GetValueOrDefault("to", "");
         foreach (var addr in to.Split(';', StringSplitOptions.RemoveEmptyEntries))
             message.To.Add(MailboxAddress.Parse(addr.Trim()));
 
-        var cc = cfg.GetValueOrDefault("cc", "");
         foreach (var addr in cc.Split(';', StringSplitOptions.RemoveEmptyEntries))
             message.Cc.Add(MailboxAddress.Parse(addr.Trim()));
 
         message.Subject = cfg.GetValueOrDefault("subject", $"Widget {widgetId} export");
-
         var body = new BodyBuilder
         {
             TextBody = cfg.GetValueOrDefault("body", $"Widget export attached.\nGenerated: {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC")
@@ -210,14 +212,17 @@ public class DeliveryService : IDeliveryService
     private async Task DeliverSftpAsync(int widgetId, DeliveryTarget target)
     {
         var cfg = ParseConfig(target.Configuration);
+        var host = cfg.GetValueOrDefault("host", "");
+        var username = cfg.GetValueOrDefault("username", "");
+        if (string.IsNullOrWhiteSpace(host)) throw new InvalidOperationException("SFTP delivery requires 'host' in configuration.");
+        if (string.IsNullOrWhiteSpace(username)) throw new InvalidOperationException("SFTP delivery requires 'username' in configuration.");
+
         var format = cfg.GetValueOrDefault("format", "csv");
         var data = await _exportService.ExportAsync(widgetId, format);
         var fileName = _exportService.GetFileName(widgetId, format);
         var remotePath = cfg.GetValueOrDefault("path", "/upload") + "/" + fileName;
 
-        var host = cfg["host"];
         var port = int.Parse(cfg.GetValueOrDefault("port", "22"));
-        var username = cfg["username"];
         var password = cfg.GetValueOrDefault("password", "");
 
         ConnectionInfo connInfo;
@@ -238,13 +243,16 @@ public class DeliveryService : IDeliveryService
     private async Task DeliverSshAsync(int widgetId, DeliveryTarget target)
     {
         var cfg = ParseConfig(target.Configuration);
+        var host = cfg.GetValueOrDefault("host", "");
+        var username = cfg.GetValueOrDefault("username", "");
+        if (string.IsNullOrWhiteSpace(host)) throw new InvalidOperationException("SSH delivery requires 'host' in configuration.");
+        if (string.IsNullOrWhiteSpace(username)) throw new InvalidOperationException("SSH delivery requires 'username' in configuration.");
+
         var format = cfg.GetValueOrDefault("format", "csv");
         var data = await _exportService.ExportAsync(widgetId, format);
         var fileName = _exportService.GetFileName(widgetId, format);
 
-        var host = cfg["host"];
         var port = int.Parse(cfg.GetValueOrDefault("port", "22"));
-        var username = cfg["username"];
         var password = cfg.GetValueOrDefault("password", "");
         var remotePath = cfg.GetValueOrDefault("path", $"/tmp/{fileName}");
 
@@ -259,11 +267,13 @@ public class DeliveryService : IDeliveryService
     private async Task DeliverHttpApiAsync(int widgetId, DeliveryTarget target)
     {
         var cfg = ParseConfig(target.Configuration);
+        var url = cfg.GetValueOrDefault("url", "");
+        if (string.IsNullOrWhiteSpace(url)) throw new InvalidOperationException("HttpApi delivery requires 'url' in configuration.");
+
         var format = cfg.GetValueOrDefault("format", "csv");
         var data = await _exportService.ExportAsync(widgetId, format);
         var fileName = _exportService.GetFileName(widgetId, format);
 
-        var url = cfg["url"];
         var method = cfg.GetValueOrDefault("method", "POST").ToUpper();
         var apiKey = cfg.GetValueOrDefault("apiKey", "");
 
@@ -284,12 +294,14 @@ public class DeliveryService : IDeliveryService
     private async Task DeliverTelegramAsync(int widgetId, DeliveryTarget target)
     {
         var cfg = ParseConfig(target.Configuration);
+        var botToken = cfg.GetValueOrDefault("botToken", "");
+        var chatId = cfg.GetValueOrDefault("chatId", "");
+        if (string.IsNullOrWhiteSpace(botToken)) throw new InvalidOperationException("Telegram delivery requires 'botToken' in configuration.");
+        if (string.IsNullOrWhiteSpace(chatId)) throw new InvalidOperationException("Telegram delivery requires 'chatId' in configuration.");
+
         var format = cfg.GetValueOrDefault("format", "csv");
         var data = await _exportService.ExportAsync(widgetId, format);
         var fileName = _exportService.GetFileName(widgetId, format);
-
-        var botToken = cfg["botToken"];
-        var chatId = cfg["chatId"];
         var caption = cfg.GetValueOrDefault("caption", $"Widget {widgetId} export");
 
         var bot = new TelegramBotClient(botToken);
@@ -303,12 +315,14 @@ public class DeliveryService : IDeliveryService
     private async Task DeliverZaloAsync(int widgetId, DeliveryTarget target)
     {
         var cfg = ParseConfig(target.Configuration);
+        var accessToken = cfg.GetValueOrDefault("accessToken", "");
+        var toUserId = cfg.GetValueOrDefault("toUserId", "");
+        if (string.IsNullOrWhiteSpace(accessToken)) throw new InvalidOperationException("Zalo delivery requires 'accessToken' in configuration.");
+        if (string.IsNullOrWhiteSpace(toUserId)) throw new InvalidOperationException("Zalo delivery requires 'toUserId' in configuration.");
+
         var format = cfg.GetValueOrDefault("format", "csv");
         var data = await _exportService.ExportAsync(widgetId, format);
         var fileName = _exportService.GetFileName(widgetId, format);
-
-        var accessToken = cfg["accessToken"];
-        var toUserId = cfg["toUserId"];
         var message = cfg.GetValueOrDefault("message", $"Widget {widgetId} export: {fileName}");
 
         var http = _httpClientFactory.CreateClient();

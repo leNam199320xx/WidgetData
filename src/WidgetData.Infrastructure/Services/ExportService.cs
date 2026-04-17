@@ -1,22 +1,18 @@
 using System.Text;
 using ClosedXML.Excel;
-using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using WidgetData.Application.Interfaces;
-using WidgetData.Infrastructure.Data;
 
 namespace WidgetData.Infrastructure.Services;
 
 public class ExportService : IExportService
 {
-    private readonly ApplicationDbContext _context;
     private readonly IWidgetService _widgetService;
 
-    public ExportService(ApplicationDbContext context, IWidgetService widgetService)
+    public ExportService(IWidgetService widgetService)
     {
-        _context = context;
         _widgetService = widgetService;
     }
 
@@ -25,21 +21,42 @@ public class ExportService : IExportService
         var widget = await _widgetService.GetByIdAsync(widgetId)
             ?? throw new KeyNotFoundException($"Widget {widgetId} not found");
 
-        // Get sample data from executions for export
-        var executions = await _context.WidgetExecutions
-            .Where(e => e.WidgetId == widgetId)
-            .OrderByDescending(e => e.StartedAt)
-            .Take(100)
-            .ToListAsync();
+        // Get actual widget query results
+        var rawData = await _widgetService.GetDataAsync(widgetId);
 
-        var headers = new[] { "ExecutionId", "Status", "TriggeredBy", "StartedAt", "CompletedAt", "ExecutionTimeMs", "RowCount", "ErrorMessage" };
-        var rows = executions.Select(e => new object?[]
+        string[] headers;
+        List<object?[]> rows;
+
+        if (rawData is System.Text.Json.JsonElement je)
         {
-            e.ExecutionId, e.Status.ToString(), e.TriggeredBy.ToString(),
-            e.StartedAt.ToString("yyyy-MM-dd HH:mm:ss"),
-            e.CompletedAt?.ToString("yyyy-MM-dd HH:mm:ss"),
-            e.ExecutionTimeMs, e.RowCount, e.ErrorMessage
-        }).ToList();
+            // Deserialize JSON element
+            rawData = System.Text.Json.JsonSerializer.Deserialize<object>(je.GetRawText());
+        }
+
+        if (rawData is Dictionary<string, object?> dict
+            && dict.TryGetValue("rows", out var rowsObj)
+            && dict.TryGetValue("columns", out var colsObj)
+            && colsObj is System.Text.Json.JsonElement colsJson
+            && rowsObj is System.Text.Json.JsonElement rowsJson)
+        {
+            headers = colsJson.EnumerateArray().Select(e => e.GetString() ?? "").ToArray();
+            rows = rowsJson.EnumerateArray().Select(rowEl =>
+                headers.Select(h => rowEl.TryGetProperty(h, out var v) ? (object?)v.ToString() : null).ToArray()
+            ).ToList();
+        }
+        else if (rawData is IDictionary<string, object?> rawDict)
+        {
+            // Flat dictionary — single-row
+            headers = rawDict.Keys.ToArray();
+            rows = [headers.Select(h => rawDict[h]).ToArray()];
+        }
+        else
+        {
+            // Fallback: serialize as JSON blob
+            var json = System.Text.Json.JsonSerializer.Serialize(rawData, new System.Text.Json.JsonSerializerOptions { WriteIndented = false });
+            headers = ["data"];
+            rows = [[json]];
+        }
 
         return format.ToLower() switch
         {

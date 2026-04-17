@@ -40,6 +40,7 @@ app.UseRequestLocalization(new RequestLocalizationOptions()
     .SetDefaultCulture("vi"));
 
 app.UseStaticFiles();
+
 app.UseAntiforgery();
 
 app.MapDefaultEndpoints();

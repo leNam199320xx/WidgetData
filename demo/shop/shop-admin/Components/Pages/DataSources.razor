@@ -1,0 +1,240 @@
+@page "/datasources"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@using WidgetData.Domain.Enums
+@inject ShopAdmin.Services.ApiService ApiService
+@inject ISnackbar Snackbar
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["DS_Title"] - WidgetData</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">@L["DS_Title"]</MudText>
+
+@* Inline Add/Edit Form *@
+@if (_showForm)
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="3">
+        <MudText Typo="Typo.h6" Class="mb-3">@(_editingId == null ? L["DS_AddTitle"] : L["DS_EditTitle"])</MudText>
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_form.Name" Label="@L["Name"]" Required="true" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudSelect @bind-Value="_form.SourceType" Label="@L["Type"]" Variant="Variant.Outlined">
+                    @foreach (var t in Enum.GetValues<DataSourceType>())
+                    {
+                        <MudSelectItem Value="@t">@t</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_form.Description" Label="@L["Description"]" Variant="Variant.Outlined" Lines="2" />
+            </MudItem>
+            @if (_form.SourceType == DataSourceType.SQLite)
+            {
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_form.ConnectionString" Label="@L["DS_ConnString"]" Variant="Variant.Outlined"
+                                  Placeholder="Data Source=mydb.db" />
+                </MudItem>
+            }
+            else if (_form.SourceType == DataSourceType.RestApi)
+            {
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_form.ApiEndpoint" Label="@L["DS_ApiEndpoint"]" Variant="Variant.Outlined"
+                                  Placeholder="https://api.example.com/data" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_form.ApiKey" Label="@L["DS_ApiKey"]" Variant="Variant.Outlined" InputType="InputType.Password" />
+                </MudItem>
+            }
+            else if (_form.SourceType is DataSourceType.SqlServer or DataSourceType.PostgreSql or DataSourceType.MySql)
+            {
+                <MudItem xs="8">
+                    <MudTextField @bind-Value="_form.Host" Label="@L["DS_Host"]" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudNumericField @bind-Value="_form.Port" Label="@L["DS_Port"]" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_form.DatabaseName" Label="@L["DS_Database"]" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="_form.Username" Label="@L["DS_Username"]" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="_form.Password" Label="@L["DS_Password"]" Variant="Variant.Outlined" InputType="InputType.Password" />
+                </MudItem>
+            }
+            else
+            {
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_form.AdditionalConfig" Label="@L["DS_AdditionalConfig"]" Variant="Variant.Outlined" Lines="3" />
+                </MudItem>
+            }
+            @if (_editingId != null)
+            {
+                <MudItem xs="12">
+                    <MudCheckBox @bind-Value="_formIsActive" Label="@L["DS_ActiveLabel"]" Color="Color.Primary" />
+                </MudItem>
+            }
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveDataSource" Disabled="_saving" Class="mr-2">
+                    @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                    @L["Save"]
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick="CancelForm">@L["Cancel"]</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+}
+
+@* Delete confirmation *@
+@if (_deletingItem != null)
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="3" Style="border-left: 4px solid #f44336">
+        <MudText Typo="Typo.h6" Color="Color.Error">@L["ConfirmDelete"]</MudText>
+        <MudText Class="mb-3">@L["DS_DeleteConfirm", _deletingItem.Name]</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DoDelete" Class="mr-2">@L["Delete"]</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="() => _deletingItem = null">@L["Cancel"]</MudButton>
+    </MudPaper>
+}
+
+@if (_sources != null)
+{
+    <MudTable Items="_sources" Dense="true" Hover="true" Striped="true">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">@L["DS_List"]</MudText>
+            <MudSpacer />
+            @if (!_showForm)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="OpenAddForm">@L["DS_AddTitle"]</MudButton>
+            }
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>@L["Name"]</MudTh>
+            <MudTh>@L["Type"]</MudTh>
+            <MudTh>@L["Description"]</MudTh>
+            <MudTh>@L["Status"]</MudTh>
+            <MudTh>@L["DS_LastTested"]</MudTh>
+            <MudTh>@L["Actions"]</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.Name</MudTd>
+            <MudTd>@context.SourceType</MudTd>
+            <MudTd>@(context.Description ?? "-")</MudTd>
+            <MudTd><MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Error)" Size="Size.Small">@(context.IsActive ? L["Active"] : L["Inactive"])</MudChip></MudTd>
+            <MudTd>
+                @(context.LastTestedAt.HasValue ? context.LastTestedAt.Value.ToString("g") : L["DS_NeverTested"].Value)
+                @if (!string.IsNullOrEmpty(context.LastTestResult))
+                {
+                    <MudChip T="string" Color="Color.Success" Size="Size.Small" Class="ml-1">@context.LastTestResult</MudChip>
+                }
+            </MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Info" Size="Size.Small"
+                               OnClick="() => TestConnection(context)" />
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" Size="Size.Small"
+                               OnClick="() => OpenEditForm(context)" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                               OnClick="() => _deletingItem = context" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+else if (_error != null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+else
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+
+@code {
+    IEnumerable<DataSourceDto>? _sources;
+    string? _error;
+    bool _showForm;
+    bool _saving;
+    int? _editingId;
+    bool _formIsActive = true;
+    DataSourceDto? _deletingItem;
+    CreateDataSourceDto _form = new();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    async Task LoadAsync()
+    {
+        try { _sources = await ApiService.GetDataSourcesAsync() ?? Array.Empty<DataSourceDto>(); }
+        catch (Exception ex) { _error = L["FailedToLoad", ex.Message].Value; _sources = Array.Empty<DataSourceDto>(); }
+    }
+
+    void OpenAddForm()
+    {
+        _editingId = null;
+        _form = new CreateDataSourceDto { SourceType = DataSourceType.SQLite };
+        _formIsActive = true;
+        _showForm = true;
+    }
+
+    void OpenEditForm(DataSourceDto ds)
+    {
+        _editingId = ds.Id;
+        _form = new CreateDataSourceDto
+        {
+            Name = ds.Name, SourceType = ds.SourceType, Description = ds.Description,
+            Host = ds.Host, Port = ds.Port, DatabaseName = ds.DatabaseName,
+            Username = ds.Username, ApiEndpoint = ds.ApiEndpoint, AdditionalConfig = ds.AdditionalConfig
+        };
+        _formIsActive = ds.IsActive;
+        _showForm = true;
+    }
+
+    void CancelForm() { _showForm = false; _editingId = null; }
+
+    async Task SaveDataSource()
+    {
+        _saving = true;
+        try
+        {
+            if (_editingId == null)
+            {
+                var result = await ApiService.CreateDataSourceAsync(_form);
+                Snackbar.Add(result != null ? L["DS_Created"].Value : L["FailedCreate"].Value, result != null ? Severity.Success : Severity.Error);
+            }
+            else
+            {
+                var dto = new UpdateDataSourceDto
+                {
+                    Name = _form.Name, SourceType = _form.SourceType, Description = _form.Description,
+                    ConnectionString = _form.ConnectionString, Host = _form.Host, Port = _form.Port,
+                    DatabaseName = _form.DatabaseName, Username = _form.Username, Password = _form.Password,
+                    ApiEndpoint = _form.ApiEndpoint, ApiKey = _form.ApiKey, AdditionalConfig = _form.AdditionalConfig,
+                    IsActive = _formIsActive
+                };
+                var result = await ApiService.UpdateDataSourceAsync(_editingId.Value, dto);
+                Snackbar.Add(result != null ? L["DS_Updated"].Value : L["FailedUpdate"].Value, result != null ? Severity.Success : Severity.Error);
+            }
+            _showForm = false;
+            await LoadAsync();
+        }
+        finally { _saving = false; }
+    }
+
+    async Task TestConnection(DataSourceDto ds)
+    {
+        var result = await ApiService.TestDataSourceAsync(ds.Id);
+        Snackbar.Add(result != null ? $"✓ {result}" : L["DS_TestFailed"].Value, result != null ? Severity.Success : Severity.Error);
+        await LoadAsync();
+    }
+
+    async Task DoDelete()
+    {
+        if (_deletingItem == null) return;
+        var ok = await ApiService.DeleteDataSourceAsync(_deletingItem.Id);
+        Snackbar.Add(ok ? L["Deleted"].Value : L["DeleteFailed"].Value, ok ? Severity.Success : Severity.Error);
+        _deletingItem = null;
+        await LoadAsync();
+    }
+}

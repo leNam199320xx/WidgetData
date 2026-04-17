@@ -21,6 +21,7 @@ public class SchedulesController : ControllerBase
     public async Task<IActionResult> GetAll() => Ok(await _service.GetAllAsync());
 
     [HttpPost]
+    [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> Create([FromBody] CreateScheduleDto dto)
     {
         var result = await _service.CreateAsync(dto);
@@ -28,6 +29,7 @@ public class SchedulesController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateScheduleDto dto)
     {
         var result = await _service.UpdateAsync(id, dto);
@@ -35,6 +37,7 @@ public class SchedulesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var result = await _service.DeleteAsync(id);
@@ -42,6 +45,7 @@ public class SchedulesController : ControllerBase
     }
 
     [HttpPost("{id}/enable")]
+    [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> Enable(int id)
     {
         var result = await _service.EnableAsync(id);
@@ -49,6 +53,7 @@ public class SchedulesController : ControllerBase
     }
 
     [HttpPost("{id}/disable")]
+    [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> Disable(int id)
     {
         var result = await _service.DisableAsync(id);

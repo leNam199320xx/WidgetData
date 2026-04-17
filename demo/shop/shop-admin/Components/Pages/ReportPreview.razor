@@ -1,0 +1,333 @@
+@page "/reports/preview/{PageId:int}"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@using WidgetData.Domain.Enums
+@using System.Text.Json
+@using WidgetData.Application.Helpers
+@using ShopAdmin.Services
+@inject ShopAdmin.Services.ApiService ApiService
+@inject NavigationManager Nav
+
+<PageTitle>@(_pageName ?? "Báo cáo") - Preview</PageTitle>
+
+<MudBreadcrumbs Items="_breadcrumbs" Class="mb-2 px-0" />
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+    <MudGrid>
+        @for (int i = 0; i < 6; i++)
+        {
+            <MudItem xs="12" md="6">
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="250px" />
+            </MudItem>
+        }
+    </MudGrid>
+}
+else if (_error != null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+else
+{
+    <MudText Typo="Typo.h4" Class="mb-1">
+        <MudIcon Icon="@Icons.Material.Filled.Assessment" Class="mr-2" />
+        @_pageName
+    </MudText>
+    <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">@_pageDescription</MudText>
+
+    @* KPI Metrics row *@
+    @if (_metrics.Any())
+    {
+        <MudGrid Class="mb-4">
+            @foreach (var m in _metrics)
+            {
+                <MudItem xs="12" sm="6" md="3">
+                    @if (!string.IsNullOrWhiteSpace(m.HtmlTemplate))
+                    {
+                        <MudPaper Elevation="2" Class="pa-2">
+                            @((MarkupString)m.HtmlTemplate
+                                .Replace("{{value}}", System.Web.HttpUtility.HtmlEncode(m.DisplayValue))
+                                .Replace("{{label}}", System.Web.HttpUtility.HtmlEncode(m.Label))
+                                .Replace("{{helpText}}", System.Web.HttpUtility.HtmlEncode(m.HelpText ?? "")))
+                        </MudPaper>
+                    }
+                    else
+                    {
+                        <MudPaper Elevation="2" Class="pa-4" Style="border-top: 4px solid #1976d2;">
+                            <MudText Typo="Typo.h4" Color="Color.Primary">@m.DisplayValue</MudText>
+                            <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="mt-1">@m.Label</MudText>
+                            @if (!string.IsNullOrEmpty(m.HelpText))
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Tertiary">@m.HelpText</MudText>
+                            }
+                        </MudPaper>
+                    }
+                </MudItem>
+            }
+        </MudGrid>
+    }
+
+    @* Charts *@
+    @if (_charts.Any())
+    {
+        <MudGrid Class="mb-4">
+            @foreach (var c in _charts)
+            {
+                <MudItem xs="12" md="6">
+                    <MudPaper Elevation="2" Class="pa-4">
+                        <MudText Typo="Typo.h6" Class="mb-3">
+                            @c.Title
+                            @if (!string.IsNullOrEmpty(c.HelpText))
+                            {
+                                <MudTooltip Text="@c.HelpText">
+                                    <MudIcon Icon="@Icons.Material.Filled.HelpOutline" Size="Size.Small" Color="Color.Secondary" Class="ml-1" />
+                                </MudTooltip>
+                            }
+                        </MudText>
+                        @if (c.Error != null)
+                        {
+                            <MudAlert Severity="Severity.Warning" Dense="true">@c.Error</MudAlert>
+                        }
+                        else if (c.ChartType == ChartType.Pie || c.ChartType == ChartType.Donut)
+                        {
+                            <MudChart T="double" ChartType="@c.ChartType"
+                                      InputData="@c.InputData"
+                                      InputLabels="@c.Labels"
+                                      Width="100%" Height="280px"
+                                      LegendPosition="Position.Bottom" />
+                        }
+                        else
+                        {
+                            <MudChart T="double" ChartType="@c.ChartType"
+                                      ChartSeries="@c.Series"
+                                      XAxisLabels="@c.Labels"
+                                      Width="100%" Height="280px" />
+                        }
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+
+    @* Tables *@
+    @foreach (var t in _tables)
+    {
+        <MudPaper Elevation="2" Class="pa-4 mb-4">
+            <MudText Typo="Typo.h6" Class="mb-3">
+                @t.Title
+                @if (!string.IsNullOrEmpty(t.HelpText))
+                {
+                    <MudTooltip Text="@t.HelpText">
+                        <MudIcon Icon="@Icons.Material.Filled.HelpOutline" Size="Size.Small" Color="Color.Secondary" Class="ml-1" />
+                    </MudTooltip>
+                }
+            </MudText>
+            @if (t.Error != null)
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true">@t.Error</MudAlert>
+            }
+            else if (!string.IsNullOrWhiteSpace(t.HtmlTemplate))
+            {
+                <div style="overflow-x:auto;">
+                    @((MarkupString)HtmlTemplateHelper.Render(t.HtmlTemplate, t.Columns, t.Rows))
+                </div>
+            }
+            else if (t.Rows.Any())
+            {
+                <div style="overflow-x:auto;">
+                    <MudSimpleTable Dense="true" Hover="true" Striped="true" Style="min-width:100%">
+                        <thead>
+                            <tr>
+                                @foreach (var col in t.Columns)
+                                {
+                                    <th>@col</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in t.Rows.Take(20))
+                            {
+                                <tr>
+                                    @foreach (var col in t.Columns)
+                                    {
+                                        <td>@(row.GetValueOrDefault(col) ?? "-")</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                </div>
+                @if (t.Rows.Count > 20)
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
+                        Hiển thị 20 / @t.Rows.Count dòng
+                    </MudText>
+                }
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">Không có dữ liệu</MudAlert>
+            }
+        </MudPaper>
+    }
+}
+
+@code {
+    [Parameter] public int PageId { get; set; }
+
+    bool _loading = true;
+    string? _error;
+    string? _pageName;
+    string? _pageDescription;
+
+    record MetricModel(string DisplayValue, string Label, string? HelpText, string? HtmlTemplate);
+    record ChartModel(string Title, string? HelpText, ChartType ChartType, string[] Labels,
+        double[] InputData, List<ChartSeries<double>> Series, string? Error, string? HtmlTemplate);
+    record TableModel(string Title, string? HelpText, List<string> Columns,
+        List<Dictionary<string, string>> Rows, string? Error, string? HtmlTemplate);
+
+    List<MetricModel> _metrics = new();
+    List<ChartModel> _charts = new();
+    List<TableModel> _tables = new();
+
+    List<BreadcrumbItem> _breadcrumbs = new()
+    {
+        new BreadcrumbItem("Dashboard", href: "/"),
+        new BreadcrumbItem("Báo cáo", href: "/reports"),
+        new BreadcrumbItem("Xem trước", href: null, disabled: true)
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var pageData = await ApiService.GetReportPageAsync(PageId);
+            if (pageData == null) { _error = "Không tìm thấy trang báo cáo."; _loading = false; return; }
+
+            _pageName = pageData.Page?.Name;
+            _pageDescription = pageData.Page?.Description;
+
+            foreach (var item in pageData.Widgets)
+            {
+                var widget = item.Widget;
+                var data = item.Data;
+                if (widget == null) continue;
+
+                var title = widget.FriendlyLabel ?? widget.Name;
+                var helpText = widget.HelpText;
+
+                if (widget.WidgetType == WidgetType.Metric)
+                {
+                    var config = ParseConfig(widget.Configuration);
+                    var label = config?.GetValueOrDefault("label")?.ToString() ?? title;
+                    var format = config?.GetValueOrDefault("format")?.ToString() ?? "number";
+                    var rawVal = GetFirstValue(data);
+                    _metrics.Add(new MetricModel(FormatMetric(rawVal, format), label, helpText, widget.HtmlTemplate));
+                }
+                else if (widget.WidgetType == WidgetType.Chart)
+                {
+                    var chartModel = BuildChart(title, helpText, widget, data);
+                    _charts.Add(chartModel);
+                }
+                else if (widget.WidgetType == WidgetType.Table)
+                {
+                    var tableModel = BuildTable(title, helpText, widget.HtmlTemplate, data);
+                    _tables.Add(tableModel);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = "Không thể tải báo cáo: " + ex.Message;
+        }
+        finally { _loading = false; }
+    }
+
+    ChartModel BuildChart(string title, string? helpText, WidgetDto widget, WidgetDataDto? data)
+    {
+        if (data?.Error != null)
+            return new ChartModel(title, helpText, ChartType.Bar, Array.Empty<string>(), Array.Empty<double>(), new(), data.Error, widget.HtmlTemplate);
+
+        var chartConfig = ParseConfig(widget.ChartConfig);
+        var chartTypeStr = chartConfig?.GetValueOrDefault("type")?.ToString() ?? "Bar";
+        var xAxisCol = chartConfig?.GetValueOrDefault("xAxis")?.ToString() ?? "";
+        var yAxisCol = chartConfig?.GetValueOrDefault("yAxis")?.ToString() ?? "";
+        var seriesLabel = chartConfig?.GetValueOrDefault("seriesLabel")?.ToString() ?? "Giá trị";
+
+        var chartType = chartTypeStr switch
+        {
+            "Line" => ChartType.Line,
+            "Donut" => ChartType.Donut,
+            "Pie" => ChartType.Pie,
+            _ => ChartType.Bar
+        };
+
+        var rows = data?.Rows ?? new List<Dictionary<string, object?>>();
+        if (!rows.Any())
+            return new ChartModel(title, helpText, chartType, Array.Empty<string>(), Array.Empty<double>(), new(), "Không có dữ liệu", widget.HtmlTemplate);
+
+        var labels = rows.Select(r => r.GetValueOrDefault(xAxisCol)?.ToString() ?? "").ToArray();
+        var values = rows.Select(r => ToDouble(r.GetValueOrDefault(yAxisCol))).ToArray();
+
+        var series = new List<ChartSeries<double>>
+        {
+            new ChartSeries<double> { Name = seriesLabel, Data = values }
+        };
+
+        return new ChartModel(title, helpText, chartType, labels, values, series, null, widget.HtmlTemplate);
+    }
+
+    TableModel BuildTable(string title, string? helpText, string? htmlTemplate, WidgetDataDto? data)
+    {
+        if (data?.Error != null)
+            return new TableModel(title, helpText, new(), new(), data.Error, htmlTemplate);
+
+        var columns = data?.Columns?.ToList() ?? new List<string>();
+        var rows = HtmlTemplateHelper.ToStringRows(data?.Rows);
+        return new TableModel(title, helpText, columns, rows, null, htmlTemplate);
+    }
+
+    static string? GetFirstValue(WidgetDataDto? data)
+    {
+        var firstRow = data?.Rows?.FirstOrDefault();
+        if (firstRow == null) return null;
+        var val = firstRow.Values.FirstOrDefault();
+        if (val is JsonElement je) return je.ToString();
+        return val?.ToString();
+    }
+
+    static string FormatMetric(string? value, string format)
+    {
+        if (value == null) return "-";
+        if (!double.TryParse(value, System.Globalization.NumberStyles.Any,
+            System.Globalization.CultureInfo.InvariantCulture, out double num)) return value;
+        return format switch
+        {
+            "currency" => num >= 1_000_000_000
+                ? (num / 1_000_000_000).ToString("N1") + "B ₫"
+                : num >= 1_000_000
+                    ? (num / 1_000_000).ToString("N1") + "M ₫"
+                    : num.ToString("N0") + " ₫",
+            _ => num >= 1_000_000
+                ? (num / 1_000_000).ToString("N1") + "M"
+                : num.ToString("N0")
+        };
+    }
+
+    static double ToDouble(object? val)
+    {
+        if (val == null) return 0;
+        if (val is JsonElement je)
+            return je.ValueKind == JsonValueKind.Number ? je.GetDouble() : 0;
+        return Convert.ToDouble(val);
+    }
+
+    static Dictionary<string, object>? ParseConfig(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+        try { return JsonSerializer.Deserialize<Dictionary<string, object>>(json); }
+        catch { return null; }
+    }
+}

@@ -23,6 +23,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<IdeaPost> IdeaPosts => Set<IdeaPost>();
     public DbSet<IdeaSubscription> IdeaSubscriptions => Set<IdeaSubscription>();
     public DbSet<IdeaResult> IdeaResults => Set<IdeaResult>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -126,5 +127,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .WithMany(s => s.Results)
             .HasForeignKey(r => r.IdeaSubscriptionId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<RefreshToken>()
+            .HasOne(rt => rt.User)
+            .WithMany()
+            .HasForeignKey(rt => rt.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

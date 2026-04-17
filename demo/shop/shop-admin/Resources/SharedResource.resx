@@ -1,0 +1,729 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="Note" xml:space="preserve">
+    <value>Note</value>
+  </data>
+  <data name="Active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Inactive" xml:space="preserve">
+    <value>Inactive</value>
+  </data>
+  <data name="Enabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="Disabled" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="Never" xml:space="preserve">
+    <value>Never</value>
+  </data>
+  <data name="ConfirmDelete" xml:space="preserve">
+    <value>Confirm Delete</value>
+  </data>
+  <data name="Deleted" xml:space="preserve">
+    <value>Deleted.</value>
+  </data>
+  <data name="DeleteFailed" xml:space="preserve">
+    <value>Delete failed.</value>
+  </data>
+  <data name="FailedToLoad" xml:space="preserve">
+    <value>Failed to load: {0}</value>
+  </data>
+  <data name="Created" xml:space="preserve">
+    <value>Created!</value>
+  </data>
+  <data name="Updated" xml:space="preserve">
+    <value>Updated!</value>
+  </data>
+  <data name="FailedCreate" xml:space="preserve">
+    <value>Failed to create.</value>
+  </data>
+  <data name="FailedUpdate" xml:space="preserve">
+    <value>Failed to update.</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Nav_Dashboard" xml:space="preserve">
+    <value>Dashboard</value>
+  </data>
+  <data name="Nav_Reports" xml:space="preserve">
+    <value>Reports</value>
+  </data>
+  <data name="Nav_DashboardPages" xml:space="preserve">
+    <value>Dashboard Pages</value>
+  </data>
+  <data name="Nav_Widgets" xml:space="preserve">
+    <value>Widgets</value>
+  </data>
+  <data name="Nav_WidgetGroups" xml:space="preserve">
+    <value>Widget Groups</value>
+  </data>
+  <data name="Nav_DataSources" xml:space="preserve">
+    <value>Data Sources</value>
+  </data>
+  <data name="Nav_Schedules" xml:space="preserve">
+    <value>Schedules</value>
+  </data>
+  <data name="Nav_ConfigArchives" xml:space="preserve">
+    <value>Config Archives</value>
+  </data>
+  <data name="Nav_DeliveryHistory" xml:space="preserve">
+    <value>Delivery History</value>
+  </data>
+  <data name="Nav_Users" xml:space="preserve">
+    <value>Users</value>
+  </data>
+  <data name="Nav_Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Login_Title" xml:space="preserve">
+    <value>Sign In</value>
+  </data>
+  <data name="Login_Subtitle" xml:space="preserve">
+    <value>WidgetData Platform</value>
+  </data>
+  <data name="Login_Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Login_InvalidCredentials" xml:space="preserve">
+    <value>Invalid credentials. Please try again.</value>
+  </data>
+  <data name="Login_Failed" xml:space="preserve">
+    <value>Login failed: {0}</value>
+  </data>
+  <data name="Home_Title" xml:space="preserve">
+    <value>Dashboard</value>
+  </data>
+  <data name="Home_TotalWidgets" xml:space="preserve">
+    <value>Total Widgets</value>
+  </data>
+  <data name="Home_DataSources" xml:space="preserve">
+    <value>Data Sources</value>
+  </data>
+  <data name="Home_ActiveSchedules" xml:space="preserve">
+    <value>Active Schedules</value>
+  </data>
+  <data name="Home_SuccessfulExecutions" xml:space="preserve">
+    <value>Successful Executions</value>
+  </data>
+  <data name="Home_RecentExecutions" xml:space="preserve">
+    <value>Recent Executions</value>
+  </data>
+  <data name="Home_ColWidget" xml:space="preserve">
+    <value>Widget</value>
+  </data>
+  <data name="Home_ColStatus" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Home_ColStarted" xml:space="preserve">
+    <value>Started</value>
+  </data>
+  <data name="Home_ColDuration" xml:space="preserve">
+    <value>Duration</value>
+  </data>
+  <data name="Home_FailedToLoad" xml:space="preserve">
+    <value>Failed to load dashboard stats: {0}</value>
+  </data>
+  <data name="Settings_Title" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Settings_Placeholder" xml:space="preserve">
+    <value>Settings page - configure application preferences here.</value>
+  </data>
+  <data name="Widgets_Title" xml:space="preserve">
+    <value>Widgets</value>
+  </data>
+  <data name="Widgets_AddWidget" xml:space="preserve">
+    <value>Add Widget</value>
+  </data>
+  <data name="Widgets_EditWidget" xml:space="preserve">
+    <value>Edit Widget</value>
+  </data>
+  <data name="Widgets_TechnicalName" xml:space="preserve">
+    <value>Technical Name</value>
+  </data>
+  <data name="Widgets_TechnicalNameHelper" xml:space="preserve">
+    <value>Technical name, used in the system</value>
+  </data>
+  <data name="Widgets_DisplayName" xml:space="preserve">
+    <value>Display Name (friendly)</value>
+  </data>
+  <data name="Widgets_ShortDesc" xml:space="preserve">
+    <value>Short Description</value>
+  </data>
+  <data name="Widgets_ShortDescHelper" xml:space="preserve">
+    <value>Explain what this widget does</value>
+  </data>
+  <data name="Widgets_WidgetType" xml:space="preserve">
+    <value>Widget Type</value>
+  </data>
+  <data name="Widgets_DataSource" xml:space="preserve">
+    <value>Data Source</value>
+  </data>
+  <data name="Widgets_ConfigJson" xml:space="preserve">
+    <value>Configuration (JSON)</value>
+  </data>
+  <data name="Widgets_ChartConfigJson" xml:space="preserve">
+    <value>Chart Config (JSON)</value>
+  </data>
+  <data name="Widgets_CacheEnabled" xml:space="preserve">
+    <value>Cache Enabled</value>
+  </data>
+  <data name="Widgets_CacheTtl" xml:space="preserve">
+    <value>Cache TTL (min)</value>
+  </data>
+  <data name="Widgets_ActiveLabel" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Widgets_DeleteConfirm" xml:space="preserve">
+    <value>Delete widget {0}?</value>
+  </data>
+  <data name="Widgets_List" xml:space="preserve">
+    <value>Widget List</value>
+  </data>
+  <data name="Widgets_LastExecuted" xml:space="preserve">
+    <value>Last Executed</value>
+  </data>
+  <data name="Widgets_Rows" xml:space="preserve">
+    <value>Rows</value>
+  </data>
+  <data name="Widgets_ExecHistory" xml:space="preserve">
+    <value>Execution History</value>
+  </data>
+  <data name="Widgets_Trigger" xml:space="preserve">
+    <value>Trigger</value>
+  </data>
+  <data name="Widgets_ErrMsg" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Widgets_Created" xml:space="preserve">
+    <value>Widget created!</value>
+  </data>
+  <data name="Widgets_Updated" xml:space="preserve">
+    <value>Widget updated!</value>
+  </data>
+  <data name="Widgets_ExecResult" xml:space="preserve">
+    <value>&apos;{0}&apos;: {1} in {2}ms ({3} rows)</value>
+  </data>
+  <data name="Widgets_ExecFailed" xml:space="preserve">
+    <value>Execution failed.</value>
+  </data>
+  <data name="DS_Title" xml:space="preserve">
+    <value>Data Sources</value>
+  </data>
+  <data name="DS_AddTitle" xml:space="preserve">
+    <value>Add Data Source</value>
+  </data>
+  <data name="DS_EditTitle" xml:space="preserve">
+    <value>Edit Data Source</value>
+  </data>
+  <data name="DS_ConnString" xml:space="preserve">
+    <value>Connection String</value>
+  </data>
+  <data name="DS_ApiEndpoint" xml:space="preserve">
+    <value>API Endpoint</value>
+  </data>
+  <data name="DS_ApiKey" xml:space="preserve">
+    <value>API Key</value>
+  </data>
+  <data name="DS_Host" xml:space="preserve">
+    <value>Host</value>
+  </data>
+  <data name="DS_Port" xml:space="preserve">
+    <value>Port</value>
+  </data>
+  <data name="DS_Database" xml:space="preserve">
+    <value>Database</value>
+  </data>
+  <data name="DS_Username" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  <data name="DS_Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="DS_AdditionalConfig" xml:space="preserve">
+    <value>Additional Config (JSON)</value>
+  </data>
+  <data name="DS_ActiveLabel" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="DS_DeleteConfirm" xml:space="preserve">
+    <value>Delete data source {0}? This cannot be undone.</value>
+  </data>
+  <data name="DS_List" xml:space="preserve">
+    <value>Data Source List</value>
+  </data>
+  <data name="DS_LastTested" xml:space="preserve">
+    <value>Last Tested</value>
+  </data>
+  <data name="DS_NeverTested" xml:space="preserve">
+    <value>Never</value>
+  </data>
+  <data name="DS_Created" xml:space="preserve">
+    <value>Data source created!</value>
+  </data>
+  <data name="DS_Updated" xml:space="preserve">
+    <value>Data source updated!</value>
+  </data>
+  <data name="DS_TestFailed" xml:space="preserve">
+    <value>Test connection failed.</value>
+  </data>
+  <data name="Sched_Title" xml:space="preserve">
+    <value>Schedules</value>
+  </data>
+  <data name="Sched_AddTitle" xml:space="preserve">
+    <value>Add Schedule</value>
+  </data>
+  <data name="Sched_EditTitle" xml:space="preserve">
+    <value>Edit Schedule</value>
+  </data>
+  <data name="Sched_CronExpr" xml:space="preserve">
+    <value>Cron Expression</value>
+  </data>
+  <data name="Sched_CronHelp" xml:space="preserve">
+    <value>{0} daily 6am   {1} every 5 min</value>
+  </data>
+  <data name="Sched_Timezone" xml:space="preserve">
+    <value>Timezone</value>
+  </data>
+  <data name="Sched_IsEnabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="Sched_Retry" xml:space="preserve">
+    <value>Retry on Failure</value>
+  </data>
+  <data name="Sched_MaxRetries" xml:space="preserve">
+    <value>Max Retries</value>
+  </data>
+  <data name="Sched_ArchiveConfig" xml:space="preserve">
+    <value>Save config archive on each run</value>
+  </data>
+  <data name="Sched_ArchiveConfigHelper" xml:space="preserve">
+    <value>Automatically save a config snapshot each time this schedule runs</value>
+  </data>
+  <data name="Sched_DeleteConfirm" xml:space="preserve">
+    <value>Delete schedule for {0}?</value>
+  </data>
+  <data name="Sched_List" xml:space="preserve">
+    <value>Schedule List</value>
+  </data>
+  <data name="Sched_CronCol" xml:space="preserve">
+    <value>Schedule</value>
+  </data>
+  <data name="Sched_ArchiveConfigCol" xml:space="preserve">
+    <value>Archive Config</value>
+  </data>
+  <data name="Sched_LastRun" xml:space="preserve">
+    <value>Last Run</value>
+  </data>
+  <data name="Sched_NextRun" xml:space="preserve">
+    <value>Next Run</value>
+  </data>
+  <data name="Sched_Created" xml:space="preserve">
+    <value>Schedule created!</value>
+  </data>
+  <data name="Sched_Updated" xml:space="preserve">
+    <value>Schedule updated!</value>
+  </data>
+  <data name="Sched_EnabledMsg" xml:space="preserve">
+    <value>Schedule enabled.</value>
+  </data>
+  <data name="Sched_DisabledMsg" xml:space="preserve">
+    <value>Schedule disabled.</value>
+  </data>
+  <data name="Sched_ToggleFailed" xml:space="preserve">
+    <value>Operation failed.</value>
+  </data>
+  <data name="Sched_Triggered" xml:space="preserve">
+    <value>&#x2713; Schedule triggered!</value>
+  </data>
+  <data name="Sched_TriggeredWithArchive" xml:space="preserve">
+    <value>&#x2713; Schedule triggered and config archived!</value>
+  </data>
+  <data name="Sched_TriggerFailed" xml:space="preserve">
+    <value>Trigger failed.</value>
+  </data>
+  <data name="Users_Title" xml:space="preserve">
+    <value>Users</value>
+  </data>
+  <data name="Users_TabList" xml:space="preserve">
+    <value>User List</value>
+  </data>
+  <data name="Users_TabPermissions" xml:space="preserve">
+    <value>Widget Permissions</value>
+  </data>
+  <data name="Users_AddUser" xml:space="preserve">
+    <value>Add User</value>
+  </data>
+  <data name="Users_DisplayName" xml:space="preserve">
+    <value>Display Name</value>
+  </data>
+  <data name="Users_PasswordHelper" xml:space="preserve">
+    <value>Min 8 chars, uppercase, number, symbol</value>
+  </data>
+  <data name="Users_Create" xml:space="preserve">
+    <value>Create</value>
+  </data>
+  <data name="Users_UserList" xml:space="preserve">
+    <value>User List</value>
+  </data>
+  <data name="Users_Roles" xml:space="preserve">
+    <value>Roles</value>
+  </data>
+  <data name="Users_LastLogin" xml:space="preserve">
+    <value>Last Login</value>
+  </data>
+  <data name="Users_Permissions" xml:space="preserve">
+    <value>Permissions</value>
+  </data>
+  <data name="Users_PermissionsDesc" xml:space="preserve">
+    <value>Assign view, run, and edit permissions for each widget per user.</value>
+  </data>
+  <data name="Users_PermOf" xml:space="preserve">
+    <value>Permissions for: {0}</value>
+  </data>
+  <data name="Users_SelectWidget" xml:space="preserve">
+    <value>Select Widget</value>
+  </data>
+  <data name="Users_CanView" xml:space="preserve">
+    <value>View</value>
+  </data>
+  <data name="Users_CanExecute" xml:space="preserve">
+    <value>Run</value>
+  </data>
+  <data name="Users_CanEdit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Users_AssignPerm" xml:space="preserve">
+    <value>Assign Permission</value>
+  </data>
+  <data name="Users_AddWidgetPerm" xml:space="preserve">
+    <value>Add Widget Permission</value>
+  </data>
+  <data name="Users_WidgetOrGroup" xml:space="preserve">
+    <value>Widget / Group</value>
+  </data>
+  <data name="Users_PermType" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Users_Widget" xml:space="preserve">
+    <value>Widget</value>
+  </data>
+  <data name="Users_Group" xml:space="preserve">
+    <value>Group</value>
+  </data>
+  <data name="Users_NoPermissions" xml:space="preserve">
+    <value>This user has no specific widget permissions.</value>
+  </data>
+  <data name="Users_SelectFromList" xml:space="preserve">
+    <value>Select a user from the &quot;List&quot; tab to view and edit permissions.</value>
+  </data>
+  <data name="Users_Created" xml:space="preserve">
+    <value>User created!</value>
+  </data>
+  <data name="Users_FailedCreate" xml:space="preserve">
+    <value>Failed to create user.</value>
+  </data>
+  <data name="Users_PermAssigned" xml:space="preserve">
+    <value>Permission assigned!</value>
+  </data>
+  <data name="Users_PermAssignFailed" xml:space="preserve">
+    <value>Failed to assign permission.</value>
+  </data>
+  <data name="Users_PermRemoved" xml:space="preserve">
+    <value>Permission removed!</value>
+  </data>
+  <data name="Users_PermRemoveFailed" xml:space="preserve">
+    <value>Remove failed.</value>
+  </data>
+  <data name="Users_NeverLoggedIn" xml:space="preserve">
+    <value>Never</value>
+  </data>
+  <data name="CA_Title" xml:space="preserve">
+    <value>Widget Config Archives</value>
+  </data>
+  <data name="CA_Subtitle" xml:space="preserve">
+    <value>History of widget config snapshots by schedule or manually. You can restore any old version from the Widgets page.</value>
+  </data>
+  <data name="CA_RestoreConfirm" xml:space="preserve">
+    <value>Confirm Restore Config</value>
+  </data>
+  <data name="CA_RestoreText" xml:space="preserve">
+    <value>Restore widget config {0} to snapshot at {1}?</value>
+  </data>
+  <data name="CA_RestoreNote" xml:space="preserve">
+    <value>Note: {0}</value>
+  </data>
+  <data name="CA_RestoreWarning" xml:space="preserve">
+    <value>This operation will overwrite the current widget config and automatically save the current snapshot before restoring.</value>
+  </data>
+  <data name="CA_Restore" xml:space="preserve">
+    <value>Restore</value>
+  </data>
+  <data name="CA_DeleteConfirm" xml:space="preserve">
+    <value>Confirm Delete Archive</value>
+  </data>
+  <data name="CA_DeleteText" xml:space="preserve">
+    <value>Delete archive of widget {0} at {1}?</value>
+  </data>
+  <data name="CA_FilterByWidget" xml:space="preserve">
+    <value>Filter by Widget</value>
+  </data>
+  <data name="CA_Source" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="CA_BySchedule" xml:space="preserve">
+    <value>By Schedule</value>
+  </data>
+  <data name="CA_Manual" xml:space="preserve">
+    <value>Manual</value>
+  </data>
+  <data name="CA_AutoOnSave" xml:space="preserve">
+    <value>Auto (OnSave)</value>
+  </data>
+  <data name="CA_Filter" xml:space="preserve">
+    <value>Filter</value>
+  </data>
+  <data name="CA_List" xml:space="preserve">
+    <value>Archive List ({0} versions)</value>
+  </data>
+  <data name="CA_ArchiveTime" xml:space="preserve">
+    <value>Archive Time</value>
+  </data>
+  <data name="CA_ArchivedBy" xml:space="preserve">
+    <value>Archived By</value>
+  </data>
+  <data name="CA_NoRecords" xml:space="preserve">
+    <value>No archives yet.</value>
+  </data>
+  <data name="CA_Restored" xml:space="preserve">
+    <value>&#x2713; Config restored!</value>
+  </data>
+  <data name="CA_RestoreFailed" xml:space="preserve">
+    <value>Restore failed.</value>
+  </data>
+  <data name="CA_DeletedMsg" xml:space="preserve">
+    <value>&#x2713; Archive deleted.</value>
+  </data>
+  <data name="CA_DeleteFailed" xml:space="preserve">
+    <value>Delete failed.</value>
+  </data>
+  <data name="CA_FailedToLoad" xml:space="preserve">
+    <value>Failed to load data: {0}</value>
+  </data>
+  <data name="WG_Title" xml:space="preserve">
+    <value>Widget Groups</value>
+  </data>
+  <data name="WG_Subtitle" xml:space="preserve">
+    <value>Group widgets for easier management and group-based permissions.</value>
+  </data>
+  <data name="WG_AddTitle" xml:space="preserve">
+    <value>Create New Group</value>
+  </data>
+  <data name="WG_EditTitle" xml:space="preserve">
+    <value>Edit Group</value>
+  </data>
+  <data name="WG_GroupName" xml:space="preserve">
+    <value>Group Name</value>
+  </data>
+  <data name="WG_GroupNameHelper" xml:space="preserve">
+    <value>Short, memorable name (e.g.: Revenue Reports)</value>
+  </data>
+  <data name="WG_DescHelper" xml:space="preserve">
+    <value>Briefly explain what this group is for</value>
+  </data>
+  <data name="WG_SelectWidgets" xml:space="preserve">
+    <value>Select widgets for this group:</value>
+  </data>
+  <data name="WG_ActiveLabel" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="WG_DeleteConfirm" xml:space="preserve">
+    <value>Delete group {0}?</value>
+  </data>
+  <data name="WG_List" xml:space="preserve">
+    <value>Group List</value>
+  </data>
+  <data name="WG_Create" xml:space="preserve">
+    <value>Create Group</value>
+  </data>
+  <data name="WG_GroupNameCol" xml:space="preserve">
+    <value>Group Name</value>
+  </data>
+  <data name="WG_WidgetCount" xml:space="preserve">
+    <value>{0} widgets</value>
+  </data>
+  <data name="WG_Created" xml:space="preserve">
+    <value>Group created!</value>
+  </data>
+  <data name="WG_Updated" xml:space="preserve">
+    <value>Group updated!</value>
+  </data>
+  <data name="WG_Deleted" xml:space="preserve">
+    <value>Group deleted!</value>
+  </data>
+  <data name="WG_FailedToLoad" xml:space="preserve">
+    <value>Failed to load group list: {0}</value>
+  </data>
+  <data name="WG_BuildPage" xml:space="preserve">
+    <value>Build Page</value>
+  </data>
+  <data name="DP_Title" xml:space="preserve">
+    <value>Dashboard Pages</value>
+  </data>
+  <data name="DP_Subtitle" xml:space="preserve">
+    <value>Create and manage dashboard pages with multiple widgets.</value>
+  </data>
+  <data name="DP_AddTitle" xml:space="preserve">
+    <value>Create New Page</value>
+  </data>
+  <data name="DP_EditTitle" xml:space="preserve">
+    <value>Edit Page</value>
+  </data>
+  <data name="DP_PageName" xml:space="preserve">
+    <value>Page Name</value>
+  </data>
+  <data name="DP_DescHelper" xml:space="preserve">
+    <value>Briefly describe the page content</value>
+  </data>
+  <data name="DP_SelectWidgets" xml:space="preserve">
+    <value>Select widgets to show on this page:</value>
+  </data>
+  <data name="DP_ActiveLabel" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="DP_SavePage" xml:space="preserve">
+    <value>Save Page</value>
+  </data>
+  <data name="DP_DeleteConfirm" xml:space="preserve">
+    <value>Delete page {0}?</value>
+  </data>
+  <data name="DP_List" xml:space="preserve">
+    <value>Page List</value>
+  </data>
+  <data name="DP_Create" xml:space="preserve">
+    <value>Create New Page</value>
+  </data>
+  <data name="DP_PageNameCol" xml:space="preserve">
+    <value>Page Name</value>
+  </data>
+  <data name="DP_WidgetCount" xml:space="preserve">
+    <value>{0} widgets</value>
+  </data>
+  <data name="DP_Created" xml:space="preserve">
+    <value>&#x2713; Dashboard page created!</value>
+  </data>
+  <data name="DP_Updated" xml:space="preserve">
+    <value>&#x2713; Page updated!</value>
+  </data>
+  <data name="DP_Deleted" xml:space="preserve">
+    <value>&#x2713; Page deleted!</value>
+  </data>
+  <data name="DP_FailedToLoad" xml:space="preserve">
+    <value>Failed to load pages: {0}</value>
+  </data>
+  <data name="DP_BuildPage" xml:space="preserve">
+    <value>Build Page</value>
+  </data>
+  <data name="DP_Preview" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="Reports_Title" xml:space="preserve">
+    <value>Reports</value>
+  </data>
+  <data name="Reports_Subtitle" xml:space="preserve">
+    <value>Preview report pages generated from real data.</value>
+  </data>
+  <data name="Reports_ViewReport" xml:space="preserve">
+    <value>View Report</value>
+  </data>
+  <data name="Reports_FailedToLoad" xml:space="preserve">
+    <value>Failed to load report list: {0}</value>
+  </data>
+  <data name="Del_Title" xml:space="preserve">
+    <value>Delivery History</value>
+  </data>
+  <data name="Del_Subtitle" xml:space="preserve">
+    <value>Track the status of data delivery to various targets.</value>
+  </data>
+  <data name="Del_SelectWidget" xml:space="preserve">
+    <value>Select widget</value>
+  </data>
+  <data name="Del_AllWidgets" xml:space="preserve">
+    <value>-- All --</value>
+  </data>
+  <data name="Del_NoHistory" xml:space="preserve">
+    <value>No delivery history yet.</value>
+  </data>
+  <data name="Del_DeliveryTarget" xml:space="preserve">
+    <value>Delivery Target</value>
+  </data>
+  <data name="Del_Time" xml:space="preserve">
+    <value>Time</value>
+  </data>
+  <data name="Del_Message" xml:space="preserve">
+    <value>Message</value>
+  </data>
+  <data name="Del_SentBy" xml:space="preserve">
+    <value>Sent By</value>
+  </data>
+  <data name="Del_Success" xml:space="preserve">
+    <value>&#x2705; Success</value>
+  </data>
+  <data name="Del_Failed" xml:space="preserve">
+    <value>&#x274C; Failed</value>
+  </data>
+  <data name="Del_Running" xml:space="preserve">
+    <value>&#x23F3; Running</value>
+  </data>
+</root>

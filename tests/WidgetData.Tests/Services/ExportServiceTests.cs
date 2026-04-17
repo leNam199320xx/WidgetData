@@ -22,7 +22,7 @@ public class ExportServiceTests : IDisposable
             .Options;
         _context = new ApplicationDbContext(options);
         _widgetServiceMock = new Mock<IWidgetService>();
-        _service = new ExportService(_context, _widgetServiceMock.Object);
+        _service = new ExportService(_widgetServiceMock.Object);
     }
 
     public void Dispose()
@@ -94,6 +94,7 @@ public class ExportServiceTests : IDisposable
     public async Task ExportAsync_UnsupportedFormat_ThrowsNotSupportedException()
     {
         _widgetServiceMock.Setup(s => s.GetByIdAsync(1)).ReturnsAsync(new WidgetDto { Id = 1, Name = "W" });
+        _widgetServiceMock.Setup(s => s.GetDataAsync(1)).ReturnsAsync((object?)null);
 
         await Assert.ThrowsAsync<NotSupportedException>(() => _service.ExportAsync(1, "docx"));
     }
@@ -104,37 +105,32 @@ public class ExportServiceTests : IDisposable
     public async Task ExportAsync_CsvFormat_NoExecutions_ReturnsHeaderOnlyBytes()
     {
         _widgetServiceMock.Setup(s => s.GetByIdAsync(1)).ReturnsAsync(new WidgetDto { Id = 1, Name = "TestWidget" });
+        _widgetServiceMock.Setup(s => s.GetDataAsync(1)).ReturnsAsync((object?)null);
 
         var bytes = await _service.ExportAsync(1, "csv");
 
         Assert.NotEmpty(bytes);
         var text = System.Text.Encoding.UTF8.GetString(bytes);
-        Assert.Contains("ExecutionId", text);
-        Assert.Contains("Status", text);
+        // When GetDataAsync returns null, ExportService serializes it as a single-column "data" CSV
+        Assert.Contains("data", text);
     }
 
     [Fact]
     public async Task ExportAsync_CsvFormat_WithExecutions_IncludesDataRows()
     {
         _widgetServiceMock.Setup(s => s.GetByIdAsync(1)).ReturnsAsync(new WidgetDto { Id = 1, Name = "W" });
-        _context.WidgetExecutions.Add(new WidgetExecution
+        // Simulate GetDataAsync returning structured rows
+        _widgetServiceMock.Setup(s => s.GetDataAsync(1)).ReturnsAsync(new Dictionary<string, object?>
         {
-            ExecutionId = Guid.NewGuid(),
-            WidgetId = 1,
-            Status = ExecutionStatus.Success,
-            TriggeredBy = ExecutionTrigger.Manual,
-            StartedAt = DateTime.UtcNow,
-            CompletedAt = DateTime.UtcNow,
-            ExecutionTimeMs = 100,
-            RowCount = 10
+            ["columns"] = System.Text.Json.JsonSerializer.SerializeToElement(new[] { "id", "name" }),
+            ["rows"] = System.Text.Json.JsonSerializer.SerializeToElement(new[] { new { id = "1", name = "Test" } })
         });
-        await _context.SaveChangesAsync();
 
         var bytes = await _service.ExportAsync(1, "csv");
         var text = System.Text.Encoding.UTF8.GetString(bytes);
 
-        Assert.Contains("Success", text);
-        Assert.Contains("Manual", text);
+        Assert.Contains("id", text);
+        Assert.Contains("name", text);
     }
 
     // ─── ExportAsync – TXT output ─────────────────────────────────────────────
@@ -143,12 +139,12 @@ public class ExportServiceTests : IDisposable
     public async Task ExportAsync_TxtFormat_ContainsTitleAndHeaders()
     {
         _widgetServiceMock.Setup(s => s.GetByIdAsync(1)).ReturnsAsync(new WidgetDto { Id = 1, Name = "My Widget" });
+        _widgetServiceMock.Setup(s => s.GetDataAsync(1)).ReturnsAsync((object?)null);
 
         var bytes = await _service.ExportAsync(1, "txt");
         var text = System.Text.Encoding.UTF8.GetString(bytes);
 
         Assert.Contains("My Widget", text);
-        Assert.Contains("ExecutionId", text);
     }
 
     // ─── ExportAsync – HTML output ────────────────────────────────────────────
@@ -157,6 +153,7 @@ public class ExportServiceTests : IDisposable
     public async Task ExportAsync_HtmlFormat_ContainsDocTypeAndTable()
     {
         _widgetServiceMock.Setup(s => s.GetByIdAsync(1)).ReturnsAsync(new WidgetDto { Id = 1, Name = "Dashboard" });
+        _widgetServiceMock.Setup(s => s.GetDataAsync(1)).ReturnsAsync((object?)null);
 
         var bytes = await _service.ExportAsync(1, "html");
         var text = System.Text.Encoding.UTF8.GetString(bytes);
@@ -172,6 +169,7 @@ public class ExportServiceTests : IDisposable
     public async Task ExportAsync_ExcelFormat_ReturnsNonEmptyBytes()
     {
         _widgetServiceMock.Setup(s => s.GetByIdAsync(1)).ReturnsAsync(new WidgetDto { Id = 1, Name = "W" });
+        _widgetServiceMock.Setup(s => s.GetDataAsync(1)).ReturnsAsync((object?)null);
 
         var bytes = await _service.ExportAsync(1, "excel");
 

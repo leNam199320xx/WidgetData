@@ -9,12 +9,14 @@ namespace WidgetData.Tests.Services;
 public class ScheduleServiceTests
 {
     private readonly Mock<IScheduleRepository> _repoMock;
+    private readonly Mock<WidgetData.Application.Interfaces.IWidgetService> _widgetServiceMock;
     private readonly ScheduleService _service;
 
     public ScheduleServiceTests()
     {
         _repoMock = new Mock<IScheduleRepository>();
-        _service = new ScheduleService(_repoMock.Object);
+        _widgetServiceMock = new Mock<WidgetData.Application.Interfaces.IWidgetService>();
+        _service = new ScheduleService(_repoMock.Object, _widgetServiceMock.Object);
     }
 
     // ─── GetAllAsync ─────────────────────────────────────────────────────────

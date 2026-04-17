@@ -17,6 +17,7 @@ Widget Data là platform cho phép bạn:
 - 📈 **Visualize real-time** trên Blazor dashboard với SignalR
 - 🎨 **HTML Designer** tạo giao diện tùy chỉnh với template engine
 - 📑 **Dashboard Pages** ghép nhiều widget thành trang báo cáo
+- 🌐 **Standalone Frontend** — public-facing pages từ WidgetEngine, tách hoàn toàn khỏi Blazor
 - 🔐 **Bảo mật** với authentication, authorization, encryption
 
 **Không cần code!** Business users có thể tạo data pipelines qua visual builder.
@@ -33,6 +34,8 @@ Widget Data là platform cho phép bạn:
 - **Live Data**: Real-time dashboard qua SignalR, auto-refresh
 - **Security**: ASP.NET Identity, JWT, MFA, RBAC, encryption → [📖 Chi tiết](doc/security.md)
 - **Blazor UI**: Modern dashboard với MudBlazor, charts, code editor
+- **Store Module**: Quản lý sản phẩm, đơn hàng, thanh toán — giao diện tách biệt với `StoreLayout`
+- **Demo Storefront** (`demo/shop-front/`): trang bán hàng public HTML/CSS/JS thuần, render từ config xuất bởi **WidgetData.Web** (Blazor admin shop)
 
 ## 🎯 Use Cases
 
@@ -92,44 +95,45 @@ dotnet run --project src/WidgetData.API
 ```
 
 Truy cập:
-- Frontend (Blazor): `https://localhost:5001`
-- API Gateway (YARP): `https://localhost:7000`
-- API Swagger: `https://localhost:7001/swagger`
-- .NET Aspire Dashboard: `https://localhost:15888`
+- **Admin Dashboard** (Blazor): `https://localhost:5001`
+- **Demo Storefront** (trang bán hàng public): `npx serve demo/storefront` hoặc mở `demo/shop-front/index.html`
+- **API Gateway** (YARP): `https://localhost:7000`
+- **API Swagger**: `https://localhost:7001/swagger`
+- **.NET Aspire Dashboard**: `https://localhost:15888`
 
 👉 [Hướng dẫn cài đặt chi tiết](doc/deployment.md)
 
 ## 📐 Architecture
 
 ```
-┌───────────────────────────────────────────┐
-│         .NET ASPIRE APP HOST              │
-│   AppHost + ServiceDefaults + Gateway     │
-└────────────────┬──────────────────────────┘
-                 │ YARP Reverse Proxy
-┌────────────────┴──────────────────────────┐
-│         BLAZOR FRONTEND (Web)             │
-│  Dashboard | Widget Builder | HTML Designer│
-│  Dashboard Pages | Reports Preview        │
-└────────────────┬──────────────────────────┘
-                 │ SignalR + REST API
-┌────────────────┴──────────────────────────┐
-│         ASP.NET CORE WEB API              │
-│  Widget API | Auth | Reports | Source API │
-└────────────────┬──────────────────────────┘
-                 │
-┌────────────────┴──────────────────────────┐
-│  Services: Widget | Schedule | Cache      │
-│  HtmlTemplateHelper | SalesDataSeeder     │
-└────────────────┬──────────────────────────┘
-                 │
-┌────────────────┴──────────────────────────┐
-│  Infra: EF Core SQLite | Hangfire | Redis │
-└────────────────┬──────────────────────────┘
-                 │
-┌────────────────┴──────────────────────────┐
-│  Data: SQLite | Files | APIs              │
-└───────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│  TẦNG 1 — PLATFORM  (src/)                              │
+│                                                         │
+│  .NET Aspire AppHost + Gateway (YARP)                   │
+│                                                         │
+│  WidgetData.Web (Blazor)                                │
+│    Admin platform: widget builder, HTML designer        │
+│    Dashboard page builder, reports, data pipeline       │
+│                                                         │
+│  WidgetData.API (ASP.NET Core)                          │
+│    Execute widget | schedule | cache | auth | reports   │
+│                         ↓                               │
+│  EF Core + SQLite | Hangfire | Redis | SignalR           │
+└─────────────────────────┬───────────────────────────────┘
+                          │ Platform deploy cho đơn vị nghiệp vụ
+┌─────────────────────────▼───────────────────────────────┐
+│  TẦNG 2 — BUSINESS APP  (demo/)                         │
+│                                                         │
+│  shop-admin/    ← Backend quản lý shop                  │
+│    WidgetData.Web cấu hình cho nghiệp vụ bán hàng       │
+│    Quản lý sản phẩm, đơn hàng, KH, báo cáo              │
+│    Xuất page config JSON → storefront                   │
+│                                                         │
+│  shop-front/    ← Trang bán hàng public                 │
+│    HTML/CSS/JS thuần (zero .NET dependency)             │
+│    WidgetEngine đọc JSON config → render UI             │
+│    Deploy độc lập: CDN / nginx / GitHub Pages           │
+└─────────────────────────────────────────────────────────┘
 ```
 
 👉 [Chi tiết Architecture](doc/architecture.md)
@@ -137,7 +141,8 @@ Truy cập:
 ## 💻 Technology Stack
 
 **Backend**: ASP.NET Core 10.0, EF Core, Hangfire, SignalR, QuestPDF  
-**Frontend**: Blazor Server, MudBlazor, ChartJs, BlazorMonaco  
+**Frontend (Blazor)**: Blazor Server, MudBlazor, ChartJs, BlazorMonaco  
+**Frontend (Standalone)**: Vanilla HTML/CSS/JS, WidgetEngine library (zero-dep)  
 **Infrastructure**: .NET Aspire, YARP Gateway, SQLite, Docker, Serilog  
 
 👉 [Chi tiết Technology](doc/architecture.md#technology-stack)
@@ -226,7 +231,7 @@ Truy cập:
 
 ## 🚦 Roadmap
 
-- ✅ **v1.0** (Q2 2026) - MVP: Core widgets, scheduling, Blazor UI, .NET Aspire, HTML Designer, Dashboard Pages, Reports
+- ✅ **v1.0** (Q2 2026) - MVP: Core widgets, scheduling, Blazor UI, .NET Aspire, HTML Designer, Dashboard Pages, Reports, Store module, Demo Shop (standalone + blazor-web)
 - 🔄 **v1.5** (Q3 2026) - Advanced charts, templates
 - 📅 **v2.0** (Q4 2026) - AI features, Power BI integration
 - 📅 **v2.5** (Q1 2027) - Visual ETL, multi-tenancy
@@ -257,5 +262,5 @@ MIT License - see [LICENSE](LICENSE)
 
 ---
 
-**Made with ❤️ using .NET & Blazor**
+**Made with ❤️ using .NET, Blazor & Vanilla JS**
 

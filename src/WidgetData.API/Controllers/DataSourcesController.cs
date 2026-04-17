@@ -19,7 +19,16 @@ public class DataSourcesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll() => Ok(await _service.GetAllAsync());
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 200) pageSize = 20;
+
+        var all = (await _service.GetAllAsync()).ToList();
+        var total = all.Count;
+        var items = all.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        return Ok(new PagedResult<DataSourceDto> { Items = items, Total = total, Page = page, PageSize = pageSize });
+    }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
@@ -29,6 +38,7 @@ public class DataSourcesController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> Create([FromBody] CreateDataSourceDto dto)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
@@ -37,6 +47,7 @@ public class DataSourcesController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateDataSourceDto dto)
     {
         var result = await _service.UpdateAsync(id, dto);
@@ -44,6 +55,7 @@ public class DataSourcesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var result = await _service.DeleteAsync(id);

@@ -73,7 +73,10 @@ public class WidgetGroupService : IWidgetGroupService
         var desired = dto.WidgetIds.ToHashSet();
 
         foreach (var toRemove in existing.Except(desired))
-            _context.WidgetGroupMembers.Remove(group.Members.First(m => m.WidgetId == toRemove));
+        {
+            var member = group.Members.FirstOrDefault(m => m.WidgetId == toRemove);
+            if (member != null) _context.WidgetGroupMembers.Remove(member);
+        }
 
         foreach (var toAdd in desired.Except(existing))
             _context.WidgetGroupMembers.Add(new WidgetGroupMember { WidgetGroupId = id, WidgetId = toAdd });

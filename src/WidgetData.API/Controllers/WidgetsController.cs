@@ -32,19 +32,30 @@ public class WidgetsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 200) pageSize = 20;
+
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
 
+        IEnumerable<WidgetDto> source;
         if (userId != null && !roles.Contains("Admin"))
         {
             var accessibleIds = (await _permissionService.GetAccessibleWidgetIdsAsync(userId)).ToHashSet();
             var all = await _service.GetAllAsync();
-            return Ok(all.Where(w => accessibleIds.Contains(w.Id)));
+            source = all.Where(w => accessibleIds.Contains(w.Id));
+        }
+        else
+        {
+            source = await _service.GetAllAsync();
         }
 
-        return Ok(await _service.GetAllAsync());
+        var list = source.ToList();
+        var total = list.Count;
+        var items = list.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        return Ok(new PagedResult<WidgetDto> { Items = items, Total = total, Page = page, PageSize = pageSize });
     }
 
     [HttpGet("{id}")]
@@ -83,6 +94,17 @@ public class WidgetsController : ControllerBase
     public async Task<IActionResult> Execute(int id, [FromQuery] int? scheduleId = null)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
+        var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
+
+        if (!roles.Contains("Admin"))
+        {
+            var hasAccess = await _permissionService.HasWidgetAccessAsync(userId, id, "execute");
+            if (!hasAccess) return Forbid();
+        }
+
+        var widget = await _service.GetByIdAsync(id);
+        if (widget == null) return NotFound();
+
         var result = await _service.ExecuteAsync(id, userId, scheduleId);
         return Ok(result);
     }
@@ -90,6 +112,15 @@ public class WidgetsController : ControllerBase
     [HttpGet("{id}/data")]
     public async Task<IActionResult> GetData(int id)
     {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+        var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
+
+        if (!roles.Contains("Admin"))
+        {
+            var hasAccess = await _permissionService.HasWidgetAccessAsync(userId, id, "view");
+            if (!hasAccess) return Forbid();
+        }
+
         var result = await _service.GetDataAsync(id);
         return result == null ? NotFound() : Ok(result);
     }

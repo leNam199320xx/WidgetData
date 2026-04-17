@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
+using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
 using WidgetData.Domain.Interfaces;
@@ -28,8 +30,10 @@ public class WidgetServiceTests
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
         _context = new ApplicationDbContext(options);
+        var auditServiceMock = new Mock<IAuditService>();
+        var loggerMock = new Mock<ILogger<WidgetService>>();
         _service = new WidgetService(_widgetRepoMock.Object, _executionRepoMock.Object, _context,
-            _archiveRepoMock.Object, _scheduleRepoMock.Object);
+            _archiveRepoMock.Object, _scheduleRepoMock.Object, auditServiceMock.Object, loggerMock.Object);
     }
 
     // ─── GetAllAsync ─────────────────────────────────────────────────────────

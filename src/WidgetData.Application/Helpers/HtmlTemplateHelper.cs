@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Web;
 
 namespace WidgetData.Application.Helpers;
@@ -13,6 +14,24 @@ public static class HtmlTemplateHelper
     public const int MaxPreviewRows = 100;
     public const int MaxBuilderPreviewRows = 20;
 
+    // Patterns used for XSS sanitization
+    private static readonly Regex ScriptTagRegex = new(@"<\s*script[^>]*>[\s\S]*?<\s*/\s*script\s*>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex InlineEventRegex = new(@"\s+on\w+\s*=\s*([""'])[^""']*\1", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex JavascriptHrefRegex = new(@"href\s*=\s*([""'])\s*javascript:[^""']*\1", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    /// <summary>
+    /// Sanitizes an HTML template to remove potentially dangerous content (XSS vectors).
+    /// Strips script tags, inline event handlers (onclick, onload, etc.), and javascript: hrefs.
+    /// </summary>
+    public static string SanitizeTemplate(string template)
+    {
+        if (string.IsNullOrWhiteSpace(template)) return template;
+        var sanitized = ScriptTagRegex.Replace(template, string.Empty);
+        sanitized = InlineEventRegex.Replace(sanitized, string.Empty);
+        sanitized = JavascriptHrefRegex.Replace(sanitized, "href=\"#\"");
+        return sanitized;
+    }
+
     /// <summary>
     /// Renders an HTML template by substituting column variable placeholders with actual row data.
     /// </summary>
@@ -20,7 +39,8 @@ public static class HtmlTemplateHelper
     {
         if (string.IsNullOrWhiteSpace(template)) return string.Empty;
 
-        var result = template;
+        // Sanitize template before rendering to prevent stored XSS
+        var result = SanitizeTemplate(template);
         const string startTag = "{{#each rows}}";
         const string endTag = "{{/each}}";
 

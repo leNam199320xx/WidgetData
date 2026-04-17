@@ -41,12 +41,7 @@ try
 
     var jwtSecret = builder.Configuration["JwtSettings:Secret"];
     if (string.IsNullOrWhiteSpace(jwtSecret))
-    {
-        if (!builder.Environment.IsDevelopment())
-            throw new InvalidOperationException("JwtSettings:Secret must be configured in non-development environments.");
-        jwtSecret = "DevOnlySecretKey32CharactersLong!!";
-        Log.Warning("Using development fallback JWT secret. Do not use in production.");
-    }
+        throw new InvalidOperationException("JwtSettings:Secret must be configured. Set it via environment variable or User Secrets.");
     builder.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -69,8 +64,19 @@ try
     builder.Services.AddCors(options =>
     {
         options.AddDefaultPolicy(policy =>
-            policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+        {
+            var allowedOrigins = builder.Configuration.GetSection("CorsSettings:AllowedOrigins").Get<string[]>();
+            if (allowedOrigins != null && allowedOrigins.Length > 0)
+                policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod();
+            else if (builder.Environment.IsDevelopment())
+                policy.WithOrigins("http://localhost:5000", "https://localhost:5001", "http://localhost:5173")
+                      .AllowAnyHeader().AllowAnyMethod();
+            else
+                throw new InvalidOperationException("CorsSettings:AllowedOrigins must be configured in non-development environments.");
+        });
     });
+
+    builder.Services.AddHealthChecks();
 
     builder.Services.AddRateLimiter(options =>
     {
@@ -79,11 +85,31 @@ try
             opt.PermitLimit = 100;
             opt.Window = TimeSpan.FromMinutes(1);
         });
+        options.AddFixedWindowLimiter("auth", opt =>
+        {
+            opt.PermitLimit = 5;
+            opt.Window = TimeSpan.FromMinutes(1);
+        });
     });
 
     var app = builder.Build();
 
     app.MapDefaultEndpoints();
+
+    app.UseExceptionHandler(errorApp =>
+    {
+        errorApp.Run(async context =>
+        {
+            context.Response.StatusCode = 500;
+            context.Response.ContentType = "application/json";
+            var error = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+            if (error != null)
+            {
+                Log.Error(error.Error, "Unhandled exception");
+                await context.Response.WriteAsJsonAsync(new { error = "An unexpected error occurred. Please try again later." });
+            }
+        });
+    });
 
     using (var scope = app.Services.CreateScope())
     {
@@ -105,6 +131,7 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
+    app.MapHealthChecks("/health");
 
     app.Run();
 }

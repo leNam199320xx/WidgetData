@@ -1,6 +1,9 @@
+using System.Net.Http;
+using Microsoft.Data.Sqlite;
 using WidgetData.Application.DTOs;
 using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Entities;
+using WidgetData.Domain.Enums;
 using WidgetData.Domain.Interfaces;
 
 namespace WidgetData.Infrastructure.Services;
@@ -82,10 +85,48 @@ public class DataSourceService : IDataSourceService
     {
         var ds = await _repo.GetByIdAsync(id);
         if (ds == null) return "Data source not found";
+
+        string result;
+        try
+        {
+            result = ds.SourceType switch
+            {
+                DataSourceType.SQLite => await TestSqliteAsync(ds.ConnectionString),
+                DataSourceType.RestApi => await TestRestApiAsync(ds.ApiEndpoint, ds.ApiKey),
+                _ => "Connection test not supported for this source type"
+            };
+        }
+        catch (Exception ex)
+        {
+            result = $"Connection failed: {ex.Message}";
+        }
+
         ds.LastTestedAt = DateTime.UtcNow;
-        ds.LastTestResult = "Connection successful";
+        ds.LastTestResult = result;
         await _repo.UpdateAsync(ds);
+        return result;
+    }
+
+    private static async Task<string> TestSqliteAsync(string? connectionString)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+            return "Connection failed: connection string is empty";
+        using var conn = new SqliteConnection(connectionString);
+        await conn.OpenAsync();
         return "Connection successful";
+    }
+
+    private static async Task<string> TestRestApiAsync(string? endpoint, string? apiKey)
+    {
+        if (string.IsNullOrWhiteSpace(endpoint))
+            return "Connection failed: API endpoint is empty";
+        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+        if (!string.IsNullOrWhiteSpace(apiKey))
+            http.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
+        var response = await http.GetAsync(endpoint);
+        return response.IsSuccessStatusCode
+            ? $"Connection successful (HTTP {(int)response.StatusCode})"
+            : $"Connection failed: HTTP {(int)response.StatusCode} {response.ReasonPhrase}";
     }
 
     private static DataSourceDto MapToDto(DataSource ds) => new()

@@ -1,0 +1,377 @@
+@page "/pages/builder/{PageId:int}"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@using WidgetData.Domain.Enums
+@using System.Text.Json
+@using WidgetData.Application.Helpers
+@using ShopAdmin.Services
+@inject ShopAdmin.Services.ApiService ApiService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<PageTitle>@(_page?.Name ?? "Page Builder") - WidgetData</PageTitle>
+
+<MudBreadcrumbs Items="_breadcrumbs" Class="mb-2 px-0" />
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+}
+else if (_error != null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+else
+{
+    <div class="d-flex align-center justify-space-between mb-4 flex-wrap gap-2">
+        <div>
+            <MudText Typo="Typo.h4">
+                <MudIcon Icon="@Icons.Material.Filled.GridView" Class="mr-2" />
+                @_page?.Name
+            </MudText>
+            @if (!string.IsNullOrEmpty(_page?.Description))
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_page.Description</MudText>
+            }
+        </div>
+        <div class="d-flex gap-2">
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="ToggleAddWidget">
+                @(_showAddWidget ? "Đóng" : "Thêm widget")
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Preview"
+                       OnClick="@(() => Nav.NavigateTo($"/reports/preview/{PageId}"))">
+                Xem trước
+            </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Save"
+                       OnClick="SaveLayout" Disabled="_saving">
+                @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                Lưu thay đổi
+            </MudButton>
+        </div>
+    </div>
+
+    @* Add widget panel *@
+    @if (_showAddWidget)
+    {
+        <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-left: 4px solid #1976d2;">
+            <MudText Typo="Typo.subtitle1" Class="mb-3">
+                <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="mr-1" />
+                Thêm widget vào trang
+            </MudText>
+            <MudGrid>
+                @if (_availableWidgets != null)
+                {
+                    @foreach (var w in _availableWidgets.Where(w => !_pageWidgetIds.Contains(w.Id)))
+                    {
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudCard Elevation="1" Class="pa-2">
+                                <MudCardHeader>
+                                    <CardHeaderAvatar>
+                                        <MudIcon Icon="@GetWidgetTypeIcon(w.WidgetType.ToString())" Color="Color.Primary" />
+                                    </CardHeaderAvatar>
+                                    <CardHeaderContent>
+                                        <MudText Typo="Typo.subtitle2">@(w.FriendlyLabel ?? w.Name)</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@w.WidgetType • @w.DataSourceName</MudText>
+                                    </CardHeaderContent>
+                                </MudCardHeader>
+                                <MudCardActions>
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                                               StartIcon="@Icons.Material.Filled.Add" OnClick="@(() => AddWidget(w))">
+                                        Thêm
+                                    </MudButton>
+                                </MudCardActions>
+                            </MudCard>
+                        </MudItem>
+                    }
+                    @if (!_availableWidgets.Any(w => !_pageWidgetIds.Contains(w.Id)))
+                    {
+                        <MudItem xs="12">
+                            <MudAlert Severity="Severity.Info" Dense="true">Tất cả widget đã được thêm vào trang này.</MudAlert>
+                        </MudItem>
+                    }
+                }
+            </MudGrid>
+        </MudPaper>
+    }
+
+    @* Layout configuration *@
+    <MudText Typo="Typo.h6" Class="mb-3">
+        <MudIcon Icon="@Icons.Material.Filled.ViewModule" Size="Size.Small" Class="mr-1" />
+        Layout trang (@_pageItems.Count widget)
+    </MudText>
+
+    @if (!_pageItems.Any())
+    {
+        <MudPaper Elevation="1" Class="pa-8 text-center" Style="border: 2px dashed #ccc;">
+            <MudIcon Icon="@Icons.Material.Filled.Widgets" Size="Size.Large" Color="Color.Secondary" />
+            <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mt-2">Trang chưa có widget nào</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Nhấn "Thêm widget" để thêm widget vào trang này.</MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <MudGrid>
+            @for (int i = 0; i < _pageItems.Count; i++)
+            {
+                var item = _pageItems[i];
+                var index = i;
+                <MudItem xs="12" sm="@item.ColSpanSm" md="@item.ColSpanMd">
+                    <MudPaper Elevation="3" Class="pa-3" Style="position:relative;">
+                        @* Widget header with controls *@
+                        <div class="d-flex align-center justify-space-between mb-2">
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@GetWidgetTypeIcon(item.Widget.WidgetType.ToString())" Size="Size.Small" Class="mr-2" Color="Color.Primary" />
+                                <div>
+                                    <MudText Typo="Typo.subtitle2">@(item.Widget.FriendlyLabel ?? item.Widget.Name)</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@item.Widget.WidgetType</MudText>
+                                </div>
+                            </div>
+                            <div class="d-flex align-center gap-1">
+                                @* Move up/down *@
+                                @if (index > 0)
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" Size="Size.Small"
+                                                   OnClick="@(() => MoveWidget(index, -1))" Title="Di chuyển lên" />
+                                }
+                                @if (index < _pageItems.Count - 1)
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward" Size="Size.Small"
+                                                   OnClick="@(() => MoveWidget(index, 1))" Title="Di chuyển xuống" />
+                                }
+                                @* HTML Designer shortcut *@
+                                <MudIconButton Icon="@Icons.Material.Filled.Code" Size="Size.Small" Color="Color.Info"
+                                               OnClick="@(() => Nav.NavigateTo($"/widgets/html-designer/{item.Widget.Id}"))"
+                                               Title="HTML Designer" />
+                                @* Remove from page *@
+                                <MudIconButton Icon="@Icons.Material.Filled.RemoveCircle" Size="Size.Small" Color="Color.Error"
+                                               OnClick="@(() => RemoveWidget(index))" Title="Xóa khỏi trang" />
+                            </div>
+                        </div>
+
+                        @* Column span config *@
+                        <MudDivider Class="mb-2" />
+                        <div class="d-flex align-center gap-3 flex-wrap">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mr-1">Chiều rộng:</MudText>
+                            <MudSelect @bind-Value="item.ColSpanMd" Label="Desktop" Variant="Variant.Outlined"
+                                       Dense="true" Style="width:120px;" Margin="Margin.Dense">
+                                <MudSelectItem Value="3">1/4</MudSelectItem>
+                                <MudSelectItem Value="4">1/3</MudSelectItem>
+                                <MudSelectItem Value="6">1/2</MudSelectItem>
+                                <MudSelectItem Value="8">2/3</MudSelectItem>
+                                <MudSelectItem Value="12">Toàn bộ</MudSelectItem>
+                            </MudSelect>
+                            <MudSelect @bind-Value="item.ColSpanSm" Label="Mobile" Variant="Variant.Outlined"
+                                       Dense="true" Style="width:120px;" Margin="Margin.Dense">
+                                <MudSelectItem Value="6">1/2</MudSelectItem>
+                                <MudSelectItem Value="12">Toàn bộ</MudSelectItem>
+                            </MudSelect>
+                        </div>
+
+                        @* Widget data preview *@
+                        <MudDivider Class="my-2" />
+                        @if (item.Loading)
+                        {
+                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" />
+                        }
+                        else if (item.Data != null)
+                        {
+                            @RenderWidgetPreview(item)
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Info" Dense="true">Không có dữ liệu xem trước</MudAlert>
+                        }
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+}
+
+@code {
+    [Parameter] public int PageId { get; set; }
+
+    bool _loading = true;
+    bool _saving;
+    bool _showAddWidget;
+    string? _error;
+    WidgetGroupDto? _page;
+    IEnumerable<WidgetDto>? _availableWidgets;
+    HashSet<int> _pageWidgetIds = new();
+    List<PageWidgetItem> _pageItems = new();
+
+    List<BreadcrumbItem> _breadcrumbs = new()
+    {
+        new BreadcrumbItem("Dashboard", href: "/"),
+        new BreadcrumbItem("Dashboard Pages", href: "/pages"),
+        new BreadcrumbItem("Page Builder", href: null, disabled: true)
+    };
+
+    class PageWidgetItem
+    {
+        public WidgetDto Widget { get; set; } = null!;
+        public WidgetDataDto? Data { get; set; }
+        public bool Loading { get; set; }
+        public int ColSpanMd { get; set; } = 6;
+        public int ColSpanSm { get; set; } = 12;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var pageTask = ApiService.GetDashboardPageAsync(PageId);
+            var widgetsTask = ApiService.GetWidgetsAsync();
+            await Task.WhenAll(pageTask, widgetsTask);
+
+            _page = pageTask.Result;
+            _availableWidgets = widgetsTask.Result ?? Array.Empty<WidgetDto>();
+
+            if (_page == null) { _error = "Không tìm thấy trang."; _loading = false; return; }
+
+            _pageWidgetIds = _page.WidgetIds.ToHashSet();
+
+            var widgetMap = _availableWidgets.ToDictionary(w => w.Id);
+            foreach (var widgetId in _page.WidgetIds)
+            {
+                if (widgetMap.TryGetValue(widgetId, out var widget))
+                {
+                    var item = new PageWidgetItem { Widget = widget, Loading = true };
+                    _pageItems.Add(item);
+                }
+            }
+        }
+        catch (Exception ex) { _error = "Lỗi tải trang: " + ex.Message; }
+        finally { _loading = false; }
+
+        await LoadWidgetDataAsync();
+    }
+
+    async Task LoadWidgetDataAsync()
+    {
+        var tasks = _pageItems.Select(async item =>
+        {
+            try
+            {
+                item.Data = await ApiService.GetWidgetDataAsync(item.Widget.Id);
+            }
+            catch { }
+            finally
+            {
+                item.Loading = false;
+                await InvokeAsync(StateHasChanged);
+            }
+        });
+        await Task.WhenAll(tasks);
+    }
+
+    void ToggleAddWidget() => _showAddWidget = !_showAddWidget;
+
+    void AddWidget(WidgetDto widget)
+    {
+        _pageItems.Add(new PageWidgetItem { Widget = widget, Loading = false });
+        _pageWidgetIds.Add(widget.Id);
+    }
+
+    void RemoveWidget(int index)
+    {
+        var removed = _pageItems[index];
+        _pageItems.RemoveAt(index);
+        _pageWidgetIds.Remove(removed.Widget.Id);
+    }
+
+    void MoveWidget(int index, int direction)
+    {
+        var newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= _pageItems.Count) return;
+        (_pageItems[index], _pageItems[newIndex]) = (_pageItems[newIndex], _pageItems[index]);
+    }
+
+    async Task SaveLayout()
+    {
+        if (_page == null) return;
+        _saving = true;
+        try
+        {
+            var dto = new UpdateWidgetGroupDto
+            {
+                Name = _page.Name,
+                Description = _page.Description,
+                WidgetIds = _pageItems.Select(i => i.Widget.Id).ToList(),
+                IsActive = _page.IsActive
+            };
+            var result = await ApiService.UpdateDashboardPageAsync(PageId, dto);
+            if (result != null)
+            {
+                _page = result;
+                Snackbar.Add("✓ Đã lưu layout trang!", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Lưu thất bại.", Severity.Error);
+            }
+        }
+        finally { _saving = false; }
+    }
+
+    RenderFragment RenderWidgetPreview(PageWidgetItem item)
+    {
+        return builder =>
+        {
+            var data = item.Data;
+            var widget = item.Widget;
+
+            if (data?.Error != null)
+            {
+                builder.AddMarkupContent(0, $"<div style='color:#f44336;font-size:12px;padding:4px'>{System.Web.HttpUtility.HtmlEncode(data.Error)}</div>");
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(widget.HtmlTemplate) && data != null)
+            {
+                var cols = data.Columns?.ToList() ?? new List<string>();
+                var rows = HtmlTemplateHelper.ToStringRows(data.Rows);
+                var html = HtmlTemplateHelper.Render(widget.HtmlTemplate, cols, rows);
+                builder.AddMarkupContent(0, $"<div style='max-height:200px;overflow:auto'>{html}</div>");
+                return;
+            }
+
+            if (widget.WidgetType == WidgetType.Metric && data?.Rows != null)
+            {
+                var val = data.Rows.FirstOrDefault()?.Values.FirstOrDefault();
+                var display = val is JsonElement je2 ? je2.ToString() : val?.ToString() ?? "-";
+                builder.AddMarkupContent(0, $"<div style='text-align:center;padding:16px'><div style='font-size:2rem;font-weight:bold;color:#1976d2'>{System.Web.HttpUtility.HtmlEncode(display)}</div></div>");
+            }
+            else if (widget.WidgetType == WidgetType.Table && data?.Rows != null)
+            {
+                var cols = data.Columns?.Take(4).ToList() ?? new List<string>();
+                var rowCount = data.Rows?.Count ?? 0;
+                builder.AddMarkupContent(0,
+                    $"<div style='font-size:12px;color:#555'>" +
+                    $"<strong>{cols.Count} cột</strong> • <strong>{rowCount} dòng</strong>" +
+                    $"<br/>{string.Join(", ", cols)}" +
+                    (data.Columns?.Count > 4 ? $" và {data.Columns.Count - 4} cột khác" : "") +
+                    "</div>");
+            }
+            else if (widget.WidgetType == WidgetType.Chart && data?.Rows != null)
+            {
+                builder.AddMarkupContent(0, $"<div style='font-size:12px;color:#555;text-align:center;padding:8px'><strong>{data.Rows.Count}</strong> điểm dữ liệu</div>");
+            }
+            else
+            {
+                builder.AddMarkupContent(0, "<div style='color:#999;font-size:12px;padding:4px'>Không có dữ liệu</div>");
+            }
+        };
+    }
+
+    static string GetWidgetTypeIcon(string type) => type switch
+    {
+        "Chart" => Icons.Material.Filled.BarChart,
+        "Table" => Icons.Material.Filled.TableChart,
+        "Metric" => Icons.Material.Filled.Speed,
+        "Map" => Icons.Material.Filled.Map,
+        _ => Icons.Material.Filled.Widgets
+    };
+}
