@@ -99,6 +99,7 @@ try
 
     app.UseSerilogRequestLogging();
     app.UseHttpsRedirection();
+    app.UseStaticFiles();
     app.UseCors();
     app.UseRateLimiter();
     app.UseAuthentication();
