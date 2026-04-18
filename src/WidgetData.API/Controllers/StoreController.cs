@@ -174,6 +174,8 @@ public class StoreController : ControllerBase
             return BadRequest(new { error = "Tên khách hàng không được để trống" });
         if (string.IsNullOrWhiteSpace(dto.CustomerPhone))
             return BadRequest(new { error = "Số điện thoại không được để trống" });
+        if (!ValidPaymentMethods.Contains(dto.PaymentMethod))
+            return BadRequest(new { error = $"Phương thức thanh toán không hợp lệ. Chấp nhận: {string.Join(", ", ValidPaymentMethods)}" });
 
         if (!System.IO.File.Exists(Path.Combine(AppContext.BaseDirectory, "sales.db")))
             return StatusCode(503, new { error = "Hệ thống đang khởi động, vui lòng thử lại" });
@@ -205,7 +207,7 @@ public class StoreController : ControllerBase
                 int stock = pr.GetInt32(1);
                 string prodName = pr.GetString(2);
                 if (item.Quantity > stock)
-                    return BadRequest(new { error = $"Sản phẩm '{prodName}' chỉ còn {stock} {(stock == 1 ? "cái" : "cái")}" });
+                    return BadRequest(new { error = $"Sản phẩm '{prodName}' chỉ còn {stock} cái" });
 
                 lineItems.Add((item.ProductId, item.Quantity, unitPrice));
                 subtotal += unitPrice * item.Quantity;
@@ -263,15 +265,13 @@ public class StoreController : ControllerBase
             }
 
             // Insert payment record
-            var validMethod = ValidPaymentMethods.Contains(dto.PaymentMethod)
-                ? dto.PaymentMethod : "cash";
             using var payCmd = conn.CreateCommand();
             payCmd.Transaction = tx;
             payCmd.CommandText = @"
                 INSERT INTO payments (order_id, payment_method, amount, status, transaction_ref)
                 VALUES (@ord, @method, @amount, 'pending', @ref)";
             payCmd.Parameters.AddWithValue("@ord", orderId);
-            payCmd.Parameters.AddWithValue("@method", validMethod);
+            payCmd.Parameters.AddWithValue("@method", dto.PaymentMethod);
             payCmd.Parameters.AddWithValue("@amount", (double)subtotal);
             payCmd.Parameters.AddWithValue("@ref", $"REF-{orderCode}");
             await payCmd.ExecuteNonQueryAsync();
