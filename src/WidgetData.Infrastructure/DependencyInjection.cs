@@ -25,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped<IExecutionRepository, ExecutionRepository>();
         services.AddScoped<IWidgetConfigArchiveRepository, WidgetConfigArchiveRepository>();
         services.AddScoped<IIdeaBoardRepository, IdeaBoardRepository>();
+        services.AddScoped<IWidgetActivityRepository, WidgetActivityRepository>();
 
         services.AddScoped<IWidgetService, WidgetService>();
         services.AddScoped<IDataSourceService, DataSourceService>();
@@ -38,6 +39,9 @@ public static class DependencyInjection
         services.AddScoped<IWidgetConfigArchiveService, WidgetConfigArchiveService>();
         services.AddScoped<IIdeaBoardService, IdeaBoardService>();
         services.AddScoped<IPageHtmlService, PageHtmlService>();
+        services.AddScoped<IWidgetActivityService, WidgetActivityService>();
+
+        services.AddHostedService<InactivityMonitorService>();
 
         services.AddHttpClient();
         services.AddScoped<DataSeeder>();

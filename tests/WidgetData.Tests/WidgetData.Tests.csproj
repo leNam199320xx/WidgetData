@@ -26,6 +26,7 @@
     <ProjectReference Include="..\..\src\WidgetData.Domain\WidgetData.Domain.csproj" />
     <ProjectReference Include="..\..\src\WidgetData.Application\WidgetData.Application.csproj" />
     <ProjectReference Include="..\..\src\WidgetData.Infrastructure\WidgetData.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\WidgetData.API\WidgetData.API.csproj" />
   </ItemGroup>
 
 </Project>

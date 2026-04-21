@@ -21,6 +21,9 @@ public class WidgetDto
     public int CacheTtlMinutes { get; set; }
     public DateTime? LastExecutedAt { get; set; }
     public int? LastRowCount { get; set; }
+    public DateTime? LastActivityAt { get; set; }
+    public bool InactivityAutoDisableEnabled { get; set; }
+    public int InactivityThresholdDays { get; set; }
     public string? CreatedBy { get; set; }
     public DateTime CreatedAt { get; set; }
     public IList<int> GroupIds { get; set; } = new List<int>();
@@ -53,6 +56,11 @@ public class CreateWidgetDto
 
     [Range(1, 1440)]
     public int CacheTtlMinutes { get; set; } = 15;
+
+    public bool InactivityAutoDisableEnabled { get; set; } = false;
+
+    [Range(1, 3650)]
+    public int InactivityThresholdDays { get; set; } = 30;
 
     public IList<int> GroupIds { get; set; } = new List<int>();
 }

@@ -20,6 +20,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<DeliveryTarget> DeliveryTargets => Set<DeliveryTarget>();
     public DbSet<DeliveryExecution> DeliveryExecutions => Set<DeliveryExecution>();
     public DbSet<WidgetConfigArchive> WidgetConfigArchives => Set<WidgetConfigArchive>();
+    public DbSet<WidgetApiActivity> WidgetApiActivities => Set<WidgetApiActivity>();
     public DbSet<IdeaPost> IdeaPosts => Set<IdeaPost>();
     public DbSet<IdeaSubscription> IdeaSubscriptions => Set<IdeaSubscription>();
     public DbSet<IdeaResult> IdeaResults => Set<IdeaResult>();
@@ -101,6 +102,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<WidgetConfigArchive>()
             .HasOne(a => a.Widget)
             .WithMany()
+            .HasForeignKey(a => a.WidgetId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<WidgetApiActivity>()
+            .HasOne(a => a.Widget)
+            .WithMany(w => w.ApiActivities)
             .HasForeignKey(a => a.WidgetId)
             .OnDelete(DeleteBehavior.Cascade);
 

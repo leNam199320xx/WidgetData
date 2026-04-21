@@ -16,6 +16,9 @@ public class Widget
     public int CacheTtlMinutes { get; set; } = 15;
     public DateTime? LastExecutedAt { get; set; }
     public int? LastRowCount { get; set; }
+    public DateTime? LastActivityAt { get; set; }
+    public bool InactivityAutoDisableEnabled { get; set; } = false;
+    public int InactivityThresholdDays { get; set; } = 30;
     public string? FriendlyLabel { get; set; }
     public string? HelpText { get; set; }
     public string? HtmlTemplate { get; set; }
@@ -29,4 +32,5 @@ public class Widget
     public ICollection<DeliveryTarget> DeliveryTargets { get; set; } = new List<DeliveryTarget>();
     public ICollection<WidgetSchedule> Schedules { get; set; } = new List<WidgetSchedule>();
     public ICollection<WidgetExecution> Executions { get; set; } = new List<WidgetExecution>();
+    public ICollection<WidgetApiActivity> ApiActivities { get; set; } = new List<WidgetApiActivity>();
 }
