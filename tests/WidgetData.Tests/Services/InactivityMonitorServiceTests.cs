@@ -145,18 +145,17 @@ public class InactivityMonitorServiceTests
     public async Task RunCheck_UsesPerWidgetThreshold_WhenSet()
     {
         var context = CreateContext();
-        // Widget with custom threshold of 7 days and inactive for 10 days
+        // Widget with custom threshold of 7 days and inactive for 35 days
+        // (beyond both the default 30-day and its own 7-day threshold)
         var widget = TestDataBuilder.CreateWidget(5);
         widget.DataSource = null!;
         widget.IsActive = true;
         widget.InactivityAutoDisableEnabled = true;
         widget.InactivityThresholdDays = 7;
-        widget.LastActivityAt = DateTime.UtcNow.AddDays(-10);
+        widget.LastActivityAt = DateTime.UtcNow.AddDays(-35);
         context.Widgets.Add(widget);
         await context.SaveChangesAsync();
 
-        // Use default threshold of 30 — widget would NOT be detected based on default
-        // but the service should pick it up based on per-widget threshold of 7
         var service = CreateService(context, defaultThresholdDays: 30);
 
         var method = typeof(InactivityMonitorService)

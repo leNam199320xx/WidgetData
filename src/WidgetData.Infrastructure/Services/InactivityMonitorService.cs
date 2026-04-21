@@ -54,12 +54,19 @@ public class InactivityMonitorService : BackgroundService
         using var scope = _scopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        // Load all active widgets that might be inactive — we filter per-widget threshold below
+        var now = DateTime.UtcNow;
+        // Use the default threshold as the DB-level cutoff so the query is efficient.
+        // Widgets with a longer per-widget threshold are filtered out in memory below.
+        // Note: widgets with InactivityThresholdDays smaller than the default are not
+        // detected until they also exceed the default; operators should keep the default
+        // at or below the smallest custom threshold they intend to use.
+        var defaultCutoff = now.AddDays(-_defaultThresholdDays);
+
         var candidates = await context.Widgets
-            .Where(w => w.IsActive)
+            .Where(w => w.IsActive && (w.LastActivityAt == null || w.LastActivityAt < defaultCutoff))
             .ToListAsync(cancellationToken);
 
-        var now = DateTime.UtcNow;
+        // Apply per-widget thresholds in memory on the already-small candidate set
         var inactiveWidgets = candidates
             .Where(w =>
             {
