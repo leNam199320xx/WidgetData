@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Serilog;
+using WidgetData.API.Middleware;
 using WidgetData.Domain.Entities;
 using WidgetData.Infrastructure;
 using WidgetData.Infrastructure.Data;
@@ -130,6 +131,7 @@ try
     app.UseRateLimiter();
     app.UseAuthentication();
     app.UseAuthorization();
+    app.UseMiddleware<WidgetActivityMiddleware>();
     app.MapControllers();
     app.MapHealthChecks("/health");
 

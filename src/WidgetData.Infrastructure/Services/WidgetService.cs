@@ -65,6 +65,8 @@ public class WidgetService : IWidgetService
             HtmlTemplate = dto.HtmlTemplate,
             CacheEnabled = dto.CacheEnabled,
             CacheTtlMinutes = dto.CacheTtlMinutes,
+            InactivityAutoDisableEnabled = dto.InactivityAutoDisableEnabled,
+            InactivityThresholdDays = dto.InactivityThresholdDays,
             CreatedBy = userId
         };
         var created = await _widgetRepo.CreateAsync(widget);
@@ -115,6 +117,8 @@ public class WidgetService : IWidgetService
         widget.HtmlTemplate = dto.HtmlTemplate;
         widget.CacheEnabled = dto.CacheEnabled;
         widget.CacheTtlMinutes = dto.CacheTtlMinutes;
+        widget.InactivityAutoDisableEnabled = dto.InactivityAutoDisableEnabled;
+        widget.InactivityThresholdDays = dto.InactivityThresholdDays;
         widget.IsActive = dto.IsActive;
         widget.UpdatedAt = DateTime.UtcNow;
         var updated = await _widgetRepo.UpdateAsync(widget);
@@ -277,6 +281,9 @@ public class WidgetService : IWidgetService
         CacheTtlMinutes = w.CacheTtlMinutes,
         LastExecutedAt = w.LastExecutedAt,
         LastRowCount = w.LastRowCount,
+        LastActivityAt = w.LastActivityAt,
+        InactivityAutoDisableEnabled = w.InactivityAutoDisableEnabled,
+        InactivityThresholdDays = w.InactivityThresholdDays,
         CreatedBy = w.CreatedBy,
         CreatedAt = w.CreatedAt
     };
