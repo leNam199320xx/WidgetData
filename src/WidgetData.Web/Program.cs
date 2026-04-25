@@ -18,7 +18,7 @@ builder.Services.AddScoped<AuthStateProvider>();
 builder.Services.AddScoped<TokenStore>();
 builder.Services.AddHttpClient<ApiService>(client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5000/");
+    client.BaseAddress = new("https+http://widgetdata-api");
 });
 
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");

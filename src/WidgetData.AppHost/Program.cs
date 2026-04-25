@@ -3,7 +3,7 @@ var builder = DistributedApplication.CreateBuilder(args);
 var api = builder.AddProject<Projects.WidgetData_API>("widgetdata-api")
     .WithExternalHttpEndpoints();
 
-builder.AddProject<Projects.WidgetData_Gateway>("widgetdata-gateway")
+var gateway = builder.AddProject<Projects.WidgetData_Gateway>("widgetdata-gateway")
     .WithReference(api)
     .WaitFor(api)
     .WithExternalHttpEndpoints();
