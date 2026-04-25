@@ -321,6 +321,56 @@
   };
 
   /* =========================================================
+   *  Form API Module (PR #23)
+   *
+   *  Public endpoints (no auth needed):
+   *    Form.getSchema(id)       → GET /api/form/{id}/schema
+   *    Form.submit(id, data)    → POST /api/form/{id}
+   *
+   *  Admin/Manager endpoints:
+   *    Form.getSubmissions(id)         → GET /api/form/{id}/submissions
+   *    Form.deleteSubmission(subId)    → DELETE /api/form/submissions/{subId}
+   * ======================================================= */
+  const Form = {
+    getSchema(widgetId) {
+      return Http.get(`/form/${widgetId}/schema`);
+    },
+    submit(widgetId, data) {
+      return Http.post(`/form/${widgetId}`, data);
+    },
+    getSubmissions(widgetId) {
+      return Http.get(`/form/${widgetId}/submissions`);
+    },
+    deleteSubmission(id) {
+      return Http.del(`/form/submissions/${id}`);
+    },
+  };
+
+  /* =========================================================
+   *  Widget Activity API Module (PR #22)
+   *
+   *  All endpoints require Admin or Manager role.
+   *    WidgetActivity.getActivity(widgetId, params)  → GET /api/widget-activity/{widgetId}
+   *    WidgetActivity.getSummary(widgetId)            → GET /api/widget-activity/{widgetId}/summary
+   *    WidgetActivity.getInactive(thresholdDays)      → GET /api/widget-activity/inactive
+   *    WidgetActivity.getAlerts()                     → GET /api/widget-activity/alerts
+   * ======================================================= */
+  const WidgetActivity = {
+    getActivity(widgetId, params) {
+      return Http.get(`/widget-activity/${widgetId}`, params);
+    },
+    getSummary(widgetId) {
+      return Http.get(`/widget-activity/${widgetId}/summary`);
+    },
+    getInactive(thresholdDays = 30) {
+      return Http.get('/widget-activity/inactive', { thresholdDays });
+    },
+    getAlerts() {
+      return Http.get('/widget-activity/alerts');
+    },
+  };
+
+  /* =========================================================
    *  Template Engine
    *
    *  Supports:
@@ -416,10 +466,11 @@
     /**
      * Render a widget into a given DOM element.
      *
-     * Supports two modes:
+     * Supports three modes:
      *   1. Static content  – supply `staticData` (object or array) + `template` in config;
      *                        no API call is made.  Great for landing pages, product cards, etc.
      *   2. API-backed data – supply `id` to fetch data from the WidgetData server.
+     *   3. Form widget     – supply `formId` to render a dynamic form from the server schema.
      *
      * @param {HTMLElement} container
      * @param {object}      widgetConfig
@@ -428,10 +479,10 @@
       if (!container) throw new WidgetEngineError('INVALID_CONTAINER', 'Container element not found');
 
       container.classList.add('we-widget');
-      container.setAttribute('data-widget-id', widgetConfig.id || '');
+      container.setAttribute('data-widget-id', widgetConfig.id || widgetConfig.formId || '');
 
       // Static-content widgets skip the loading spinner for a snappier feel
-      if (!Renderer._isStatic(widgetConfig)) {
+      if (!Renderer._isStatic(widgetConfig) && !Renderer._isForm(widgetConfig)) {
         Renderer._setLoading(container, true);
       }
 
@@ -440,6 +491,9 @@
         let html;
         if (Renderer._isStatic(widgetConfig)) {
           html = Renderer._renderStatic(widgetConfig);
+        } else if (Renderer._isForm(widgetConfig)) {
+          await Renderer._renderForm(container, widgetConfig);
+          return; // _renderForm manages the DOM directly
         } else {
           const result = await Renderer._fetchData(widgetConfig);
           const tpl = widgetConfig.template
@@ -473,6 +527,93 @@
     /** Returns true when the widget uses local staticData instead of an API call. */
     _isStatic(cfg) {
       return cfg.staticData !== undefined;
+    },
+
+    /** Returns true when the widget is a Form widget backed by the Form API. */
+    _isForm(cfg) {
+      return cfg.formId !== undefined;
+    },
+
+    /**
+     * Render a Form widget by fetching the schema from the Form API.
+     * On submit, POST data to the Form API and show success/error message.
+     * Falls back to a static placeholder if the API is unreachable.
+     *
+     * @param {HTMLElement} container
+     * @param {object}      cfg  – must have `formId`
+     */
+    async _renderForm(container, cfg) {
+      const title = cfg.title || 'Liên hệ';
+      container.innerHTML = `<div class="we-title">${Utils.escapeHtml(title)}</div>` +
+        `<div class="we-body"><div class="we-loading"><span class="we-spinner"></span> Đang tải form…</div></div>`;
+
+      let schema;
+      try {
+        schema = await Form.getSchema(cfg.formId);
+      } catch (_) {
+        // No API available – render a static placeholder
+        container.innerHTML = `<div class="we-title">${Utils.escapeHtml(title)}</div>` +
+          `<div class="we-body"><div class="we-form-placeholder">` +
+          `<p>📝 Form Widget demo — kết nối WidgetData.API để hiển thị form thực tế.</p>` +
+          `<p style="font-size:13px;color:#718096">Endpoint: <code>GET /api/form/${cfg.formId}/schema</code></p>` +
+          `</div></div>`;
+        return;
+      }
+
+      const fields = schema.fields || [];
+      const submitLabel = schema.submitLabel || 'Gửi';
+      const successMessage = schema.successMessage || 'Cảm ơn bạn đã gửi thông tin!';
+
+      const fieldHtml = fields.map(f => {
+        const req = f.required ? ' required' : '';
+        const label = `<label class="we-form-label">${Utils.escapeHtml(f.label || f.name)}${f.required ? ' <span class="we-required">*</span>' : ''}</label>`;
+        let input;
+        if (f.type === 'textarea') {
+          input = `<textarea class="we-form-input" name="${Utils.escapeHtml(f.name)}" rows="4" placeholder="${Utils.escapeHtml(f.label || '')}"${req}></textarea>`;
+        } else if (f.type === 'select' && Array.isArray(f.options)) {
+          const opts = f.options.map(o => `<option value="${Utils.escapeHtml(o)}">${Utils.escapeHtml(o)}</option>`).join('');
+          input = `<select class="we-form-input" name="${Utils.escapeHtml(f.name)}"${req}><option value="">-- Chọn --</option>${opts}</select>`;
+        } else {
+          input = `<input class="we-form-input" type="${Utils.escapeHtml(f.type || 'text')}" name="${Utils.escapeHtml(f.name)}" placeholder="${Utils.escapeHtml(f.label || '')}"${req}>`;
+        }
+        return `<div class="we-form-group">${label}${input}</div>`;
+      }).join('');
+
+      const formId = `we-form-${cfg.formId}-${Math.random().toString(36).slice(2, 7)}`;
+      container.innerHTML = `<div class="we-title">${Utils.escapeHtml(title)}</div>` +
+        `<div class="we-body">` +
+        `<form id="${formId}" class="we-form" novalidate>` +
+        fieldHtml +
+        `<div class="we-form-msg" id="${formId}-msg" style="display:none"></div>` +
+        `<button type="submit" class="we-btn we-btn-primary we-form-submit">${Utils.escapeHtml(submitLabel)}</button>` +
+        `</form></div>`;
+
+      const formEl = document.getElementById(formId);
+      const msgEl = document.getElementById(`${formId}-msg`);
+
+      formEl.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = formEl.querySelector('.we-form-submit');
+        submitBtn.disabled = true;
+        msgEl.style.display = 'none';
+
+        const data = {};
+        new FormData(formEl).forEach((v, k) => { data[k] = v; });
+
+        try {
+          await Form.submit(cfg.formId, data);
+          formEl.reset();
+          msgEl.className = 'we-form-msg we-form-msg--success';
+          msgEl.textContent = successMessage;
+          msgEl.style.display = 'block';
+        } catch (err) {
+          msgEl.className = 'we-form-msg we-form-msg--error';
+          msgEl.textContent = err.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
+          msgEl.style.display = 'block';
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
     },
 
     /**
@@ -757,6 +898,8 @@
     dataSources: DataSources,
     schedules: Schedules,
     dashboard: Dashboard,
+    form: Form,
+    widgetActivity: WidgetActivity,
     template: Template,
     page: Page,
     utils: Utils,

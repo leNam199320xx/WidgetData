@@ -10,7 +10,7 @@ Standalone frontend project — **pure HTML / CSS / JavaScript**, không phụ t
 
 ```
 widgetdata-frontend/
-├── index.html          ← Trang public: landing / sản phẩm / bảng giá
+├── index.html          ← Trang public: landing / sản phẩm / bảng giá / liên hệ
 ├── dashboard.html      ← Dashboard có đăng nhập, gọi API live
 │
 ├── lib/
@@ -25,6 +25,7 @@ widgetdata-frontend/
     ├── home.json       ← Landing page (static data, no auth)
     ├── products.json   ← Trang sản phẩm (static data)
     ├── pricing.json    ← Bảng giá (static data)
+    ├── contact.json    ← Form liên hệ (Form widget demo)
     └── dashboard.json  ← Sales dashboard (API-backed, requires auth)
 ```
 
@@ -59,7 +60,7 @@ npx serve .
 ### 1. Trang public (`index.html`)
 - Không yêu cầu đăng nhập
 - Tất cả dữ liệu là `staticData` — không cần API
-- Gồm: Trang chủ · Sản phẩm · Bảng giá
+- Gồm: Trang chủ · Sản phẩm · Bảng giá · Liên hệ (Form widget demo)
 
 ### 2. Dashboard (`dashboard.html`)
 - Yêu cầu đăng nhập → gọi `POST /api/auth/login`
@@ -67,8 +68,10 @@ npx serve .
 - Gọi API live từ **WidgetData.API** (`http://localhost:5114/api`)
 - Chức năng demo:
   - 📈 Sales Dashboard — page config từ `pages/dashboard.json`
+  - 📡 Widget Activity — xem activity log + summary cho bất kỳ widget ID
+  - 🔔 Inactivity Alerts — danh sách widget không hoạt động + alert log
   - ⚡ Chạy widget đơn — nhập Widget ID
-  - 🔌 Kiểm tra kết nối — test các API endpoint
+  - 🔌 Kiểm tra kết nối — test các API endpoint (bao gồm Form và Activity)
 
 ---
 
@@ -111,6 +114,35 @@ Thông tin đăng nhập mặc định:
 </script>
 ```
 
+### Form Widget (PR #23)
+```html
+<!-- Render form từ schema API, tự submit qua POST /api/form/{id} -->
+<script>
+  WidgetEngine.init({ baseUrl: 'http://localhost:5114/api' });
+  await WidgetEngine.render('#contact-form', {
+    formId: 1,
+    title: 'Gửi tin nhắn'
+  });
+</script>
+```
+
+Trong page config JSON:
+```json
+{
+  "formId": 1,
+  "title": "Gửi tin nhắn"
+}
+```
+
+### Widget Activity API (PR #22)
+```javascript
+// Xem activity log (yêu cầu Admin/Manager)
+const log = await WidgetEngine.widgetActivity.getActivity(widgetId, { page: 1, pageSize: 20 });
+const summary = await WidgetEngine.widgetActivity.getSummary(widgetId);
+const inactive = await WidgetEngine.widgetActivity.getInactive(30); // Admin only
+const alerts = await WidgetEngine.widgetActivity.getAlerts();        // Admin only
+```
+
 ### Cấu trúc page config (`pages/*.json`)
 ```json
 {
@@ -128,6 +160,10 @@ Thông tin đăng nhập mặc định:
       "title": "Live widget từ API",
       "colSpan": 2,
       "autoRefreshSeconds": 60
+    },
+    {
+      "formId": 1,
+      "title": "Form liên hệ"
     }
   ]
 }
@@ -139,3 +175,17 @@ Thông tin đăng nhập mặc định:
 
 Khi chạy `dashboard.html` từ một origin khác với API (ví dụ `localhost:3000` vs `localhost:5114`), đảm bảo API cho phép CORS.  
 Trong `WidgetData.API/Program.cs` đã có `app.UseCors("AllowAll")`.
+
+---
+
+## Thay đổi gần nhất
+
+| Thay đổi | PR |
+|---|---|
+| Multi-source data: CSV, JSON, Excel, REST API | #23 |
+| Form Widget: schema API + submit + `formId` config | #23 |
+| `WidgetEngine.form.*` API module | #23 |
+| `WidgetEngine.widgetActivity.*` API module | #22 |
+| Dashboard Activity Monitoring panel | #22 |
+| Dashboard Inactivity Alerts panel | #22 |
+| Trang Liên hệ (`pages/contact.json`) | — |

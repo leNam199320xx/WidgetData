@@ -40,6 +40,14 @@
             📦 Đơn hàng
           </a>
 
+          <p class="sidebar-section">Monitoring</p>
+          <a href="#" id="btn-activity" onclick="showActivityPanel(event)">
+            📡 Widget Activity
+          </a>
+          <a href="#" id="btn-alerts" onclick="showAlertsPanel(event)">
+            🔔 Inactivity Alerts
+          </a>
+
           <p class="sidebar-section">Demo API</p>
           <a href="#" id="btn-run-widget" onclick="runSingleWidget(event)">
             ⚡ Chạy widget đơn
@@ -197,10 +205,14 @@
   }
 
   /* ── Sidebar navigation ── */
+  function setActiveSidebar(link) {
+    document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+    if (link) link.classList.add('active');
+  }
+
   function loadPage(link, e) {
     e.preventDefault();
-    document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
-    link.classList.add('active');
+    setActiveSidebar(link);
     loadPageByUrl(link.dataset.page);
   }
 
@@ -217,6 +229,7 @@
   /* ── Demo: run a single widget by ID ── */
   async function runSingleWidget(e) {
     e.preventDefault();
+    setActiveSidebar(e.currentTarget);
     const idStr = prompt('Nhập Widget ID để chạy (ví dụ: 1):', '1');
     if (!idStr) return;
     const id = parseInt(idStr, 10);
@@ -246,6 +259,7 @@
   /* ── Demo: API connection test ── */
   async function showApiTest(e) {
     e.preventDefault();
+    setActiveSidebar(e.currentTarget);
     const root = document.getElementById('dash-app');
     root.innerHTML = '<div class="api-test-panel"><h2>🔌 Kiểm tra kết nối API</h2><div id="test-results"></div></div>';
     const results = document.getElementById('test-results');
@@ -255,6 +269,8 @@
       { label: 'Danh sách Widget', fn: () => WidgetEngine.widgets.list({ page: 1, pageSize: 5 }) },
       { label: 'Data Sources',     fn: () => WidgetEngine.dataSources.list({ page: 1, pageSize: 5 }) },
       { label: 'Schedules',        fn: () => WidgetEngine.schedules.list({ page: 1, pageSize: 5 }) },
+      { label: 'Form Schema (id=1)', fn: () => WidgetEngine.form.getSchema(1) },
+      { label: 'Widget Activity (id=1)', fn: () => WidgetEngine.widgetActivity.getActivity(1, { page: 1, pageSize: 5 }) },
     ];
 
     for (const t of tests) {
@@ -274,6 +290,134 @@
         statusEl.textContent = `❌ ${err.message}`;
         statusEl.className   = 'test-status error';
       }
+    }
+  }
+
+  /* ── Activity Monitoring: Widget Activity log ── */
+  async function showActivityPanel(e) {
+    e.preventDefault();
+    setActiveSidebar(e.currentTarget);
+    const root = document.getElementById('dash-app');
+    hideAlert();
+
+    const idStr = prompt('Nhập Widget ID để xem activity (ví dụ: 1):', '1');
+    if (!idStr) return;
+    const widgetId = parseInt(idStr, 10);
+    if (isNaN(widgetId)) { showAlert('error', 'ID không hợp lệ'); return; }
+
+    root.innerHTML = `
+      <div class="api-test-panel">
+        <h2>📡 Widget Activity — Widget #${widgetId}</h2>
+        <div id="activity-summary" style="margin-bottom:20px"></div>
+        <h3 style="font-size:14px;font-weight:700;color:#4a5568;margin:0 0 10px">Activity Log</h3>
+        <div id="activity-log"></div>
+      </div>`;
+
+    const summaryEl = document.getElementById('activity-summary');
+    const logEl     = document.getElementById('activity-log');
+
+    // Load summary
+    try {
+      const summary = await WidgetEngine.widgetActivity.getSummary(widgetId);
+      summaryEl.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
+          <div class="activity-stat"><span class="activity-stat-val">${summary.totalCalls ?? '—'}</span><span class="activity-stat-lbl">Tổng lời gọi</span></div>
+          <div class="activity-stat"><span class="activity-stat-val">${summary.uniqueUsers ?? '—'}</span><span class="activity-stat-lbl">Người dùng</span></div>
+          <div class="activity-stat"><span class="activity-stat-val">${summary.lastActivityAt ? new Date(summary.lastActivityAt).toLocaleString('vi-VN') : 'Chưa có'}</span><span class="activity-stat-lbl">Lần gọi cuối</span></div>
+        </div>`;
+    } catch (err) {
+      summaryEl.innerHTML = `<p style="color:#c53030;font-size:13px">Không thể tải summary: ${err.message}</p>`;
+    }
+
+    // Load activity log
+    try {
+      const result = await WidgetEngine.widgetActivity.getActivity(widgetId, { page: 1, pageSize: 20 });
+      const items = Array.isArray(result) ? result : (result.items || result.data || []);
+      if (!items.length) {
+        logEl.innerHTML = '<p style="color:#a0aec0;text-align:center;padding:20px 0">Chưa có dữ liệu activity.</p>';
+      } else {
+        const rows = items.map(r => `
+          <tr>
+            <td>${new Date(r.calledAt).toLocaleString('vi-VN')}</td>
+            <td><code>${r.apiEndpoint || '—'}</code></td>
+            <td>${r.statusCode ?? '—'}</td>
+            <td>${r.responseTimeMs != null ? r.responseTimeMs + ' ms' : '—'}</td>
+          </tr>`).join('');
+        logEl.innerHTML = `
+          <table class="we-table">
+            <thead><tr><th>Thời gian</th><th>Endpoint</th><th>Status</th><th>Thời gian phản hồi</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>`;
+      }
+    } catch (err) {
+      logEl.innerHTML = `<p style="color:#c53030;font-size:13px">Lỗi: ${err.message}</p>`;
+    }
+  }
+
+  /* ── Activity Monitoring: Inactivity Alerts ── */
+  async function showAlertsPanel(e) {
+    e.preventDefault();
+    setActiveSidebar(e.currentTarget);
+    const root = document.getElementById('dash-app');
+    hideAlert();
+
+    root.innerHTML = `
+      <div class="api-test-panel">
+        <h2>🔔 Inactivity Alerts</h2>
+        <h3 style="font-size:14px;font-weight:700;color:#4a5568;margin:0 0 10px">Widget không hoạt động</h3>
+        <div id="inactive-list" style="margin-bottom:24px"></div>
+        <h3 style="font-size:14px;font-weight:700;color:#4a5568;margin:0 0 10px">Alert Log</h3>
+        <div id="alerts-list"></div>
+      </div>`;
+
+    const inactiveEl = document.getElementById('inactive-list');
+    const alertsEl   = document.getElementById('alerts-list');
+
+    // Inactive widgets
+    try {
+      const inactive = await WidgetEngine.widgetActivity.getInactive(30);
+      const items = Array.isArray(inactive) ? inactive : (inactive.items || inactive.data || []);
+      if (!items.length) {
+        inactiveEl.innerHTML = '<p style="color:#48bb78;font-size:13px">✅ Không có widget nào không hoạt động.</p>';
+      } else {
+        const rows = items.map(w => `
+          <tr>
+            <td>#${w.id ?? w.widgetId ?? '—'}</td>
+            <td>${w.name ?? w.widgetName ?? '—'}</td>
+            <td>${w.lastActivityAt ? new Date(w.lastActivityAt).toLocaleString('vi-VN') : 'Chưa có'}</td>
+            <td>${w.daysSinceLastActivity != null ? w.daysSinceLastActivity + ' ngày' : '—'}</td>
+          </tr>`).join('');
+        inactiveEl.innerHTML = `
+          <table class="we-table">
+            <thead><tr><th>ID</th><th>Tên widget</th><th>Lần gọi cuối</th><th>Không hoạt động</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>`;
+      }
+    } catch (err) {
+      inactiveEl.innerHTML = `<p style="color:#c53030;font-size:13px">Lỗi: ${err.message}</p>`;
+    }
+
+    // Alert log
+    try {
+      const alerts = await WidgetEngine.widgetActivity.getAlerts();
+      const items = Array.isArray(alerts) ? alerts : (alerts.items || alerts.data || []);
+      if (!items.length) {
+        alertsEl.innerHTML = '<p style="color:#a0aec0;font-size:13px">Chưa có alert nào được ghi.</p>';
+      } else {
+        const rows = items.map(a => `
+          <tr>
+            <td>${a.createdAt ? new Date(a.createdAt).toLocaleString('vi-VN') : '—'}</td>
+            <td>${a.action ?? '—'}</td>
+            <td style="font-size:12px;color:#718096">${a.notes ?? a.description ?? '—'}</td>
+          </tr>`).join('');
+        alertsEl.innerHTML = `
+          <table class="we-table">
+            <thead><tr><th>Thời gian</th><th>Loại</th><th>Chi tiết</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>`;
+      }
+    } catch (err) {
+      alertsEl.innerHTML = `<p style="color:#c53030;font-size:13px">Lỗi: ${err.message}</p>`;
     }
   }
 

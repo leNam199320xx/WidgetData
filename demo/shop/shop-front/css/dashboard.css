@@ -324,3 +324,31 @@ body.dashboard-page {
   .dash-main { padding: 16px; }
   .login-card { padding: 28px 20px 24px; }
 }
+
+/* ════════════════════════════════════
+   Activity Monitoring panel  (PR #22)
+════════════════════════════════════ */
+.activity-stat {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px 20px;
+  text-align: center;
+}
+
+.activity-stat-val {
+  display: block;
+  font-size: 24px;
+  font-weight: 800;
+  color: #2b6cb0;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.activity-stat-lbl {
+  font-size: 12px;
+  font-weight: 600;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
