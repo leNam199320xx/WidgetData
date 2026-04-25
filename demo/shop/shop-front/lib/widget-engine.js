@@ -266,6 +266,7 @@
      * Execute a widget and return data.
      * @param {number}  id
      * @param {number}  [scheduleId] – optional schedule context (forwarded as query param)
+     * @returns {Promise<{data: Array, columns: Array, executedAt: string}>}
      */
     execute(id, scheduleId) {
       const qs = scheduleId != null ? `?scheduleId=${encodeURIComponent(scheduleId)}` : '';
