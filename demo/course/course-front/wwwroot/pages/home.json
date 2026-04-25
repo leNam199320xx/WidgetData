@@ -1,0 +1,90 @@
+{
+  "title": "EduViet – Nền tảng học trực tuyến hàng đầu Việt Nam",
+  "layout": "flex",
+  "auth": { "required": false },
+  "widgets": [
+    {
+      "staticData": {
+        "badge": "🎓 Hơn 50.000 học viên tin tưởng",
+        "headline": "Học bất cứ điều gì, ở bất cứ đâu",
+        "subheadline": "EduViet cung cấp hàng nghìn khóa học chất lượng cao từ các chuyên gia hàng đầu. Học theo lộ trình cá nhân hóa, được xây dựng trên nền tảng WidgetData Engine.",
+        "cta_primary": "Khám phá khóa học",
+        "cta_secondary": "Trở thành giảng viên"
+      },
+      "template": "<div class=\"we-hero\" style=\"background:linear-gradient(135deg,#ebf4ff 0%,#e9d8fd 100%)\"><span class=\"we-hero-badge\" style=\"background:#4c51bf;color:#fff\">{{badge}}</span><h1 class=\"we-hero-headline\">{{headline}}</h1><p class=\"we-hero-subheadline\">{{subheadline}}</p><div class=\"we-hero-actions\"><a class=\"we-btn we-btn-primary\" href=\"#\" style=\"background:#4c51bf;border-color:#4c51bf\">{{cta_primary}}</a><a class=\"we-btn we-btn-outline\" href=\"#\">{{cta_secondary}}</a></div></div>"
+    },
+    {
+      "staticData": {
+        "val1": "50.000+", "lbl1": "Học viên",
+        "val2": "1.200+",  "lbl2": "Khóa học",
+        "val3": "300+",    "lbl3": "Giảng viên",
+        "val4": "4.8★",    "lbl4": "Đánh giá TB"
+      },
+      "template": "<div style=\"background:#fff;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0\"><div class=\"we-stats\"><div class=\"we-stat\"><span class=\"we-stat-value\" style=\"color:#4c51bf\">{{val1}}</span><span class=\"we-stat-label\">{{lbl1}}</span></div><div class=\"we-stat\"><span class=\"we-stat-value\" style=\"color:#4c51bf\">{{val2}}</span><span class=\"we-stat-label\">{{lbl2}}</span></div><div class=\"we-stat\"><span class=\"we-stat-value\" style=\"color:#4c51bf\">{{val3}}</span><span class=\"we-stat-label\">{{lbl3}}</span></div><div class=\"we-stat\"><span class=\"we-stat-value\" style=\"color:#4c51bf\">{{val4}}</span><span class=\"we-stat-label\">{{lbl4}}</span></div></div></div>"
+    },
+    {
+      "staticData": {
+        "title": "Danh mục khóa học",
+        "subtitle": "Từ lập trình đến kinh doanh — hãy bắt đầu hành trình học tập của bạn.",
+        "rows": [
+          { "icon": "💻", "name": "Lập trình & CNTT",    "count": "320 khóa",  "href": "#" },
+          { "icon": "📊", "name": "Phân tích dữ liệu",   "count": "95 khóa",   "href": "#" },
+          { "icon": "🎨", "name": "Thiết kế & UX/UI",    "count": "140 khóa",  "href": "#" },
+          { "icon": "📈", "name": "Marketing & SEO",      "count": "110 khóa",  "href": "#" },
+          { "icon": "💼", "name": "Kinh doanh & Quản lý", "count": "180 khóa",  "href": "#" },
+          { "icon": "🗣️", "name": "Ngoại ngữ",           "count": "200 khóa",  "href": "#" },
+          { "icon": "🎬", "name": "Video & Nhiếp ảnh",    "count": "75 khóa",   "href": "#" },
+          { "icon": "🏃", "name": "Sức khỏe & Thể dục",  "count": "60 khóa",   "href": "#" }
+        ]
+      },
+      "template": "<div class=\"we-section\" style=\"background:#f7fafc\"><h2 class=\"we-section-title\" style=\"text-align:center;margin-bottom:8px\">{{title}}</h2><p class=\"we-section-subtitle\" style=\"text-align:center\">{{subtitle}}</p><div style=\"display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:24px\">{{#each rows}}<a href=\"{{href}}\" style=\"display:flex;flex-direction:column;align-items:center;gap:8px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:22px 12px;text-decoration:none;transition:box-shadow .15s\" onmouseover=\"this.style.boxShadow='0 4px 12px rgba(0,0,0,.1)'\" onmouseout=\"this.style.boxShadow='none'\"><span style=\"font-size:32px\">{{icon}}</span><span style=\"font-size:14px;font-weight:700;color:#1a202c;text-align:center\">{{name}}</span><span style=\"font-size:12px;color:#4c51bf;font-weight:600\">{{count}}</span></a>{{/each}}</div></div>"
+    },
+    {
+      "staticData": {
+        "title": "Khóa học nổi bật",
+        "subtitle": "Được chọn lọc bởi đội ngũ chuyên gia — đảm bảo chất lượng và cập nhật liên tục.",
+        "rows": [
+          { "icon": "🐍", "name": "Python từ cơ bản đến nâng cao",          "instructor": "Nguyễn Văn An",   "level": "Mọi trình độ", "duration": "42 giờ", "students": "12.400", "rating": "4.9", "price": "599.000₫", "old_price": "899.000₫", "badge": "Bán chạy", "href": "#" },
+          { "icon": "📊", "name": "Data Analysis với Python & Pandas",       "instructor": "Trần Thị Bích",   "level": "Trung cấp",    "duration": "28 giờ", "students": "7.200",  "rating": "4.8", "price": "499.000₫", "old_price": "699.000₫", "badge": "Mới",      "href": "#" },
+          { "icon": "🌐", "name": "Lập trình Web Full-Stack với React & .NET","instructor": "Lê Minh Đức",    "level": "Nâng cao",     "duration": "68 giờ", "students": "5.800",  "rating": "4.9", "price": "799.000₫", "old_price": "1.199.000₫","badge": "Hot",      "href": "#" },
+          { "icon": "🎨", "name": "UI/UX Design với Figma — từ A đến Z",    "instructor": "Phạm Thu Hà",    "level": "Cơ bản",       "duration": "32 giờ", "students": "9.100",  "rating": "4.7", "price": "449.000₫", "old_price": "649.000₫", "badge": "",         "href": "#" },
+          { "icon": "📈", "name": "Digital Marketing toàn diện 2026",        "instructor": "Vũ Hoàng Nam",   "level": "Mọi trình độ", "duration": "35 giờ", "students": "8.600",  "rating": "4.8", "price": "399.000₫", "old_price": "599.000₫", "badge": "",         "href": "#" },
+          { "icon": "🤖", "name": "Machine Learning thực chiến với TensorFlow","instructor": "Đặng Thị Lan", "level": "Nâng cao",     "duration": "55 giờ", "students": "4.300",  "rating": "4.9", "price": "899.000₫", "old_price": "1.299.000₫","badge": "Trending", "href": "#" }
+        ]
+      },
+      "template": "<div class=\"we-section\"><h2 class=\"we-section-title\" style=\"text-align:center;margin-bottom:8px\">{{title}}</h2><p class=\"we-section-subtitle\" style=\"text-align:center\">{{subtitle}}</p><div class=\"we-products\" style=\"margin-top:24px\">{{#each rows}}<div class=\"we-product-card\"><div class=\"we-product-img\" style=\"font-size:48px;display:flex;align-items:center;justify-content:center;height:110px;background:linear-gradient(135deg,#ebf4ff,#e9d8fd);border-radius:10px 10px 0 0\">{{icon}}</div><div class=\"we-product-body\"><div style=\"font-size:11px;color:#4c51bf;font-weight:700;margin-bottom:4px\">{{level}} · {{duration}}</div>{{#if badge}}<span class=\"we-product-badge\" style=\"background:#4c51bf;color:#fff\">{{badge}}</span>{{/if}}<h3 class=\"we-product-name\" style=\"font-size:14px;margin:6px 0 4px;line-height:1.4\">{{name}}</h3><div style=\"font-size:12px;color:#718096;margin-bottom:4px\">👨‍🏫 {{instructor}}</div><div style=\"font-size:12px;color:#718096;margin-bottom:6px\">⭐ {{rating}} · {{students}} học viên</div><div style=\"display:flex;align-items:baseline;gap:8px;margin-bottom:10px\"><span style=\"color:#4c51bf;font-weight:700;font-size:16px\">{{price}}</span>{{#if old_price}}<span style=\"font-size:12px;color:#a0aec0;text-decoration:line-through\">{{old_price}}</span>{{/if}}</div><a class=\"we-btn we-btn-primary\" href=\"{{href}}\" style=\"background:#4c51bf;color:#fff;border-color:#4c51bf;display:block;text-align:center;font-size:13px\">🎓 Đăng ký học</a></div></div>{{/each}}</div></div>"
+    },
+    {
+      "staticData": {
+        "title": "Tại sao chọn EduViet?",
+        "rows": [
+          { "icon": "🎯", "name": "Lộ trình cá nhân hóa",    "desc": "AI phân tích kỹ năng hiện tại và đề xuất lộ trình học tập phù hợp với mục tiêu của bạn." },
+          { "icon": "🎬", "name": "Video chất lượng 4K",      "desc": "Tất cả video bài giảng đều được quay với chất lượng 4K, phụ đề tiếng Việt và Anh." },
+          { "icon": "🏆", "name": "Chứng chỉ được công nhận", "desc": "Chứng chỉ EduViet được hơn 500 doanh nghiệp hàng đầu Việt Nam và quốc tế công nhận." },
+          { "icon": "💬", "name": "Hỗ trợ 1-1 từ mentor",   "desc": "Mỗi học viên được kết nối với mentor chuyên ngành sẵn sàng giải đáp mọi thắc mắc." },
+          { "icon": "📱", "name": "Học mọi lúc, mọi nơi",    "desc": "Ứng dụng mobile iOS/Android, học offline không cần internet, đồng bộ đa thiết bị." },
+          { "icon": "🔄", "name": "Cập nhật nội dung liên tục","desc": "Nội dung khóa học được cập nhật theo xu hướng công nghệ mới nhất, học viên nhận cập nhật miễn phí." }
+        ]
+      },
+      "template": "<div class=\"we-section\" style=\"background:#f7fafc\"><h2 class=\"we-section-title\" style=\"text-align:center;margin-bottom:32px\">{{title}}</h2><div class=\"we-features\">{{#each rows}}<div class=\"we-feature-card\"><span class=\"we-feature-icon\">{{icon}}</span><h3 class=\"we-feature-title\">{{name}}</h3><p class=\"we-feature-desc\">{{desc}}</p></div>{{/each}}</div></div>"
+    },
+    {
+      "staticData": {
+        "rows": [
+          { "quote": "Khóa học Python của EduViet giúp tôi chuyển ngành từ kế toán sang data analyst trong vòng 6 tháng. Nội dung thực chiến, dễ hiểu.", "name": "Nguyễn Thị Hoa", "role": "Data Analyst tại VPBank", "avatar": "👩‍💻" },
+          { "quote": "Chứng chỉ Machine Learning giúp tôi được nhận vào Grab với mức lương tăng gấp đôi. Đầu tư xứng đáng nhất từ trước đến nay.",      "name": "Trần Quốc Hùng", "role": "ML Engineer tại Grab",   "avatar": "👨‍🔬" },
+          { "quote": "EduViet có community học tập rất sôi nổi. Tôi học được nhiều từ mentor lẫn bạn học, mở rộng network chuyên môn rất hiệu quả.",    "name": "Lê Thị Phương", "role": "Product Manager tại VNG", "avatar": "👩‍📊" }
+        ]
+      },
+      "template": "<div class=\"we-section we-section-center\" style=\"background:#fff\"><h2 class=\"we-section-title\">Học viên nói gì về EduViet?</h2><div class=\"we-testimonials\">{{#each rows}}<div class=\"we-testimonial\"><p class=\"we-testimonial-quote\">{{quote}}</p><div class=\"we-testimonial-author\"><div class=\"we-testimonial-avatar\">{{avatar}}</div><div><div class=\"we-testimonial-name\">{{name}}</div><div class=\"we-testimonial-role\">{{role}}</div></div></div></div>{{/each}}</div></div>"
+    },
+    {
+      "staticData": {
+        "title": "Bắt đầu hành trình học tập hôm nay",
+        "subtitle": "Đăng ký miễn phí, truy cập hơn 50 khóa học miễn phí. Nâng cấp khi bạn sẵn sàng.",
+        "cta": "Đăng ký miễn phí ngay"
+      },
+      "template": "<div class=\"we-section\"><div class=\"we-cta-banner\" style=\"background:linear-gradient(135deg,#434190,#4c51bf)\"><h2 class=\"we-cta-title\">{{title}}</h2><p class=\"we-cta-subtitle\">{{subtitle}}</p><a class=\"we-btn we-btn-cta\" href=\"#\" style=\"background:#fff;color:#4c51bf;border-color:#fff\">{{cta}}</a></div></div>"
+    }
+  ]
+}

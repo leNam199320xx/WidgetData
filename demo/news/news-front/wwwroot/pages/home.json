@@ -1,0 +1,64 @@
+{
+  "title": "VietNews – Tin tức nhanh, chính xác, đáng tin cậy",
+  "layout": "flex",
+  "auth": { "required": false },
+  "widgets": [
+    {
+      "staticData": {
+        "badge": "🔴 Tin nóng hôm nay",
+        "headline": "Nơi tin tức đến đầu tiên",
+        "subheadline": "VietNews mang đến thông tin nhanh nhất, chính xác nhất từ khắp nơi trong và ngoài nước. Được xây dựng trên nền tảng WidgetData Engine.",
+        "cta_primary": "Đọc tin mới nhất",
+        "cta_secondary": "Xem chuyên mục"
+      },
+      "template": "<div class=\"we-hero\" style=\"background:linear-gradient(135deg,#fff5f5 0%,#fed7d7 100%)\"><span class=\"we-hero-badge\" style=\"background:#e53e3e;color:#fff\">{{badge}}</span><h1 class=\"we-hero-headline\">{{headline}}</h1><p class=\"we-hero-subheadline\">{{subheadline}}</p><div class=\"we-hero-actions\"><a class=\"we-btn we-btn-primary\" href=\"#\" style=\"background:#e53e3e;border-color:#e53e3e\">{{cta_primary}}</a><a class=\"we-btn we-btn-outline\" href=\"#\">{{cta_secondary}}</a></div></div>"
+    },
+    {
+      "staticData": {
+        "val1": "5 triệu+", "lbl1": "Độc giả/ngày",
+        "val2": "200+",     "lbl2": "Phóng viên",
+        "val3": "24/7",     "lbl3": "Cập nhật liên tục",
+        "val4": "15 năm",   "lbl4": "Kinh nghiệm"
+      },
+      "template": "<div style=\"background:#fff;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0\"><div class=\"we-stats\"><div class=\"we-stat\"><span class=\"we-stat-value\" style=\"color:#e53e3e\">{{val1}}</span><span class=\"we-stat-label\">{{lbl1}}</span></div><div class=\"we-stat\"><span class=\"we-stat-value\" style=\"color:#e53e3e\">{{val2}}</span><span class=\"we-stat-label\">{{lbl2}}</span></div><div class=\"we-stat\"><span class=\"we-stat-value\" style=\"color:#e53e3e\">{{val3}}</span><span class=\"we-stat-label\">{{lbl3}}</span></div><div class=\"we-stat\"><span class=\"we-stat-value\" style=\"color:#e53e3e\">{{val4}}</span><span class=\"we-stat-label\">{{lbl4}}</span></div></div></div>"
+    },
+    {
+      "staticData": {
+        "title": "Tin nổi bật",
+        "subtitle": "Những bài viết được đọc nhiều nhất trong 24 giờ qua.",
+        "rows": [
+          { "category": "Kinh tế",    "badge": "🔥 Hot",  "title": "GDP Việt Nam tăng trưởng 7,2% trong quý I/2026",                            "summary": "Tổng cục Thống kê vừa công bố số liệu tăng trưởng kinh tế quý đầu năm, vượt mục tiêu đề ra.",                  "time": "2 giờ trước",  "views": "128.000", "href": "#" },
+          { "category": "Công nghệ",  "badge": "🆕 Mới",  "title": "Apple ra mắt iPhone 17 với camera 200MP và chip A20 Bionic",                   "summary": "Chiếc điện thoại mới nhất của Apple được trang bị cảm biến camera lớn nhất lịch sử dòng iPhone.",             "time": "4 giờ trước",  "views": "95.000",  "href": "#" },
+          { "category": "Thể thao",   "badge": "⚽ Sport", "title": "ĐT Việt Nam giành vé vào tứ kết Asian Cup 2026 sau trận thắng Nhật Bản",       "summary": "Chiến thắng lịch sử trước đội bóng hạng nhất châu Á đưa Việt Nam vào vòng tứ kết lần đầu tiên.",           "time": "6 giờ trước",  "views": "312.000", "href": "#" },
+          { "category": "Xã hội",     "badge": "",         "title": "Hà Nội triển khai hệ thống xe buýt điện diện rộng từ tháng 6/2026",            "summary": "Thành phố sẽ đưa vào vận hành 500 xe buýt điện thay thế dần các xe chạy xăng trên 30 tuyến.",                "time": "8 giờ trước",  "views": "67.000",  "href": "#" },
+          { "category": "Giáo dục",   "badge": "",         "title": "Bộ GD&ĐT công bố lịch thi tốt nghiệp THPT 2026",                               "summary": "Kỳ thi tốt nghiệp THPT năm 2026 dự kiến diễn ra vào ngày 10-12/6, với một số thay đổi quan trọng trong đề thi.", "time": "10 giờ trước", "views": "84.000",  "href": "#" }
+        ]
+      },
+      "template": "<div class=\"we-section\"><h2 class=\"we-section-title\" style=\"text-align:center;margin-bottom:8px\">{{title}}</h2><p class=\"we-section-subtitle\" style=\"text-align:center\">{{subtitle}}</p><div style=\"display:flex;flex-direction:column;gap:16px;margin-top:24px;max-width:860px;margin-left:auto;margin-right:auto\">{{#each rows}}<a href=\"{{href}}\" style=\"display:flex;gap:16px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px 20px;text-decoration:none;transition:box-shadow .15s\" onmouseover=\"this.style.boxShadow='0 4px 12px rgba(0,0,0,.08)'\" onmouseout=\"this.style.boxShadow='none'\"><div style=\"flex:1\"><div style=\"display:flex;align-items:center;gap:8px;margin-bottom:6px\"><span style=\"font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#e53e3e\">{{category}}</span>{{#if badge}}<span style=\"font-size:11px;font-weight:700;background:#fed7d7;color:#c53030;padding:2px 7px;border-radius:4px\">{{badge}}</span>{{/if}}</div><h3 style=\"font-size:16px;font-weight:700;color:#1a202c;margin:0 0 6px;line-height:1.4\">{{title}}</h3><p style=\"font-size:13px;color:#718096;margin:0 0 8px;line-height:1.5\">{{summary}}</p><div style=\"font-size:12px;color:#a0aec0\">🕐 {{time}} &nbsp;·&nbsp; 👁 {{views}} lượt xem</div></div></a>{{/each}}</div></div>"
+    },
+    {
+      "staticData": {
+        "title": "Chuyên mục nổi bật",
+        "rows": [
+          { "icon": "💼", "name": "Kinh tế",      "count": "2.400+ bài",  "color": "#e53e3e", "href": "#" },
+          { "icon": "🖥️", "name": "Công nghệ",    "count": "1.800+ bài",  "color": "#3182ce", "href": "#" },
+          { "icon": "⚽", "name": "Thể thao",     "count": "3.100+ bài",  "color": "#38a169", "href": "#" },
+          { "icon": "🌍", "name": "Thế giới",     "count": "2.700+ bài",  "color": "#744210", "href": "#" },
+          { "icon": "🎭", "name": "Giải trí",     "count": "1.500+ bài",  "color": "#7b2d8b", "href": "#" },
+          { "icon": "🏥", "name": "Sức khỏe",     "count": "900+ bài",    "color": "#d69e2e", "href": "#" },
+          { "icon": "📚", "name": "Giáo dục",     "count": "700+ bài",    "color": "#2c7a7b", "href": "#" },
+          { "icon": "🏛️", "name": "Chính trị",   "count": "1.200+ bài",  "color": "#c05621", "href": "#" }
+        ]
+      },
+      "template": "<div class=\"we-section\" style=\"background:#f7fafc\"><h2 class=\"we-section-title\" style=\"text-align:center;margin-bottom:24px\">{{title}}</h2><div style=\"display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px\">{{#each rows}}<a href=\"{{href}}\" style=\"display:flex;flex-direction:column;align-items:center;gap:8px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:22px 12px;text-decoration:none;transition:box-shadow .15s\" onmouseover=\"this.style.boxShadow='0 4px 12px rgba(0,0,0,.1)'\" onmouseout=\"this.style.boxShadow='none'\"><span style=\"font-size:32px\">{{icon}}</span><span style=\"font-size:14px;font-weight:700;color:#1a202c\">{{name}}</span><span style=\"font-size:11px;color:#718096\">{{count}}</span></a>{{/each}}</div></div>"
+    },
+    {
+      "staticData": {
+        "title": "Đăng ký nhận bản tin",
+        "subtitle": "Nhận tin tức mới nhất mỗi sáng. Không spam, hủy đăng ký bất kỳ lúc nào.",
+        "cta": "Đăng ký ngay — miễn phí"
+      },
+      "template": "<div class=\"we-section\"><div class=\"we-cta-banner\" style=\"background:linear-gradient(135deg,#c53030,#e53e3e)\"><h2 class=\"we-cta-title\">{{title}}</h2><p class=\"we-cta-subtitle\">{{subtitle}}</p><a class=\"we-btn we-btn-cta\" href=\"#\" style=\"background:#fff;color:#c53030;border-color:#fff\">{{cta}}</a></div></div>"
+    }
+  ]
+}

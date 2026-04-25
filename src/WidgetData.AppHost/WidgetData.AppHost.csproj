@@ -18,6 +18,10 @@
     <ProjectReference Include="..\WidgetData.API\WidgetData.API.csproj" />
     <ProjectReference Include="..\WidgetData.Gateway\WidgetData.Gateway.csproj" />
     <ProjectReference Include="..\WidgetData.Web\WidgetData.Web.csproj" />
+    <!-- Demo web projects -->
+    <ProjectReference Include="..\..\demo\shop\shop-admin\shop-admin.csproj" />
+    <ProjectReference Include="..\..\demo\news\news-front\news-front.csproj" />
+    <ProjectReference Include="..\..\demo\course\course-front\course-front.csproj" />
   </ItemGroup>
 
 </Project>

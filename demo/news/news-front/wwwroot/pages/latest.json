@@ -1,0 +1,37 @@
+{
+  "title": "Tin mới nhất – VietNews",
+  "layout": "flex",
+  "auth": { "required": false },
+  "widgets": [
+    {
+      "staticData": {
+        "headline": "Tin tức mới nhất",
+        "subheadline": "Cập nhật liên tục 24/7 — tất cả tin tức quan trọng trong ngày."
+      },
+      "template": "<div class=\"we-hero\" style=\"padding:48px 24px 40px;background:#fff5f5\"><h1 class=\"we-hero-headline\">{{headline}}</h1><p class=\"we-hero-subheadline\">{{subheadline}}</p></div>"
+    },
+    {
+      "staticData": {
+        "rows": [
+          { "time": "07:30", "category": "Kinh tế",   "title": "Chứng khoán Việt Nam tăng điểm mạnh, VN-Index vượt mốc 1.450",              "summary": "Phiên giao dịch sáng nay ghi nhận lực mua mạnh từ nhóm cổ phiếu ngân hàng và bất động sản.",  "views": "42.000" },
+          { "time": "08:15", "category": "Công nghệ", "title": "Google ra mắt Gemini 3.0 — mô hình AI mạnh nhất từ trước đến nay",            "summary": "Với khả năng xử lý đa phương tiện và lý luận nâng cao, Gemini 3.0 đặt chuẩn mới cho AI.",      "views": "78.000" },
+          { "time": "09:00", "category": "Xã hội",    "title": "TP.HCM thí điểm mô hình 'khu phố thông minh' tại quận 1",                    "summary": "Dự án áp dụng camera AI, cảm biến IoT và ứng dụng di động để nâng cao chất lượng sống.",       "views": "31.000" },
+          { "time": "09:45", "category": "Thể thao",  "title": "CLB Hà Nội FC vào chung kết AFC Champions League lần đầu tiên",               "summary": "Chiến thắng 2-0 trên sân khách trước Jeonbuk giúp Hà Nội FC đi vào lịch sử bóng đá Việt Nam.", "views": "156.000" },
+          { "time": "10:20", "category": "Giáo dục",  "title": "Đại học Quốc gia Hà Nội lọt vào top 500 thế giới theo QS Rankings 2026",      "summary": "Đây là lần đầu tiên một trường đại học Việt Nam đạt thứ hạng này, đánh dấu bước tiến lớn.",     "views": "63.000" },
+          { "time": "11:00", "category": "Sức khỏe",  "title": "Phát hiện loại vaccine mới ngừa cúm mùa, hiệu quả lên đến 95%",               "summary": "Nghiên cứu được thực hiện trên 50.000 người, cho thấy hiệu quả vượt trội so với các loại cũ.",  "views": "48.000" },
+          { "time": "11:30", "category": "Thế giới",  "title": "Mỹ và EU ký kết hiệp ước thương mại mới, mở ra kỷ nguyên hợp tác mới",         "summary": "Hiệp ước loại bỏ thuế quan trên 80% hàng hóa, dự kiến thúc đẩy GDP hai bên tăng thêm 2%.",    "views": "55.000" },
+          { "time": "12:00", "category": "Giải trí",  "title": "Phim Việt 'Đất rừng phương Nam' phần 2 xác lập kỷ lục doanh thu 300 tỷ đồng",  "summary": "Chỉ sau 10 ngày công chiếu, bộ phim đã vượt mốc doanh thu kỷ lục của điện ảnh Việt Nam.",     "views": "210.000" }
+        ]
+      },
+      "template": "<div class=\"we-section\"><div style=\"max-width:860px;margin:0 auto\"><div style=\"display:flex;flex-direction:column;gap:12px\">{{#each rows}}<div style=\"display:flex;gap:16px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px\"><div style=\"min-width:52px;text-align:center\"><div style=\"font-size:12px;font-weight:700;color:#e53e3e\">{{time}}</div><div style=\"font-size:10px;color:#a0aec0;margin-top:2px\">hôm nay</div></div><div style=\"flex:1;border-left:1px solid #fed7d7;padding-left:16px\"><div style=\"font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#e53e3e;margin-bottom:4px\">{{category}}</div><h3 style=\"font-size:15px;font-weight:700;color:#1a202c;margin:0 0 4px;line-height:1.4\">{{title}}</h3><p style=\"font-size:13px;color:#718096;margin:0 0 6px;line-height:1.5\">{{summary}}</p><div style=\"font-size:11px;color:#a0aec0\">👁 {{views}} lượt xem</div></div></div>{{/each}}</div></div></div>"
+    },
+    {
+      "staticData": {
+        "title": "Không bỏ lỡ tin quan trọng",
+        "subtitle": "Đăng ký nhận thông báo tin tức mới nhất qua email.",
+        "cta": "Đăng ký bản tin miễn phí"
+      },
+      "template": "<div class=\"we-section\"><div class=\"we-cta-banner\" style=\"background:linear-gradient(135deg,#c53030,#e53e3e)\"><h2 class=\"we-cta-title\">{{title}}</h2><p class=\"we-cta-subtitle\">{{subtitle}}</p><a class=\"we-btn we-btn-cta\" href=\"#\" style=\"background:#fff;color:#c53030;border-color:#fff\">{{cta}}</a></div></div>"
+    }
+  ]
+}

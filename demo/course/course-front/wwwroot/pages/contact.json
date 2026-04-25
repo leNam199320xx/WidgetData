@@ -1,0 +1,37 @@
+{
+  "title": "Liên hệ – EduViet",
+  "layout": "flex",
+  "auth": { "required": false },
+  "widgets": [
+    {
+      "staticData": {
+        "headline": "Liên hệ với EduViet",
+        "subheadline": "Có câu hỏi về khóa học, học bổng, hay hợp tác doanh nghiệp? Chúng tôi luôn sẵn sàng hỗ trợ."
+      },
+      "template": "<div class=\"we-hero\" style=\"padding:48px 24px 40px;background:linear-gradient(135deg,#ebf4ff,#e9d8fd)\"><h1 class=\"we-hero-headline\">{{headline}}</h1><p class=\"we-hero-subheadline\">{{subheadline}}</p></div>"
+    },
+    {
+      "staticData": {
+        "rows": [
+          { "icon": "📧", "label": "Email hỗ trợ học viên", "value": "support@eduviet.vn" },
+          { "icon": "🤝", "label": "Hợp tác doanh nghiệp",  "value": "b2b@eduviet.vn" },
+          { "icon": "🕐", "label": "Giờ hỗ trợ",             "value": "T2–CN, 8:00–22:00" },
+          { "icon": "📍", "label": "Văn phòng",               "value": "Tòa nhà Techcombank, 191 Bà Triệu, Hà Nội" }
+        ]
+      },
+      "template": "<div class=\"we-section\"><h2 class=\"we-section-title\" style=\"text-align:center;margin-bottom:28px\">Thông tin liên hệ</h2><div style=\"display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;max-width:800px;margin:0 auto\">{{#each rows}}<div style=\"background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:18px 20px;display:flex;align-items:flex-start;gap:12px\"><span style=\"font-size:26px\">{{icon}}</span><div><div style=\"font-size:11px;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px\">{{label}}</div><div style=\"font-size:14px;font-weight:600;color:#1a202c\">{{value}}</div></div></div>{{/each}}</div></div>"
+    },
+    {
+      "formId": 19,
+      "title": "Gửi câu hỏi"
+    },
+    {
+      "staticData": {
+        "title": "Đào tạo doanh nghiệp (B2B)",
+        "desc": "EduViet cung cấp giải pháp đào tạo nhân sự toàn diện cho doanh nghiệp. Nội dung tùy chỉnh theo nhu cầu, báo cáo tiến độ học tập realtime, tích hợp hệ thống HR.",
+        "clients": "FPT Software · Viettel · VNPT · VinGroup · Grab · Shopee · MoMo"
+      },
+      "template": "<div class=\"we-section\" style=\"background:#ebf4ff;padding:40px 24px\"><div style=\"max-width:680px;margin:0 auto;text-align:center\"><h3 style=\"font-size:18px;font-weight:700;color:#4c51bf;margin:0 0 10px\">🏢 {{title}}</h3><p style=\"font-size:14px;color:#718096;margin:0 0 16px;line-height:1.6\">{{desc}}</p><p style=\"font-size:13px;color:#4a5568;font-weight:600\">Đối tác đang sử dụng: {{clients}}</p></div></div>"
+    }
+  ]
+}

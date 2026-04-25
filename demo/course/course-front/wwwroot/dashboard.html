@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard – EduViet Analytics</title>
+  <link rel="stylesheet" href="lib/widget-engine.css">
+  <link rel="stylesheet" href="css/site.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body class="dashboard-page">
+
+  <div id="shell" style="display:none">
+
+    <header class="dash-header">
+      <span class="logo">🎓 EduViet</span>
+      <nav>
+        <a href="index.html">🏠 Trang chủ</a>
+        <a href="#" class="active">📊 Dashboard</a>
+      </nav>
+      <div class="header-right">
+        <span id="user-name" class="user-badge"></span>
+        <button class="btn-logout" onclick="logout()">Đăng xuất</button>
+      </div>
+    </header>
+
+    <div class="dash-layout">
+      <aside class="sidebar">
+        <nav class="sidebar-nav">
+          <p class="sidebar-section">Báo cáo</p>
+          <a href="#" class="active" data-page="pages/dashboard.json" onclick="loadPage(this, event)">
+            📈 Tổng quan
+          </a>
+          <a href="#" data-page="pages/enrollments.json" onclick="loadPage(this, event)">
+            📋 Đăng ký học
+          </a>
+          <a href="#" data-page="pages/completions.json" onclick="loadPage(this, event)">
+            🏆 Hoàn thành
+          </a>
+
+          <p class="sidebar-section">Monitoring</p>
+          <a href="#" id="btn-activity" onclick="showActivityPanel(event)">
+            📡 Widget Activity
+          </a>
+          <a href="#" id="btn-alerts" onclick="showAlertsPanel(event)">
+            🔔 Inactivity Alerts
+          </a>
+
+          <p class="sidebar-section">Demo API</p>
+          <a href="#" id="btn-run-widget" onclick="runSingleWidget(event)">
+            ⚡ Chạy widget đơn
+          </a>
+          <a href="#" id="btn-api-test" onclick="showApiTest(event)">
+            🔌 Kiểm tra kết nối
+          </a>
+        </nav>
+      </aside>
+
+      <main class="dash-main">
+        <div id="alert-bar" class="alert-bar" style="display:none"></div>
+        <div id="dash-app"></div>
+      </main>
+    </div>
+
+  </div>
+
+  <div id="login-screen">
+    <div class="login-card">
+      <div class="login-logo">🎓</div>
+      <h1 class="login-title">EduViet Dashboard</h1>
+      <p class="login-subtitle">Đăng nhập để xem dashboard phân tích học viên và khóa học.</p>
+
+      <div id="login-error" class="login-error" style="display:none"></div>
+
+      <form id="login-form" onsubmit="doLogin(event)">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input id="email" type="email" value="admin@widgetdata.com"
+                 placeholder="admin@widgetdata.com" autocomplete="username" required />
+        </div>
+        <div class="form-group">
+          <label for="password">Mật khẩu</label>
+          <input id="password" type="password" value="Admin@123"
+                 placeholder="••••••••" autocomplete="current-password" required />
+        </div>
+        <div class="form-group">
+          <label for="api-url">API URL</label>
+          <input id="api-url" type="url" value="http://localhost:5114/api"
+                 placeholder="http://localhost:5114/api" />
+          <small>Địa chỉ của WidgetData.API đang chạy.</small>
+        </div>
+        <button type="submit" id="login-btn" class="btn-login">Đăng nhập</button>
+      </form>
+
+      <div class="login-hint">
+        <strong>Demo credentials:</strong> admin@widgetdata.com / Admin@123
+      </div>
+    </div>
+  </div>
+
+  <script src="lib/widget-engine.js"></script>
+  <script>
+  const API_URL_KEY = 'wd_api_url';
+  const TOKEN_KEY   = 'wd_token';
+  const REFRESH_KEY = 'wd_refresh';
+  const EXPIRES_KEY = 'wd_expires';
+  const USER_KEY    = 'wd_user';
+
+  (function restoreSession() {
+    const token   = localStorage.getItem(TOKEN_KEY);
+    const refresh = localStorage.getItem(REFRESH_KEY);
+    const expires = localStorage.getItem(EXPIRES_KEY);
+    const apiUrl  = localStorage.getItem(API_URL_KEY) || 'http://localhost:5114/api';
+    if (token) {
+      WidgetEngine.init({ baseUrl: apiUrl, token, refreshToken: refresh, tokenExpiresAt: expires });
+      showShell();
+    } else {
+      document.getElementById('api-url').value = apiUrl;
+      showLogin();
+    }
+  })();
+
+  async function doLogin(e) {
+    e.preventDefault();
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const apiUrl   = document.getElementById('api-url').value.trim().replace(/\/$/, '');
+    const btn      = document.getElementById('login-btn');
+    btn.disabled   = true;
+    btn.textContent = 'Đang đăng nhập…';
+    hideLoginError();
+    try {
+      WidgetEngine.init({ baseUrl: apiUrl });
+      const data = await WidgetEngine.auth.login(email, password);
+      localStorage.setItem(API_URL_KEY, apiUrl);
+      localStorage.setItem(TOKEN_KEY,   data.token);
+      if (data.refreshToken) localStorage.setItem(REFRESH_KEY, data.refreshToken);
+      if (data.expiresAt)    localStorage.setItem(EXPIRES_KEY, data.expiresAt);
+      if (data.user)         localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+      showShell();
+    } catch (err) {
+      showLoginError(err.message || 'Đăng nhập thất bại. Kiểm tra email, mật khẩu và API URL.');
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = 'Đăng nhập';
+    }
+  }
+
+  function logout() {
+    WidgetEngine.auth.logout();
+    [TOKEN_KEY, REFRESH_KEY, EXPIRES_KEY, USER_KEY].forEach(k => localStorage.removeItem(k));
+    showLogin();
+  }
+
+  function showShell() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('shell').style.display        = 'block';
+    try {
+      const user = JSON.parse(localStorage.getItem(USER_KEY) || '{}');
+      document.getElementById('user-name').textContent = user.fullName || user.email || 'User';
+    } catch (_) {}
+    loadPageByUrl('pages/dashboard.json');
+  }
+
+  function showLogin() {
+    document.getElementById('shell').style.display        = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+  }
+
+  function showLoginError(msg) {
+    const el = document.getElementById('login-error');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function hideLoginError() {
+    document.getElementById('login-error').style.display = 'none';
+  }
+
+  function setActiveSidebar(link) {
+    document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+    if (link) link.classList.add('active');
+  }
+
+  function loadPage(link, e) {
+    e.preventDefault();
+    setActiveSidebar(link);
+    loadPageByUrl(link.dataset.page);
+  }
+
+  async function loadPageByUrl(url) {
+    const root = document.getElementById('dash-app');
+    hideAlert();
+    try {
+      await WidgetEngine.page.load(url, root);
+    } catch (err) {
+      showAlert('error', `Không thể tải trang: ${err.message}`);
+    }
+  }
+
+  async function runSingleWidget(e) {
+    e.preventDefault();
+    setActiveSidebar(e.currentTarget);
+    const idStr = prompt('Nhập Widget ID để chạy (ví dụ: 1):', '1');
+    if (!idStr) return;
+    const id = parseInt(idStr, 10);
+    if (isNaN(id)) { showAlert('error', 'ID không hợp lệ'); return; }
+    const root = document.getElementById('dash-app');
+    root.innerHTML = '';
+    hideAlert();
+    try {
+      showAlert('info', `Đang thực thi widget #${id}…`);
+      const container = document.createElement('div');
+      container.className = 'demo-widget-wrap';
+      root.appendChild(container);
+      await WidgetEngine.render(container, { id, title: `Widget #${id}`, forceRefresh: true });
+      hideAlert();
+    } catch (err) {
+      showAlert('error', `Lỗi: ${err.message}`);
+    }
+  }
+
+  async function showApiTest(e) {
+    e.preventDefault();
+    setActiveSidebar(e.currentTarget);
+    const root = document.getElementById('dash-app');
+    root.innerHTML = '<div class="api-test-panel"><h2>🔌 Kiểm tra kết nối API</h2><div id="test-results"></div></div>';
+    const results = document.getElementById('test-results');
+    const tests = [
+      { label: 'Dashboard Stats',        fn: () => WidgetEngine.dashboard.stats() },
+      { label: 'Danh sách Widget',        fn: () => WidgetEngine.widgets.list({ page: 1, pageSize: 5 }) },
+      { label: 'Data Sources',            fn: () => WidgetEngine.dataSources.list({ page: 1, pageSize: 5 }) },
+      { label: 'Widget Activity (id=1)',  fn: () => WidgetEngine.widgetActivity.getActivity(1, { page: 1, pageSize: 5 }) },
+    ];
+    for (const t of tests) {
+      const row = document.createElement('div');
+      row.className = 'test-row';
+      row.innerHTML = `<span class="test-label">${t.label}</span><span class="test-status pending">…</span><pre class="test-data"></pre>`;
+      results.appendChild(row);
+      const statusEl = row.querySelector('.test-status');
+      const dataEl   = row.querySelector('.test-data');
+      try {
+        const data = await t.fn();
+        statusEl.textContent = '✅ OK';
+        statusEl.className   = 'test-status ok';
+        dataEl.textContent   = JSON.stringify(data, null, 2).slice(0, 400) + '…';
+      } catch (err) {
+        statusEl.textContent = `❌ ${err.message}`;
+        statusEl.className   = 'test-status error';
+      }
+    }
+  }
+
+  async function showActivityPanel(e) {
+    e.preventDefault();
+    setActiveSidebar(e.currentTarget);
+    const root = document.getElementById('dash-app');
+    hideAlert();
+    const idStr = prompt('Nhập Widget ID để xem activity (ví dụ: 1):', '1');
+    if (!idStr) return;
+    const widgetId = parseInt(idStr, 10);
+    if (isNaN(widgetId)) { showAlert('error', 'ID không hợp lệ'); return; }
+    root.innerHTML = `
+      <div class="api-test-panel">
+        <h2>📡 Widget Activity — Widget #${widgetId}</h2>
+        <div id="activity-summary" style="margin-bottom:20px"></div>
+        <h3 style="font-size:14px;font-weight:700;color:#4a5568;margin:0 0 10px">Activity Log</h3>
+        <div id="activity-log"></div>
+      </div>`;
+    const summaryEl = document.getElementById('activity-summary');
+    const logEl     = document.getElementById('activity-log');
+    try {
+      const summary = await WidgetEngine.widgetActivity.getSummary(widgetId);
+      summaryEl.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
+          <div class="activity-stat"><span class="activity-stat-val">${summary.totalCalls ?? '—'}</span><span class="activity-stat-lbl">Tổng lời gọi</span></div>
+          <div class="activity-stat"><span class="activity-stat-val">${summary.uniqueUsers ?? '—'}</span><span class="activity-stat-lbl">Người dùng</span></div>
+          <div class="activity-stat"><span class="activity-stat-val">${summary.lastActivityAt ? new Date(summary.lastActivityAt).toLocaleString('vi-VN') : 'Chưa có'}</span><span class="activity-stat-lbl">Lần gọi cuối</span></div>
+        </div>`;
+    } catch (err) {
+      summaryEl.innerHTML = `<p style="color:#c53030;font-size:13px">Không thể tải summary: ${err.message}</p>`;
+    }
+    try {
+      const result = await WidgetEngine.widgetActivity.getActivity(widgetId, { page: 1, pageSize: 20 });
+      const items = Array.isArray(result) ? result : (result.items || result.data || []);
+      if (!items.length) {
+        logEl.innerHTML = '<p style="color:#a0aec0;text-align:center;padding:20px 0">Chưa có dữ liệu activity.</p>';
+      } else {
+        const rows = items.map(r => `
+          <tr>
+            <td>${new Date(r.calledAt).toLocaleString('vi-VN')}</td>
+            <td><code>${r.apiEndpoint || '—'}</code></td>
+            <td>${r.statusCode ?? '—'}</td>
+            <td>${r.responseTimeMs != null ? r.responseTimeMs + ' ms' : '—'}</td>
+          </tr>`).join('');
+        logEl.innerHTML = `
+          <table class="we-table">
+            <thead><tr><th>Thời gian</th><th>Endpoint</th><th>Status</th><th>Thời gian phản hồi</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>`;
+      }
+    } catch (err) {
+      logEl.innerHTML = `<p style="color:#c53030;font-size:13px">Lỗi: ${err.message}</p>`;
+    }
+  }
+
+  async function showAlertsPanel(e) {
+    e.preventDefault();
+    setActiveSidebar(e.currentTarget);
+    const root = document.getElementById('dash-app');
+    hideAlert();
+    root.innerHTML = `
+      <div class="api-test-panel">
+        <h2>🔔 Inactivity Alerts</h2>
+        <h3 style="font-size:14px;font-weight:700;color:#4a5568;margin:0 0 10px">Widget không hoạt động</h3>
+        <div id="inactive-list" style="margin-bottom:24px"></div>
+        <h3 style="font-size:14px;font-weight:700;color:#4a5568;margin:0 0 10px">Alert Log</h3>
+        <div id="alerts-list"></div>
+      </div>`;
+    const inactiveEl = document.getElementById('inactive-list');
+    const alertsEl   = document.getElementById('alerts-list');
+    try {
+      const inactive = await WidgetEngine.widgetActivity.getInactive(30);
+      const items = Array.isArray(inactive) ? inactive : (inactive.items || inactive.data || []);
+      if (!items.length) {
+        inactiveEl.innerHTML = '<p style="color:#48bb78;font-size:13px">✅ Không có widget nào không hoạt động.</p>';
+      } else {
+        const rows = items.map(w => `
+          <tr>
+            <td>#${w.id ?? w.widgetId ?? '—'}</td>
+            <td>${w.name ?? w.widgetName ?? '—'}</td>
+            <td>${w.lastActivityAt ? new Date(w.lastActivityAt).toLocaleString('vi-VN') : 'Chưa có'}</td>
+            <td>${w.daysSinceLastActivity != null ? w.daysSinceLastActivity + ' ngày' : '—'}</td>
+          </tr>`).join('');
+        inactiveEl.innerHTML = `
+          <table class="we-table">
+            <thead><tr><th>ID</th><th>Tên widget</th><th>Lần gọi cuối</th><th>Không hoạt động</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>`;
+      }
+    } catch (err) {
+      inactiveEl.innerHTML = `<p style="color:#c53030;font-size:13px">Lỗi: ${err.message}</p>`;
+    }
+    try {
+      const alerts = await WidgetEngine.widgetActivity.getAlerts();
+      const items = Array.isArray(alerts) ? alerts : (alerts.items || alerts.data || []);
+      if (!items.length) {
+        alertsEl.innerHTML = '<p style="color:#a0aec0;font-size:13px">Chưa có alert nào được ghi.</p>';
+      } else {
+        const rows = items.map(a => `
+          <tr>
+            <td>${a.createdAt ? new Date(a.createdAt).toLocaleString('vi-VN') : '—'}</td>
+            <td>${a.action ?? '—'}</td>
+            <td style="font-size:12px;color:#718096">${a.notes ?? a.description ?? '—'}</td>
+          </tr>`).join('');
+        alertsEl.innerHTML = `
+          <table class="we-table">
+            <thead><tr><th>Thời gian</th><th>Loại</th><th>Chi tiết</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>`;
+      }
+    } catch (err) {
+      alertsEl.innerHTML = `<p style="color:#c53030;font-size:13px">Lỗi: ${err.message}</p>`;
+    }
+  }
+
+  function showAlert(type, msg) {
+    const bar = document.getElementById('alert-bar');
+    bar.className     = `alert-bar alert-${type}`;
+    bar.textContent   = msg;
+    bar.style.display = 'block';
+  }
+
+  function hideAlert() {
+    document.getElementById('alert-bar').style.display = 'none';
+  }
+  </script>
+</body>
+</html>

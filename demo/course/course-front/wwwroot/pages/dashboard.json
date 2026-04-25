@@ -1,0 +1,56 @@
+{
+  "title": "Learning Analytics Dashboard",
+  "layout": "grid",
+  "columns": 4,
+  "auth": { "required": true },
+  "widgets": [
+    {
+      "id": 1,
+      "title": "Tổng đăng ký mới hôm nay",
+      "colSpan": 1,
+      "autoRefreshSeconds": 60
+    },
+    {
+      "id": 2,
+      "title": "Khóa học đang hoạt động",
+      "colSpan": 1,
+      "autoRefreshSeconds": 120
+    },
+    {
+      "id": 3,
+      "title": "Tỷ lệ hoàn thành",
+      "colSpan": 1,
+      "autoRefreshSeconds": 120
+    },
+    {
+      "id": 4,
+      "title": "Doanh thu hôm nay",
+      "colSpan": 1,
+      "autoRefreshSeconds": 120
+    },
+    {
+      "id": 5,
+      "title": "Đăng ký theo danh mục",
+      "colSpan": 2,
+      "autoRefreshSeconds": 300
+    },
+    {
+      "id": 6,
+      "title": "Khóa học phổ biến nhất",
+      "colSpan": 2,
+      "autoRefreshSeconds": 300
+    },
+    {
+      "id": 14,
+      "title": "Hoạt động học viên gần đây",
+      "colSpan": 3,
+      "autoRefreshSeconds": 30
+    },
+    {
+      "id": 7,
+      "title": "Tiến độ hoàn thành",
+      "colSpan": 1,
+      "autoRefreshSeconds": 60
+    }
+  ]
+}
