@@ -287,19 +287,46 @@ else if (_widget != null)
         @* Bước 5: Idea Board (chỉ hiển thị khi widget type = Form) *@
         @if (_form.WidgetType == WidgetType.Form)
         {
-            <MudStep Title="Idea Board" Icon="@Icons.Material.Filled.Lightbulb">
+            <MudStep Title="Form / Idea Board" Icon="@Icons.Material.Filled.Lightbulb">
                 <MudPaper Class="pa-4" Elevation="0">
-                    <MudText Typo="Typo.h6" Class="mb-2">Bước 5: Cấu hình Idea Board</MudText>
+                    <MudText Typo="Typo.h6" Class="mb-2">Bước 5: Cấu hình Form Widget</MudText>
                     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
-                        Quản lý các <strong>đăng ký nhãn</strong> (subscriptions). Mỗi lần người dùng gửi ý tưởng với một nhãn,
-                        hệ thống sẽ tự động đẩy thông tin đến tất cả điểm đăng ký phù hợp.
+                        Widget loại <strong>Form</strong> hỗ trợ hai chế độ:
+                        <ul style="margin:6px 0 0 16px">
+                            <li><strong>Custom Form</strong>: Định nghĩa các field tùy ý trong <em>Configuration JSON</em> (bước 2).
+                                Dữ liệu submit được lưu vào <em>Form Submissions</em>.</li>
+                            <li><strong>Idea Board</strong>: Nhận ý tưởng/feedback từ người dùng, tự động đẩy đến subscriptions.</li>
+                        </ul>
                     </MudText>
 
-                    <MudButton Variant="Variant.Text" Color="Color.Primary"
-                               StartIcon="@Icons.Material.Filled.OpenInNew"
-                               Href="@($"/widgets/{Id}/idea-board")" Target="_blank" Class="mb-3">
-                        Mở Idea Board
-                    </MudButton>
+                    <div class="d-flex gap-2 mb-4 flex-wrap">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Inbox"
+                                   Href="@($"/widgets/{Id}/form-submissions")" Target="_blank">
+                            Xem Form Submissions
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+                                   StartIcon="@Icons.Material.Filled.OpenInNew"
+                                   Href="@($"/widgets/{Id}/idea-board")" Target="_blank">
+                            Mở Idea Board
+                        </MudButton>
+                    </div>
+
+                    <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">
+                        <strong>Custom Form config mẫu</strong> (dán vào Configuration JSON ở bước 2):
+                        <pre style="font-size:11px;margin:6px 0 0;white-space:pre-wrap">
+{
+  "fields": [
+    {"name":"full_name","label":"Họ tên","type":"text","required":true},
+    {"name":"email","label":"Email","type":"email","required":true},
+    {"name":"message","label":"Nội dung","type":"textarea","required":false}
+  ],
+  "submitLabel": "Gửi",
+  "successMessage": "Cảm ơn bạn đã gửi thông tin!"
+}</pre>
+                        Public submit API: <code>POST /api/form/@Id</code> &nbsp;|&nbsp;
+                        Schema: <code>GET /api/form/@Id/schema</code>
+                    </MudAlert>
 
                     @if (_ideaSubscriptions == null)
                     {

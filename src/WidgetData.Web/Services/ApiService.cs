@@ -212,4 +212,9 @@ public class ApiService
     public Task<WidgetGroupDto?> CreateDashboardPageAsync(CreateWidgetGroupDto dto) => PostAsync<WidgetGroupDto>("api/widget-groups", dto);
     public Task<WidgetGroupDto?> UpdateDashboardPageAsync(int id, UpdateWidgetGroupDto dto) => PutAsync<WidgetGroupDto>($"api/widget-groups/{id}", dto);
     public Task<bool> DeleteDashboardPageAsync(int id) => DeleteAsync($"api/widget-groups/{id}");
+
+    // Form Widget
+    public Task<FormSchemaDto?> GetFormSchemaAsync(int widgetId) => GetAsync<FormSchemaDto>($"api/form/{widgetId}/schema");
+    public Task<IEnumerable<FormSubmissionDto>?> GetFormSubmissionsAsync(int widgetId) => GetAsync<IEnumerable<FormSubmissionDto>>($"api/form/{widgetId}/submissions");
+    public Task<bool> DeleteFormSubmissionAsync(int id) => DeleteAsync($"api/form/submissions/{id}");
 }
