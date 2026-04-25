@@ -103,7 +103,7 @@ public class FormService : IFormService
 
                 if (root.TryGetProperty("fields", out var fieldsEl))
                 {
-                    schema.Fields = fieldsEl.Deserialize<List<FormFieldDto>>() ?? new List<FormFieldDto>();
+                    schema.Fields = fieldsEl.Deserialize<List<FormFieldDto>>(_json) ?? new List<FormFieldDto>();
                 }
                 if (root.TryGetProperty("submitLabel", out var labelEl))
                     schema.SubmitLabel = labelEl.GetString() ?? "Gửi";

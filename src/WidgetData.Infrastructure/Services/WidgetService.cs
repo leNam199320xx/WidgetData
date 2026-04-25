@@ -351,11 +351,35 @@ public class WidgetService : IWidgetService
         var result = new List<string>();
         var inQuotes = false;
         var current = new System.Text.StringBuilder();
-        foreach (var ch in line)
+        for (int i = 0; i < line.Length; i++)
         {
-            if (ch == '"') { inQuotes = !inQuotes; }
-            else if (ch == sep && !inQuotes) { result.Add(current.ToString()); current.Clear(); }
-            else { current.Append(ch); }
+            var ch = line[i];
+            if (inQuotes)
+            {
+                if (ch == '"')
+                {
+                    // Check for escaped double-quote ("")
+                    if (i + 1 < line.Length && line[i + 1] == '"')
+                    {
+                        current.Append('"');
+                        i++; // skip the second quote
+                    }
+                    else
+                    {
+                        inQuotes = false;
+                    }
+                }
+                else
+                {
+                    current.Append(ch);
+                }
+            }
+            else
+            {
+                if (ch == '"') { inQuotes = true; }
+                else if (ch == sep) { result.Add(current.ToString()); current.Clear(); }
+                else { current.Append(ch); }
+            }
         }
         result.Add(current.ToString());
         return result;

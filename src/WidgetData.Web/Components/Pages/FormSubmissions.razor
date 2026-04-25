@@ -143,8 +143,8 @@ else
             var schemaTask = ApiService.GetFormSchemaAsync(WidgetId);
             var subsTask = ApiService.GetFormSubmissionsAsync(WidgetId);
             await Task.WhenAll(schemaTask, subsTask);
-            _schema = schemaTask.Result;
-            _submissions = subsTask.Result ?? Array.Empty<FormSubmissionDto>();
+            _schema = await schemaTask;
+            _submissions = await subsTask ?? Array.Empty<FormSubmissionDto>();
         }
         catch (Exception ex) { _error = "Lỗi tải dữ liệu: " + ex.Message; }
         finally { _loading = false; }
