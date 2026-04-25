@@ -2,63 +2,55 @@
   "title": "Sales Dashboard",
   "layout": "grid",
   "columns": 4,
-  "auth": {
-    "required": true
-  },
+  "auth": { "required": true },
   "widgets": [
     {
-      "id": 10,
-      "title": "Revenue by Category",
-      "colSpan": 2,
-      "rowSpan": 1,
-      "autoRefreshSeconds": 300,
-      "parameters": {
-        "start_date": "2026-04-01"
-      }
-    },
-    {
-      "id": 11,
-      "title": "Daily Orders",
-      "colSpan": 2,
-      "autoRefreshSeconds": 60,
-      "parameters": {}
-    },
-    {
-      "id": 12,
-      "title": "Sales by Region",
-      "colSpan": 4,
-      "autoRefreshSeconds": 600,
-      "parameters": {}
-    },
-    {
-      "id": 13,
-      "title": "Total Revenue (MTD)",
+      "id": 1,
+      "title": "Tổng doanh thu",
       "colSpan": 1,
-      "autoRefreshSeconds": 120,
-      "parameters": {},
-      "template": "<div class=\"we-metric\"><span class=\"we-metric-value\">{{formatNumber total_revenue 0}}</span><span class=\"we-metric-label\">VND</span></div>"
+      "autoRefreshSeconds": 120
+    },
+    {
+      "id": 2,
+      "title": "Tổng đơn hàng",
+      "colSpan": 1,
+      "autoRefreshSeconds": 120
+    },
+    {
+      "id": 3,
+      "title": "Giá trị đơn TB",
+      "colSpan": 1,
+      "autoRefreshSeconds": 120
+    },
+    {
+      "id": 4,
+      "title": "Khách hàng",
+      "colSpan": 1,
+      "autoRefreshSeconds": 120
+    },
+    {
+      "id": 5,
+      "title": "Xu hướng doanh thu theo tháng",
+      "colSpan": 2,
+      "autoRefreshSeconds": 300
+    },
+    {
+      "id": 6,
+      "title": "Doanh thu theo danh mục",
+      "colSpan": 2,
+      "autoRefreshSeconds": 300
     },
     {
       "id": 14,
-      "title": "Orders Pending",
-      "colSpan": 1,
-      "autoRefreshSeconds": 30,
-      "parameters": {},
-      "template": "<div class=\"we-metric\"><span class=\"we-metric-value\">{{pending_count}}</span><span class=\"we-metric-label\">Orders</span></div>"
+      "title": "Đơn hàng gần đây",
+      "colSpan": 3,
+      "autoRefreshSeconds": 30
     },
     {
-      "id": 15,
-      "title": "Conversion Rate",
+      "id": 7,
+      "title": "Trạng thái đơn hàng",
       "colSpan": 1,
-      "autoRefreshSeconds": 300,
-      "parameters": {}
-    },
-    {
-      "id": 16,
-      "title": "Top 5 Customers",
-      "colSpan": 1,
-      "autoRefreshSeconds": 600,
-      "parameters": {}
+      "autoRefreshSeconds": 60
     }
   ]
 }

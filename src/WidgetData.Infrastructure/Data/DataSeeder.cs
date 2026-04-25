@@ -407,6 +407,160 @@ public class DataSeeder
             }
             _context.WidgetExecutions.AddRange(executions);
             await _context.SaveChangesAsync();
+
+            // ── Form Widget ──────────────────────────────────────────────────
+            var wContactForm = new Widget
+            {
+                Name = "contact_form",
+                FriendlyLabel = "Form Liên hệ",
+                HelpText = "Form thu thập thông tin liên hệ từ khách hàng",
+                WidgetType = WidgetType.Form,
+                Description = "Form liên hệ tích hợp trên trang contact",
+                DataSourceId = dsSales.Id,
+                Configuration = "{\"fields\":[{\"name\":\"ho_ten\",\"label\":\"Họ và tên\",\"type\":\"text\",\"required\":true},{\"name\":\"email\",\"label\":\"Email\",\"type\":\"email\",\"required\":true},{\"name\":\"dien_thoai\",\"label\":\"Số điện thoại\",\"type\":\"text\",\"required\":false},{\"name\":\"chu_de\",\"label\":\"Chủ đề\",\"type\":\"select\",\"required\":true,\"options\":[\"Tư vấn sản phẩm\",\"Hỗ trợ kỹ thuật\",\"Khiếu nại đơn hàng\",\"Hợp tác kinh doanh\",\"Khác\"]},{\"name\":\"noi_dung\",\"label\":\"Nội dung\",\"type\":\"textarea\",\"required\":true}],\"submitLabel\":\"Gửi tin nhắn\",\"successMessage\":\"Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi trong vòng 24 giờ.\"}",
+                IsActive = true,
+                CacheEnabled = false,
+                CacheTtlMinutes = 0,
+                CreatedBy = "system"
+            };
+            _context.Widgets.Add(wContactForm);
+            await _context.SaveChangesAsync();
+
+            // Assign form widget to customer group
+            _context.WidgetGroupMembers.Add(new WidgetGroupMember { WidgetGroupId = grpCustomers.Id, WidgetId = wContactForm.Id });
+            await _context.SaveChangesAsync();
+
+            // ── Form Submissions ─────────────────────────────────────────────
+            _context.FormSubmissions.AddRange(
+                new FormSubmission { WidgetId = wContactForm.Id, Data = "{\"ho_ten\":\"Nguyễn Văn An\",\"email\":\"an.nguyen@gmail.com\",\"dien_thoai\":\"0912345678\",\"chu_de\":\"Tư vấn sản phẩm\",\"noi_dung\":\"Tôi muốn hỏi về gói Pro, cần thêm thông tin về giới hạn widget và nguồn dữ liệu.\"}", IpAddress = "192.168.1.10", SubmittedAt = DateTime.UtcNow.AddDays(-5) },
+                new FormSubmission { WidgetId = wContactForm.Id, Data = "{\"ho_ten\":\"Trần Thị Mai\",\"email\":\"mai.tran@company.vn\",\"dien_thoai\":\"0987654321\",\"chu_de\":\"Hỗ trợ kỹ thuật\",\"noi_dung\":\"Widget biểu đồ không hiển thị đúng trên thiết bị mobile, cần hỗ trợ xử lý gấp.\"}", IpAddress = "10.0.0.5", SubmittedAt = DateTime.UtcNow.AddDays(-3) },
+                new FormSubmission { WidgetId = wContactForm.Id, Data = "{\"ho_ten\":\"Lê Văn Đức\",\"email\":\"duc.le@startup.io\",\"dien_thoai\":\"\",\"chu_de\":\"Hợp tác kinh doanh\",\"noi_dung\":\"Chúng tôi muốn tích hợp WidgetData vào nền tảng SaaS của mình, muốn trao đổi về khả năng cung cấp API white-label.\"}", IpAddress = "203.113.20.5", SubmittedAt = DateTime.UtcNow.AddDays(-1) },
+                new FormSubmission { WidgetId = wContactForm.Id, Data = "{\"ho_ten\":\"Phạm Thị Hoa\",\"email\":\"hoa.pham@gmail.com\",\"dien_thoai\":\"0345678901\",\"chu_de\":\"Khiếu nại đơn hàng\",\"noi_dung\":\"Tôi chưa nhận được email xác nhận đăng ký gói Pro sau khi thanh toán thành công.\"}", IpAddress = "118.70.100.22", SubmittedAt = DateTime.UtcNow.AddHours(-6) },
+                new FormSubmission { WidgetId = wContactForm.Id, Data = "{\"ho_ten\":\"Hoàng Văn Minh\",\"email\":\"minh.hoang@techcorp.vn\",\"dien_thoai\":\"0901234567\",\"chu_de\":\"Tư vấn sản phẩm\",\"noi_dung\":\"Muốn tư vấn về gói Business cho doanh nghiệp 50+ người dùng, cần SLA rõ ràng và khả năng deploy on-premise.\"}", IpAddress = "14.232.30.100", SubmittedAt = DateTime.UtcNow.AddHours(-2) }
+            );
+            await _context.SaveChangesAsync();
+
+            // ── Delivery Targets ─────────────────────────────────────────────
+            var dtEmail = new DeliveryTarget
+            {
+                WidgetId = wMonthlyRevenueTrend.Id,
+                Name = "Báo cáo doanh thu hàng ngày (Email)",
+                Type = DeliveryType.Email,
+                Configuration = "{\"recipients\":[\"manager@widgetdata.com\",\"admin@widgetdata.com\"],\"subject\":\"[WidgetData] Báo cáo doanh thu tháng\",\"format\":\"excel\"}",
+                IsEnabled = true,
+                CreatedBy = "system"
+            };
+            var dtTelegram = new DeliveryTarget
+            {
+                WidgetId = wRecentOrders.Id,
+                Name = "Thông báo đơn hàng mới (Telegram)",
+                Type = DeliveryType.Telegram,
+                Configuration = "{\"botToken\":\"demo-bot-token-7654321\",\"chatId\":\"-100123456789\",\"messageTemplate\":\"📦 Có {{row_count}} đơn hàng mới — xem tại WidgetData!\"}",
+                IsEnabled = true,
+                CreatedBy = "system"
+            };
+            var dtCsv = new DeliveryTarget
+            {
+                WidgetId = wTopProducts.Id,
+                Name = "Xuất top sản phẩm dạng CSV (FTP)",
+                Type = DeliveryType.Csv,
+                Configuration = "{\"host\":\"ftp.internal.company.vn\",\"port\":21,\"username\":\"ftpuser\",\"path\":\"/reports/top-products.csv\"}",
+                IsEnabled = false,
+                CreatedBy = "system"
+            };
+            _context.DeliveryTargets.AddRange(dtEmail, dtTelegram, dtCsv);
+            await _context.SaveChangesAsync();
+
+            _context.DeliveryExecutions.AddRange(
+                new DeliveryExecution { DeliveryTargetId = dtEmail.Id, Status = ExecutionStatus.Success, Message = "Đã gửi đến 2 người nhận", TriggeredBy = "scheduler", ExecutedAt = DateTime.UtcNow.AddDays(-1) },
+                new DeliveryExecution { DeliveryTargetId = dtEmail.Id, Status = ExecutionStatus.Success, Message = "Đã gửi đến 2 người nhận", TriggeredBy = "scheduler", ExecutedAt = DateTime.UtcNow.AddDays(-2) },
+                new DeliveryExecution { DeliveryTargetId = dtEmail.Id, Status = ExecutionStatus.Failed, Message = "SMTP connection timeout after 30s", TriggeredBy = "scheduler", ExecutedAt = DateTime.UtcNow.AddDays(-3) },
+                new DeliveryExecution { DeliveryTargetId = dtTelegram.Id, Status = ExecutionStatus.Success, Message = "Message sent successfully", TriggeredBy = "manual", ExecutedAt = DateTime.UtcNow.AddMinutes(-15) },
+                new DeliveryExecution { DeliveryTargetId = dtTelegram.Id, Status = ExecutionStatus.Success, Message = "Message sent successfully", TriggeredBy = "scheduler", ExecutedAt = DateTime.UtcNow.AddHours(-5) }
+            );
+            await _context.SaveChangesAsync();
+
+            // ── Config Archives ──────────────────────────────────────────────
+            _context.WidgetConfigArchives.AddRange(
+                new WidgetConfigArchive
+                {
+                    WidgetId = wMonthlyRevenueTrend.Id,
+                    Configuration = "{\"query\":\"SELECT strftime('%Y-%m', created_at) as month, ROUND(SUM(total_amount),0) as revenue FROM orders WHERE status='completed' AND created_at >= date('now','-6 months') GROUP BY month ORDER BY month ASC\"}",
+                    ChartConfig = "{\"type\":\"Bar\",\"xAxis\":\"month\",\"yAxis\":\"revenue\",\"seriesLabel\":\"Doanh thu\"}",
+                    Note = "Phiên bản gốc — Bar chart, chỉ 6 tháng",
+                    TriggerSource = "Manual",
+                    ArchivedBy = "admin@widgetdata.com",
+                    ArchivedAt = DateTime.UtcNow.AddDays(-30)
+                },
+                new WidgetConfigArchive
+                {
+                    WidgetId = wMonthlyRevenueTrend.Id,
+                    Configuration = "{\"query\":\"SELECT strftime('%Y-%m', created_at) as month, ROUND(SUM(total_amount),0) as revenue FROM orders WHERE status='completed' AND created_at >= date('now','-9 months') GROUP BY month ORDER BY month ASC\"}",
+                    ChartConfig = "{\"type\":\"Line\",\"xAxis\":\"month\",\"yAxis\":\"revenue\",\"seriesLabel\":\"Doanh thu\"}",
+                    Note = "Mở rộng 9 tháng, chuyển sang Line chart",
+                    TriggerSource = "Manual",
+                    ArchivedBy = "manager@widgetdata.com",
+                    ArchivedAt = DateTime.UtcNow.AddDays(-7)
+                },
+                new WidgetConfigArchive
+                {
+                    WidgetId = wRevenueByCategoryChart.Id,
+                    Configuration = "{\"query\":\"SELECT c.name as category, ROUND(SUM(oi.line_total),0) as revenue FROM order_items oi JOIN products p ON oi.product_id=p.id JOIN categories c ON p.category_id=c.id GROUP BY c.name ORDER BY revenue DESC\"}",
+                    ChartConfig = "{\"type\":\"Pie\",\"xAxis\":\"category\",\"yAxis\":\"revenue\",\"seriesLabel\":\"Doanh thu\"}",
+                    Note = "Phiên bản Pie chart (trước khi đổi sang Bar)",
+                    TriggerSource = "OnSave",
+                    ArchivedBy = "system",
+                    ArchivedAt = DateTime.UtcNow.AddDays(-14)
+                }
+            );
+            await _context.SaveChangesAsync();
+
+            // ── Widget API Activity Logs ─────────────────────────────────────
+            var actRand = new Random(77);
+            var activityWidgets = new[] { wTotalRevenue, wMonthlyRevenueTrend, wRecentOrders, wTopProducts, wPaymentMethodChart };
+            var activities = new List<WidgetApiActivity>();
+            foreach (var w in activityWidgets)
+            {
+                for (int i = 0; i < 20; i++)
+                {
+                    activities.Add(new WidgetApiActivity
+                    {
+                        WidgetId = w.Id,
+                        ApiEndpoint = $"/api/widgets/{w.Id}/execute",
+                        UserId = actRand.Next(0, 3) == 0 ? null : $"user-demo-{actRand.Next(1, 4)}",
+                        CalledAt = DateTime.UtcNow.AddHours(-actRand.Next(1, 168)),
+                        ResponseTimeMs = actRand.Next(45, 520),
+                        StatusCode = actRand.Next(0, 10) == 0 ? 500 : 200
+                    });
+                }
+            }
+            _context.WidgetApiActivities.AddRange(activities);
+            await _context.SaveChangesAsync();
+
+            // ── Idea Board ───────────────────────────────────────────────────
+            var ideaSub = new IdeaSubscription
+            {
+                WidgetId = wTopProducts.Id,
+                Name = "Product Feedback — Internal",
+                LabelFilter = "feedback,suggestion",
+                WebhookUrl = null,
+                IsActive = true,
+                CreatedBy = "system"
+            };
+            _context.IdeaSubscriptions.Add(ideaSub);
+            await _context.SaveChangesAsync();
+
+            var ideaPost1 = new IdeaPost { WidgetId = wTopProducts.Id, Title = "Thêm bộ lọc theo khoảng giá", Content = "Khách hàng muốn lọc sản phẩm theo khoảng giá (dưới 500K, 500K-1M, trên 1M) để tìm kiếm nhanh hơn.", Labels = "feedback,suggestion", Status = "Processed", CreatedBy = "customer@example.com", CreatedAt = DateTime.UtcNow.AddDays(-10), ProcessedAt = DateTime.UtcNow.AddDays(-8) };
+            var ideaPost2 = new IdeaPost { WidgetId = wTopProducts.Id, Title = "Hiển thị đánh giá sao sản phẩm", Content = "Thêm cột điểm đánh giá trung bình (⭐) vào widget top sản phẩm để khách dễ so sánh.", Labels = "suggestion", Status = "Pending", CreatedBy = "admin@widgetdata.com", CreatedAt = DateTime.UtcNow.AddDays(-5) };
+            var ideaPost3 = new IdeaPost { WidgetId = wTopProducts.Id, Title = "Tồn kho hiển thị màu cảnh báo", Content = "Sản phẩm có tồn kho < 10 nên được tô màu đỏ, 10-50 màu vàng để nhân viên dễ theo dõi.", Labels = "feedback", Status = "Processed", CreatedBy = "manager@widgetdata.com", CreatedAt = DateTime.UtcNow.AddDays(-3), ProcessedAt = DateTime.UtcNow.AddDays(-2) };
+            _context.IdeaPosts.AddRange(ideaPost1, ideaPost2, ideaPost3);
+            await _context.SaveChangesAsync();
+
+            _context.IdeaResults.AddRange(
+                new IdeaResult { IdeaPostId = ideaPost1.Id, IdeaSubscriptionId = ideaSub.Id, ResultContent = "{\"status\":\"acknowledged\",\"assignedTo\":\"dev@widgetdata.com\",\"note\":\"Sẽ triển khai bộ lọc giá trong sprint Q3-2026\"}", Status = "Processed", CreatedAt = DateTime.UtcNow.AddDays(-8) },
+                new IdeaResult { IdeaPostId = ideaPost3.Id, IdeaSubscriptionId = ideaSub.Id, ResultContent = "{\"status\":\"acknowledged\",\"note\":\"Đã ghi nhận, sẽ thêm conditional formatting trong UI update tháng 6\"}", Status = "Received", CreatedAt = DateTime.UtcNow.AddDays(-2) }
+            );
+            await _context.SaveChangesAsync();
         }
     }
 }
