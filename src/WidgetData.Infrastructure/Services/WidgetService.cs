@@ -1,3 +1,4 @@
+using ClosedXML.Excel;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -19,10 +20,12 @@ public class WidgetService : IWidgetService
     private readonly IScheduleRepository _scheduleRepo;
     private readonly IAuditService _auditService;
     private readonly ILogger<WidgetService> _logger;
+    private readonly IHttpClientFactory _httpClientFactory;
 
     public WidgetService(IWidgetRepository widgetRepo, IExecutionRepository executionRepo,
         ApplicationDbContext context, IWidgetConfigArchiveRepository archiveRepo,
-        IScheduleRepository scheduleRepo, IAuditService auditService, ILogger<WidgetService> logger)
+        IScheduleRepository scheduleRepo, IAuditService auditService, ILogger<WidgetService> logger,
+        IHttpClientFactory httpClientFactory)
     {
         _widgetRepo = widgetRepo;
         _executionRepo = executionRepo;
@@ -31,6 +34,7 @@ public class WidgetService : IWidgetService
         _scheduleRepo = scheduleRepo;
         _auditService = auditService;
         _logger = logger;
+        _httpClientFactory = httpClientFactory;
     }
 
     public async Task<IEnumerable<WidgetDto>> GetAllAsync()
@@ -187,10 +191,38 @@ public class WidgetService : IWidgetService
         };
         execution = await _executionRepo.CreateAsync(execution);
 
-        await Task.Delay(100);
-        execution.Status = ExecutionStatus.Success;
-        execution.RowCount = 0;
-        execution.ExecutionTimeMs = 100;
+        // Run the actual data query and measure elapsed time
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        try
+        {
+            var rawData = await GetDataAsync(id);
+            sw.Stop();
+
+            int rowCount = 0;
+            if (rawData != null)
+            {
+                // rawData is anonymous { columns, rows } serialised as object
+                var json = System.Text.Json.JsonSerializer.Serialize(rawData);
+                using var doc = System.Text.Json.JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("rows", out var rowsEl)
+                    && rowsEl.ValueKind == System.Text.Json.JsonValueKind.Array)
+                    rowCount = rowsEl.GetArrayLength();
+            }
+
+            execution.Status = ExecutionStatus.Success;
+            execution.RowCount = rowCount;
+            execution.ExecutionTimeMs = sw.ElapsedMilliseconds;
+            execution.ResultSummary = $"{rowCount} rows in {sw.ElapsedMilliseconds} ms";
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            execution.Status = ExecutionStatus.Failed;
+            execution.ErrorMessage = ex.Message;
+            execution.ExecutionTimeMs = sw.ElapsedMilliseconds;
+            _logger.LogWarning(ex, "Widget {WidgetId} execution failed", id);
+        }
+
         execution.CompletedAt = DateTime.UtcNow;
         execution = await _executionRepo.UpdateAsync(execution);
 
@@ -211,50 +243,291 @@ public class WidgetService : IWidgetService
             var ds = widget.DataSource;
             if (ds == null) return new { error = "Data source not found" };
 
-            if (ds.SourceType == WidgetData.Domain.Enums.DataSourceType.SQLite && !string.IsNullOrWhiteSpace(ds.ConnectionString))
+            return ds.SourceType switch
             {
-                var config = string.IsNullOrWhiteSpace(widget.Configuration) ? null
-                    : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(widget.Configuration);
-                var query = config?.GetValueOrDefault("query")?.ToString();
-                if (string.IsNullOrWhiteSpace(query))
-                    return new { error = "No query configured for this widget" };
-
-                // Strip SQL comments before validation to prevent bypass (e.g. "/**/SELECT" or "-- comment\nDROP")
-                var trimmedQuery = query.TrimStart();
-                var strippedQuery = System.Text.RegularExpressions.Regex.Replace(trimmedQuery, @"(/\*[\s\S]*?\*/|--[^\r\n]*)", " ").TrimStart();
-
-                if (!strippedQuery.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
-                    return new { error = "Only SELECT queries are permitted for widget data retrieval" };
-
-                string[] disallowedKeywords = ["INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER", "EXEC", "EXECUTE", "TRUNCATE", "MERGE", "ATTACH", "DETACH"];
-                if (disallowedKeywords.Any(k => System.Text.RegularExpressions.Regex.IsMatch(strippedQuery, $@"\b{k}\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase)))
-                    return new { error = "Query contains disallowed SQL statements" };
-
-                using var conn = new Microsoft.Data.Sqlite.SqliteConnection(ds.ConnectionString);
-                await conn.OpenAsync();
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = query;
-                using var reader = await cmd.ExecuteReaderAsync();
-
-                var columns = Enumerable.Range(0, reader.FieldCount).Select(reader.GetName).ToList();
-                var rows = new List<Dictionary<string, object?>>();
-                while (await reader.ReadAsync())
-                {
-                    var row = new Dictionary<string, object?>();
-                    for (int i = 0; i < reader.FieldCount; i++)
-                        row[columns[i]] = reader.IsDBNull(i) ? null : reader.GetValue(i);
-                    rows.Add(row);
-                }
-
-                return new { columns, rows };
-            }
-
-            return new { message = "Data retrieval not implemented for this source type", widgetId = id };
+                WidgetData.Domain.Enums.DataSourceType.SQLite => await GetDataFromSqliteAsync(widget, ds),
+                WidgetData.Domain.Enums.DataSourceType.Csv => await GetDataFromCsvAsync(widget, ds),
+                WidgetData.Domain.Enums.DataSourceType.Json => await GetDataFromJsonAsync(widget, ds),
+                WidgetData.Domain.Enums.DataSourceType.Excel => await GetDataFromExcelAsync(widget, ds),
+                WidgetData.Domain.Enums.DataSourceType.RestApi => await GetDataFromRestApiAsync(widget, ds),
+                _ => new { message = "Data retrieval not implemented for this source type", widgetId = id }
+            };
         }
         catch (Exception ex)
         {
             return new { error = ex.Message, widgetId = id };
         }
+    }
+
+    // ── SQLite ────────────────────────────────────────────────────────────────
+
+    private static async Task<object> GetDataFromSqliteAsync(Widget widget, DataSource ds)
+    {
+        if (string.IsNullOrWhiteSpace(ds.ConnectionString))
+            return new { error = "Connection string is empty" };
+
+        var config = string.IsNullOrWhiteSpace(widget.Configuration) ? null
+            : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(widget.Configuration);
+        var query = config?.GetValueOrDefault("query")?.ToString();
+        if (string.IsNullOrWhiteSpace(query))
+            return new { error = "No query configured for this widget" };
+
+        // Strip SQL comments before validation to prevent bypass (e.g. "/**/SELECT" or "-- comment\nDROP")
+        var strippedQuery = System.Text.RegularExpressions.Regex.Replace(
+            query.TrimStart(), @"(/\*[\s\S]*?\*/|--[^\r\n]*)", " ").TrimStart();
+
+        if (!strippedQuery.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
+            return new { error = "Only SELECT queries are permitted for widget data retrieval" };
+
+        string[] disallowedKeywords = ["INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER", "EXEC", "EXECUTE", "TRUNCATE", "MERGE", "ATTACH", "DETACH"];
+        if (disallowedKeywords.Any(k => System.Text.RegularExpressions.Regex.IsMatch(
+                strippedQuery, $@"\b{k}\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase)))
+            return new { error = "Query contains disallowed SQL statements" };
+
+        using var conn = new SqliteConnection(ds.ConnectionString);
+        await conn.OpenAsync();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = query;
+        using var reader = await cmd.ExecuteReaderAsync();
+
+        var columns = Enumerable.Range(0, reader.FieldCount).Select(reader.GetName).ToList();
+        var rows = new List<Dictionary<string, object?>>();
+        while (await reader.ReadAsync())
+        {
+            var row = new Dictionary<string, object?>();
+            for (int i = 0; i < reader.FieldCount; i++)
+                row[columns[i]] = reader.IsDBNull(i) ? null : reader.GetValue(i);
+            rows.Add(row);
+        }
+        return new { columns, rows };
+    }
+
+    // ── CSV ───────────────────────────────────────────────────────────────────
+
+    private static Task<object> GetDataFromCsvAsync(Widget widget, DataSource ds)
+    {
+        var filePath = ds.ConnectionString;
+        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+            return Task.FromResult<object>(new { error = $"CSV file not found: {filePath}" });
+
+        var config = string.IsNullOrWhiteSpace(widget.Configuration) ? null
+            : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(widget.Configuration);
+        var delimiter = config?.GetValueOrDefault("delimiter")?.ToString() ?? ",";
+        var hasHeader = config?.GetValueOrDefault("hasHeader")?.ToString()?.ToLower() != "false";
+        char sep = delimiter.Length == 1 ? delimiter[0] : ',';
+
+        var lines = File.ReadAllLines(filePath);
+        if (lines.Length == 0)
+            return Task.FromResult<object>(new { columns = Array.Empty<string>(), rows = Array.Empty<object>() });
+
+        List<string> columns;
+        int startLine;
+        if (hasHeader)
+        {
+            columns = lines[0].Split(sep).Select(c => c.Trim('"', ' ')).ToList();
+            startLine = 1;
+        }
+        else
+        {
+            var firstRow = lines[0].Split(sep);
+            columns = Enumerable.Range(0, firstRow.Length).Select(i => $"col{i + 1}").ToList();
+            startLine = 0;
+        }
+
+        var rows = new List<Dictionary<string, object?>>();
+        for (int i = startLine; i < lines.Length; i++)
+        {
+            var parts = SplitCsvLine(lines[i], sep);
+            var row = new Dictionary<string, object?>();
+            for (int c = 0; c < columns.Count; c++)
+                row[columns[c]] = c < parts.Count ? parts[c] : null;
+            rows.Add(row);
+        }
+        return Task.FromResult<object>(new { columns, rows });
+    }
+
+    private static List<string> SplitCsvLine(string line, char sep)
+    {
+        var result = new List<string>();
+        var inQuotes = false;
+        var current = new System.Text.StringBuilder();
+        foreach (var ch in line)
+        {
+            if (ch == '"') { inQuotes = !inQuotes; }
+            else if (ch == sep && !inQuotes) { result.Add(current.ToString()); current.Clear(); }
+            else { current.Append(ch); }
+        }
+        result.Add(current.ToString());
+        return result;
+    }
+
+    // ── JSON file ─────────────────────────────────────────────────────────────
+
+    private static Task<object> GetDataFromJsonAsync(Widget widget, DataSource ds)
+    {
+        var filePath = ds.ConnectionString;
+        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+            return Task.FromResult<object>(new { error = $"JSON file not found: {filePath}" });
+
+        var jsonText = File.ReadAllText(filePath);
+        using var doc = System.Text.Json.JsonDocument.Parse(jsonText);
+        var root = doc.RootElement;
+
+        // Support optional jsonPath config like "items" to dig into a nested array
+        var config = string.IsNullOrWhiteSpace(widget.Configuration) ? null
+            : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(widget.Configuration);
+        var jsonPath = config?.GetValueOrDefault("jsonPath")?.ToString();
+
+        System.Text.Json.JsonElement arrayEl = root;
+        if (!string.IsNullOrWhiteSpace(jsonPath))
+        {
+            foreach (var segment in jsonPath.Split('.', StringSplitOptions.RemoveEmptyEntries))
+                if (arrayEl.TryGetProperty(segment, out var child))
+                    arrayEl = child;
+        }
+
+        if (arrayEl.ValueKind != System.Text.Json.JsonValueKind.Array)
+            return Task.FromResult<object>(new { error = "JSON root or jsonPath is not an array." });
+
+        var rows = new List<Dictionary<string, object?>>();
+        var columns = new List<string>();
+
+        foreach (var item in arrayEl.EnumerateArray())
+        {
+            if (item.ValueKind != System.Text.Json.JsonValueKind.Object) continue;
+            var row = new Dictionary<string, object?>();
+            foreach (var prop in item.EnumerateObject())
+            {
+                if (!columns.Contains(prop.Name)) columns.Add(prop.Name);
+                row[prop.Name] = prop.Value.ValueKind == System.Text.Json.JsonValueKind.String
+                    ? prop.Value.GetString()
+                    : prop.Value.ToString();
+            }
+            rows.Add(row);
+        }
+        return Task.FromResult<object>(new { columns, rows });
+    }
+
+    // ── Excel ─────────────────────────────────────────────────────────────────
+
+    private static Task<object> GetDataFromExcelAsync(Widget widget, DataSource ds)
+    {
+        var filePath = ds.ConnectionString;
+        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+            return Task.FromResult<object>(new { error = $"Excel file not found: {filePath}" });
+
+        var config = string.IsNullOrWhiteSpace(widget.Configuration) ? null
+            : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(widget.Configuration);
+        var sheetName = config?.GetValueOrDefault("sheet")?.ToString();
+        var hasHeader = config?.GetValueOrDefault("hasHeader")?.ToString()?.ToLower() != "false";
+
+        using var workbook = new XLWorkbook(filePath);
+        var ws = string.IsNullOrWhiteSpace(sheetName)
+            ? workbook.Worksheets.First()
+            : workbook.Worksheets.Worksheet(sheetName);
+
+        var usedRange = ws.RangeUsed();
+        if (usedRange == null)
+            return Task.FromResult<object>(new { columns = Array.Empty<string>(), rows = Array.Empty<object>() });
+
+        var allRows = usedRange.RowsUsed().ToList();
+        if (allRows.Count == 0)
+            return Task.FromResult<object>(new { columns = Array.Empty<string>(), rows = Array.Empty<object>() });
+
+        List<string> columns;
+        int startIdx;
+        if (hasHeader)
+        {
+            columns = allRows[0].Cells().Select(c => c.GetString().Trim()).ToList();
+            startIdx = 1;
+        }
+        else
+        {
+            columns = Enumerable.Range(1, allRows[0].CellCount()).Select(i => $"col{i}").ToList();
+            startIdx = 0;
+        }
+
+        var rows = new List<Dictionary<string, object?>>();
+        for (int r = startIdx; r < allRows.Count; r++)
+        {
+            var cells = allRows[r].Cells().ToList();
+            var row = new Dictionary<string, object?>();
+            for (int c = 0; c < columns.Count; c++)
+                row[columns[c]] = c < cells.Count ? cells[c].GetString() : null;
+            rows.Add(row);
+        }
+        return Task.FromResult<object>(new { columns, rows });
+    }
+
+    // ── REST API ──────────────────────────────────────────────────────────────
+
+    private async Task<object> GetDataFromRestApiAsync(Widget widget, DataSource ds)
+    {
+        var endpoint = ds.ApiEndpoint;
+        if (string.IsNullOrWhiteSpace(endpoint))
+            return new { error = "API endpoint is not configured." };
+
+        var config = string.IsNullOrWhiteSpace(widget.Configuration) ? null
+            : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(widget.Configuration);
+        var jsonPath = config?.GetValueOrDefault("jsonPath")?.ToString();
+
+        var client = _httpClientFactory.CreateClient();
+        client.Timeout = TimeSpan.FromSeconds(30);
+        if (!string.IsNullOrWhiteSpace(ds.ApiKey))
+            client.DefaultRequestHeaders.Add("X-Api-Key", ds.ApiKey);
+
+        var response = await client.GetAsync(endpoint);
+        if (!response.IsSuccessStatusCode)
+            return new { error = $"API returned HTTP {(int)response.StatusCode}: {response.ReasonPhrase}" };
+
+        var body = await response.Content.ReadAsStringAsync();
+        using var doc = System.Text.Json.JsonDocument.Parse(body);
+        var root = doc.RootElement;
+
+        System.Text.Json.JsonElement arrayEl = root;
+        if (!string.IsNullOrWhiteSpace(jsonPath))
+        {
+            foreach (var segment in jsonPath.Split('.', StringSplitOptions.RemoveEmptyEntries))
+                if (arrayEl.TryGetProperty(segment, out var child))
+                    arrayEl = child;
+        }
+
+        if (arrayEl.ValueKind == System.Text.Json.JsonValueKind.Array)
+        {
+            var rows = new List<Dictionary<string, object?>>();
+            var columns = new List<string>();
+            foreach (var item in arrayEl.EnumerateArray())
+            {
+                if (item.ValueKind != System.Text.Json.JsonValueKind.Object) continue;
+                var row = new Dictionary<string, object?>();
+                foreach (var prop in item.EnumerateObject())
+                {
+                    if (!columns.Contains(prop.Name)) columns.Add(prop.Name);
+                    row[prop.Name] = prop.Value.ValueKind == System.Text.Json.JsonValueKind.String
+                        ? prop.Value.GetString()
+                        : prop.Value.ToString();
+                }
+                rows.Add(row);
+            }
+            return new { columns, rows };
+        }
+
+        // Non-array response: return as single-row flat object
+        if (arrayEl.ValueKind == System.Text.Json.JsonValueKind.Object)
+        {
+            var columns = new List<string>();
+            var row = new Dictionary<string, object?>();
+            foreach (var prop in arrayEl.EnumerateObject())
+            {
+                columns.Add(prop.Name);
+                row[prop.Name] = prop.Value.ValueKind == System.Text.Json.JsonValueKind.String
+                    ? prop.Value.GetString()
+                    : prop.Value.ToString();
+            }
+            return new { columns, rows = new List<Dictionary<string, object?>> { row } };
+        }
+
+        return new { error = "API response is not a JSON array or object." };
     }
 
     public async Task<IEnumerable<WidgetExecutionDto>> GetHistoryAsync(int id)

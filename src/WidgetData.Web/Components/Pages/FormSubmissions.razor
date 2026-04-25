@@ -1,0 +1,190 @@
+@page "/widgets/{WidgetId:int}/form-submissions"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@using System.Text.Json
+@inject WidgetData.Web.Services.ApiService ApiService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<PageTitle>Form Submissions – WidgetData</PageTitle>
+
+<MudBreadcrumbs Items="_breadcrumbs" Class="mb-2 px-0" />
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+}
+else if (_error != null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+else
+{
+    <div class="d-flex align-center justify-space-between mb-4 flex-wrap gap-2">
+        <div>
+            <MudText Typo="Typo.h4">
+                <MudIcon Icon="@Icons.Material.Filled.Inbox" Class="mr-2" />
+                Form Submissions
+            </MudText>
+            @if (_schema != null)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Widget: <strong>@_schema.Title</strong> — @(_submissions?.Count() ?? 0) submissions
+                </MudText>
+            }
+        </div>
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Refresh"
+                   OnClick="LoadDataAsync">Làm mới</MudButton>
+    </div>
+
+    @* Schema info *@
+    @if (_schema != null && _schema.Fields.Any())
+    {
+        <MudExpansionPanels Class="mb-4">
+            <MudExpansionPanel Text="Cấu trúc Form (Schema)" Icon="@Icons.Material.Filled.Schema">
+                <MudTable Items="_schema.Fields" Dense="true" Hover="true" Elevation="0">
+                    <HeaderContent>
+                        <MudTh>Tên field</MudTh>
+                        <MudTh>Nhãn</MudTh>
+                        <MudTh>Loại</MudTh>
+                        <MudTh>Bắt buộc</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd><code>@context.Name</code></MudTd>
+                        <MudTd>@context.Label</MudTd>
+                        <MudTd><MudChip T="string" Size="Size.Small">@context.Type</MudChip></MudTd>
+                        <MudTd>
+                            @if (context.Required)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Success" Size="Size.Small" />
+                            }
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+                <MudDivider Class="my-2" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    Endpoint public submit: <code>POST /api/form/@WidgetId</code>
+                    &nbsp;|&nbsp;
+                    Schema: <code>GET /api/form/@WidgetId/schema</code>
+                </MudText>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+    }
+
+    @* Submissions table *@
+    @if (_submissions == null || !_submissions.Any())
+    {
+        <MudPaper Elevation="1" Class="pa-8 text-center" Style="border: 2px dashed #ccc;">
+            <MudIcon Icon="@Icons.Material.Filled.Inbox" Size="Size.Large" Color="Color.Secondary" />
+            <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mt-2">Chưa có submission nào</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Khi người dùng gửi form, dữ liệu sẽ hiển thị ở đây.</MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <MudTable Items="_submissions" Dense="true" Hover="true" Striped="true" Breakpoint="Breakpoint.Sm"
+                  Filter="FilterFunc" @bind-SelectedItem="_selectedSubmission">
+            <ToolBarContent>
+                <MudTextField @bind-Value="_searchText" Placeholder="Tìm kiếm..." Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" />
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh>#</MudTh>
+                <MudTh>Submitted At</MudTh>
+                <MudTh>Submitted By</MudTh>
+                <MudTh>IP</MudTh>
+                <MudTh>Dữ liệu</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Id</MudTd>
+                <MudTd>@context.SubmittedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</MudTd>
+                <MudTd>@(context.SubmittedBy ?? "anonymous")</MudTd>
+                <MudTd>@(context.IpAddress ?? "-")</MudTd>
+                <MudTd Style="max-width:500px;overflow:auto">
+                    @RenderDataPreview(context.Data)
+                </MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                   OnClick="@(() => DeleteSubmission(context.Id))"
+                                   Title="Xóa submission này" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+}
+
+@code {
+    [Parameter] public int WidgetId { get; set; }
+
+    bool _loading = true;
+    string? _error;
+    string _searchText = "";
+    FormSchemaDto? _schema;
+    IEnumerable<FormSubmissionDto>? _submissions;
+    FormSubmissionDto? _selectedSubmission;
+
+    List<BreadcrumbItem> _breadcrumbs = new()
+    {
+        new BreadcrumbItem("Dashboard", href: "/"),
+        new BreadcrumbItem("Widgets", href: "/widgets"),
+        new BreadcrumbItem("Form Submissions", href: null, disabled: true)
+    };
+
+    protected override async Task OnInitializedAsync() => await LoadDataAsync();
+
+    async Task LoadDataAsync()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            var schemaTask = ApiService.GetFormSchemaAsync(WidgetId);
+            var subsTask = ApiService.GetFormSubmissionsAsync(WidgetId);
+            await Task.WhenAll(schemaTask, subsTask);
+            _schema = schemaTask.Result;
+            _submissions = subsTask.Result ?? Array.Empty<FormSubmissionDto>();
+        }
+        catch (Exception ex) { _error = "Lỗi tải dữ liệu: " + ex.Message; }
+        finally { _loading = false; }
+    }
+
+    async Task DeleteSubmission(int id)
+    {
+        var ok = await ApiService.DeleteFormSubmissionAsync(id);
+        if (ok)
+        {
+            Snackbar.Add("Đã xóa submission.", Severity.Success);
+            await LoadDataAsync();
+        }
+        else
+        {
+            Snackbar.Add("Xóa thất bại.", Severity.Error);
+        }
+    }
+
+    bool FilterFunc(FormSubmissionDto s)
+    {
+        if (string.IsNullOrWhiteSpace(_searchText)) return true;
+        return s.Data.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || (s.SubmittedBy?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) == true)
+            || (s.IpAddress?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) == true);
+    }
+
+    static RenderFragment RenderDataPreview(string dataJson) => builder =>
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(dataJson);
+            var parts = doc.RootElement.EnumerateObject()
+                .Select(p => $"<b>{System.Web.HttpUtility.HtmlEncode(p.Name)}</b>: {System.Web.HttpUtility.HtmlEncode(p.Value.ToString())}")
+                .ToList();
+            builder.AddMarkupContent(0, $"<div style='font-size:12px;line-height:1.8'>{string.Join(" &nbsp;|&nbsp; ", parts)}</div>");
+        }
+        catch
+        {
+            builder.AddMarkupContent(0, $"<code>{System.Web.HttpUtility.HtmlEncode(dataJson)}</code>");
+        }
+    };
+}

@@ -40,6 +40,7 @@ public static class DependencyInjection
         services.AddScoped<IIdeaBoardService, IdeaBoardService>();
         services.AddScoped<IPageHtmlService, PageHtmlService>();
         services.AddScoped<IWidgetActivityService, WidgetActivityService>();
+        services.AddScoped<IFormService, FormService>();
 
         services.AddHostedService<InactivityMonitorService>();
 

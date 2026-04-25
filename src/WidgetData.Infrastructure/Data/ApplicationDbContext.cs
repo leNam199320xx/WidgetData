@@ -25,6 +25,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<IdeaSubscription> IdeaSubscriptions => Set<IdeaSubscription>();
     public DbSet<IdeaResult> IdeaResults => Set<IdeaResult>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<FormSubmission> FormSubmissions => Set<FormSubmission>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -139,6 +140,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasOne(rt => rt.User)
             .WithMany()
             .HasForeignKey(rt => rt.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<FormSubmission>()
+            .HasOne(fs => fs.Widget)
+            .WithMany()
+            .HasForeignKey(fs => fs.WidgetId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }
