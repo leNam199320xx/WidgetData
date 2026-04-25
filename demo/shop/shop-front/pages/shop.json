@@ -1,0 +1,95 @@
+{
+  "title": "Cửa hàng – WidgetData Shop Demo",
+  "layout": "flex",
+  "auth": { "required": false },
+  "widgets": [
+    {
+      "staticData": {
+        "headline": "Khám phá sản phẩm của chúng tôi",
+        "subheadline": "Hàng nghìn sản phẩm chính hãng — công nghệ, thời trang, gia dụng và nhiều hơn nữa. Giao hàng toàn quốc, đổi trả trong 30 ngày.",
+        "badge": "🛍️ Miễn phí giao hàng cho đơn từ 300.000₫"
+      },
+      "template": "<div class=\"we-hero\"><span class=\"we-hero-badge\">{{badge}}</span><h1 class=\"we-hero-headline\">{{headline}}</h1><p class=\"we-hero-subheadline\">{{subheadline}}</p><div class=\"we-hero-actions\"><a class=\"we-btn we-btn-primary\" href=\"#products\">Mua ngay</a><a class=\"we-btn we-btn-outline\" href=\"#categories\">Xem danh mục</a></div></div>"
+    },
+    {
+      "staticData": {
+        "val1": "55+",    "lbl1": "Thương hiệu",
+        "val2": "10K+",   "lbl2": "Sản phẩm",
+        "val3": "500+",   "lbl3": "Khách hàng",
+        "val4": "4.8★",   "lbl4": "Đánh giá TB"
+      },
+      "template": "<div style=\"background:#fff;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0\"><div class=\"we-stats\"><div class=\"we-stat\"><span class=\"we-stat-value\">{{val1}}</span><span class=\"we-stat-label\">{{lbl1}}</span></div><div class=\"we-stat\"><span class=\"we-stat-value\">{{val2}}</span><span class=\"we-stat-label\">{{lbl2}}</span></div><div class=\"we-stat\"><span class=\"we-stat-value\">{{val3}}</span><span class=\"we-stat-label\">{{lbl3}}</span></div><div class=\"we-stat\"><span class=\"we-stat-value\">{{val4}}</span><span class=\"we-stat-label\">{{lbl4}}</span></div></div></div>"
+    },
+    {
+      "staticData": {
+        "id": "categories",
+        "title": "Danh mục sản phẩm",
+        "subtitle": "Tìm kiếm sản phẩm theo danh mục bạn quan tâm.",
+        "rows": [
+          { "icon": "📱", "name": "Điện thoại & Phụ kiện", "count": "120+ sản phẩm", "href": "#" },
+          { "icon": "💻", "name": "Máy tính & Laptop",      "count": "80+ sản phẩm",  "href": "#" },
+          { "icon": "🎵", "name": "Thiết bị âm thanh",      "count": "50+ sản phẩm",  "href": "#" },
+          { "icon": "⌚", "name": "Đồng hồ & Trang sức",   "count": "60+ sản phẩm",  "href": "#" },
+          { "icon": "👔", "name": "Thời trang nam",          "count": "200+ sản phẩm", "href": "#" },
+          { "icon": "👗", "name": "Thời trang nữ",           "count": "250+ sản phẩm", "href": "#" },
+          { "icon": "🍵", "name": "Thực phẩm & Đồ uống",    "count": "90+ sản phẩm",  "href": "#" },
+          { "icon": "💊", "name": "Chăm sóc sức khỏe",      "count": "70+ sản phẩm",  "href": "#" },
+          { "icon": "🏠", "name": "Đồ gia dụng",            "count": "110+ sản phẩm", "href": "#" },
+          { "icon": "📚", "name": "Sách & Văn phòng phẩm",  "count": "300+ sản phẩm", "href": "#" }
+        ]
+      },
+      "template": "<div class=\"we-section\" id=\"categories\"><h2 class=\"we-section-title\" style=\"text-align:center;margin-bottom:8px\">{{title}}</h2><p class=\"we-section-subtitle\" style=\"text-align:center\">{{subtitle}}</p><div style=\"display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-top:24px\">{{#each rows}}<a href=\"{{href}}\" style=\"display:flex;flex-direction:column;align-items:center;gap:8px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px 12px;text-decoration:none;transition:box-shadow .15s\" onmouseover=\"this.style.boxShadow='0 4px 12px rgba(0,0,0,.1)'\" onmouseout=\"this.style.boxShadow='none'\"><span style=\"font-size:32px\">{{icon}}</span><span style=\"font-size:14px;font-weight:700;color:#1a202c;text-align:center\">{{name}}</span><span style=\"font-size:12px;color:#718096\">{{count}}</span></a>{{/each}}</div></div>"
+    },
+    {
+      "staticData": {
+        "id": "products",
+        "title": "Sản phẩm nổi bật",
+        "subtitle": "Được chọn lọc kỹ càng, đảm bảo chất lượng và giá tốt nhất.",
+        "rows": [
+          { "img": "📱", "name": "iPhone 15 Pro Max 256GB",         "category": "Điện thoại",     "price": "28.990.000₫", "old_price": "32.000.000₫", "badge": "Giảm 9%",   "rating": "4.9 ★ (248)",  "href": "#" },
+          { "img": "💻", "name": "MacBook Air M3 8GB 256GB",        "category": "Laptop",          "price": "28.490.000₫", "old_price": "30.000.000₫", "badge": "Hot",       "rating": "4.8 ★ (112)",  "href": "#" },
+          { "img": "🎧", "name": "Sony WH-1000XM5",                 "category": "Âm thanh",        "price": "7.490.000₫",  "old_price": "8.990.000₫",  "badge": "Giảm 17%", "rating": "4.9 ★ (321)",  "href": "#" },
+          { "img": "⌚", "name": "Apple Watch Series 9 GPS",        "category": "Đồng hồ",         "price": "9.990.000₫",  "old_price": "11.500.000₫", "badge": "Mới",       "rating": "4.8 ★ (87)",   "href": "#" },
+          { "img": "🍳", "name": "Nồi chiên không dầu Philips 4.1L", "category": "Gia dụng",       "price": "2.490.000₫",  "old_price": "2.990.000₫",  "badge": "Giảm 17%", "rating": "4.7 ★ (563)",  "href": "#" },
+          { "img": "📚", "name": "Combo Đắc Nhân Tâm + Nhà Giả Kim", "category": "Sách",           "price": "149.000₫",    "old_price": "168.000₫",    "badge": "Bán chạy", "rating": "5.0 ★ (1.2K)", "href": "#" },
+          { "img": "👔", "name": "Áo polo nam basic (5 màu)",       "category": "Thời trang nam",  "price": "249.000₫",    "old_price": "",             "badge": "",          "rating": "4.6 ★ (430)",  "href": "#" },
+          { "img": "💊", "name": "Vitamin C 1000mg 60 viên",        "category": "Sức khỏe",        "price": "199.000₫",    "old_price": "250.000₫",    "badge": "Giảm 20%", "rating": "4.8 ★ (720)",  "href": "#" }
+        ]
+      },
+      "template": "<div class=\"we-section\" id=\"products\"><h2 class=\"we-section-title\" style=\"text-align:center;margin-bottom:8px\">{{title}}</h2><p class=\"we-section-subtitle\" style=\"text-align:center\">{{subtitle}}</p><div class=\"we-products\" style=\"margin-top:24px\">{{#each rows}}<div class=\"we-product-card\"><div class=\"we-product-img\" style=\"font-size:48px;display:flex;align-items:center;justify-content:center;height:120px;background:#f7fafc;border-radius:10px 10px 0 0\">{{img}}</div><div class=\"we-product-body\"><div style=\"font-size:11px;color:#718096;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px\">{{category}}</div>{{#if badge}}<span class=\"we-product-badge\" style=\"background:#fc8181;color:#fff\">{{badge}}</span>{{/if}}<h3 class=\"we-product-name\" style=\"font-size:14px;margin:6px 0 4px\">{{name}}</h3><div style=\"font-size:13px;color:#718096;margin-bottom:6px\">{{rating}}</div><div style=\"display:flex;align-items:baseline;gap:8px;margin-bottom:10px\"><span class=\"we-product-price\" style=\"color:#e53e3e;font-weight:700;font-size:16px\">{{price}}</span>{{#if old_price}}<span style=\"font-size:12px;color:#a0aec0;text-decoration:line-through\">{{old_price}}</span>{{/if}}</div><a class=\"we-btn we-btn-primary\" href=\"{{href}}\" style=\"background:#4299e1;color:#fff;border-color:#4299e1;display:block;text-align:center;font-size:13px\">🛒 Thêm vào giỏ</a></div></div>{{/each}}</div></div>"
+    },
+    {
+      "staticData": {
+        "title": "Tại sao mua hàng tại đây?",
+        "rows": [
+          { "icon": "✅", "name": "Hàng chính hãng 100%",         "desc": "Cam kết nguồn gốc rõ ràng, có tem bảo hành chính hãng từ nhà sản xuất." },
+          { "icon": "🚀", "name": "Giao hàng nhanh toàn quốc",    "desc": "Giao hàng trong 2-4 giờ tại nội thành, 1-2 ngày trên toàn quốc." },
+          { "icon": "🔄", "name": "Đổi trả miễn phí 30 ngày",     "desc": "Không hài lòng? Đổi hoặc hoàn tiền 100% trong vòng 30 ngày, không hỏi lý do." },
+          { "icon": "💳", "name": "Thanh toán đa dạng",           "desc": "Tiền mặt, thẻ, chuyển khoản, ví MoMo, ZaloPay, QR Code — tất cả đều được." },
+          { "icon": "🔐", "name": "Bảo mật thông tin",            "desc": "Dữ liệu cá nhân và thanh toán được mã hóa SSL, tuyệt đối an toàn." },
+          { "icon": "🎁", "name": "Tích điểm đổi quà",            "desc": "Mỗi 10.000₫ chi tiêu = 1 điểm tích luỹ. Đổi điểm lấy voucher hoặc quà tặng." }
+        ]
+      },
+      "template": "<div class=\"we-section\" style=\"background:#f7fafc\"><h2 class=\"we-section-title\" style=\"text-align:center;margin-bottom:32px\">{{title}}</h2><div class=\"we-features\">{{#each rows}}<div class=\"we-feature-card\"><span class=\"we-feature-icon\">{{icon}}</span><h3 class=\"we-feature-title\">{{name}}</h3><p class=\"we-feature-desc\">{{desc}}</p></div>{{/each}}</div></div>"
+    },
+    {
+      "staticData": {
+        "title": "Khách hàng nói gì?",
+        "rows": [
+          { "quote": "Mua iPhone 15 ở đây, hàng chính hãng, giao nhanh hơn mong đợi. Sẽ quay lại mua tiếp!",    "name": "Nguyễn Thị Lan",   "role": "Khách hàng tại Hà Nội",     "avatar": "👩‍💼" },
+          { "quote": "Đổi trả rất dễ dàng, nhân viên hỗ trợ nhiệt tình. Trải nghiệm mua hàng tuyệt vời.",       "name": "Trần Văn Hùng",    "role": "Khách hàng tại TP.HCM",     "avatar": "👨‍💻" },
+          { "quote": "Giá cạnh tranh, nhiều khuyến mãi, tích điểm đổi quà rất hay. Recommend cho mọi người!",   "name": "Lê Thị Mai",       "role": "Khách hàng tại Đà Nẵng",    "avatar": "👩‍🎨" }
+        ]
+      },
+      "template": "<div class=\"we-section we-section-center\" style=\"background:#fff\"><h2 class=\"we-section-title\">{{title}}</h2><div class=\"we-testimonials\">{{#each rows}}<div class=\"we-testimonial\"><p class=\"we-testimonial-quote\">{{quote}}</p><div class=\"we-testimonial-author\"><div class=\"we-testimonial-avatar\">{{avatar}}</div><div><div class=\"we-testimonial-name\">{{name}}</div><div class=\"we-testimonial-role\">{{role}}</div></div></div></div>{{/each}}</div></div>"
+    },
+    {
+      "staticData": {
+        "title": "Đừng bỏ lỡ ưu đãi hôm nay!",
+        "subtitle": "Đăng ký nhận thông báo khuyến mãi và nhận ngay voucher 50.000₫ cho đơn hàng đầu tiên.",
+        "cta": "Đăng ký nhận ưu đãi"
+      },
+      "template": "<div class=\"we-section\"><div class=\"we-cta-banner\"><h2 class=\"we-cta-title\">{{title}}</h2><p class=\"we-cta-subtitle\">{{subtitle}}</p><a class=\"we-btn we-btn-cta\" href=\"#\">{{cta}}</a></div></div>"
+    }
+  ]
+}

@@ -9,7 +9,7 @@
 ## 📋 Tổng quan
 
 Widget Data là platform cho phép bạn:
-- 📊 **Đọc dữ liệu** từ database, files (CSV/JSON/Excel), APIs
+- 📊 **Đọc dữ liệu** từ database, files (CSV/JSON/Excel), REST APIs — tất cả trả về cùng định dạng
 - 🔄 **Xử lý dữ liệu** qua multi-step pipeline (Extract → Transform → Aggregate → Load)
 - 🔀 **Conditional logic** với branching (if-else, switch-case, parallel execution)
 - 📅 **Tự động hóa** với scheduling (cron, interval, event-driven)
@@ -17,6 +17,8 @@ Widget Data là platform cho phép bạn:
 - 📈 **Visualize real-time** trên Blazor dashboard với SignalR
 - 🎨 **HTML Designer** tạo giao diện tùy chỉnh với template engine
 - 📑 **Dashboard Pages** ghép nhiều widget thành trang báo cáo
+- 📝 **Form Widget** — thu thập dữ liệu với schema tùy chỉnh, lưu submission vào DB
+- 📡 **Activity Monitoring** — theo dõi mọi lần gọi API widget, tự vô hiệu hoá khi không hoạt động
 - 🌐 **Standalone Frontend** — public-facing pages từ WidgetEngine, tách hoàn toàn khỏi Blazor
 - 🔐 **Bảo mật** với authentication, authorization, encryption
 
@@ -26,9 +28,12 @@ Widget Data là platform cho phép bạn:
 
 - **Multi-Step Processing**: Pipeline với nhiều bước xử lý tuần tự → [📖 Chi tiết](doc/multi-step-processing.md)
 - **Branching & Variables**: If-else, switch-case, parallel branches + biến → [📖 Chi tiết](doc/branching-variables.md)
+- **Multi-Source Data**: Đọc dữ liệu từ **SQLite/SQL**, **CSV**, **JSON**, **Excel** (ClosedXML), **REST API** — tất cả trả về cùng định dạng `{ columns, rows }`
+- **Form Widget**: Admin định nghĩa schema field (text, email, textarea, select…); `/api/form/{id}/schema` trả schema public; submission lưu DB qua `POST /api/form/{id}`; admin xem qua `GET /api/form/{id}/submissions`
 - **HTML Widget Designer**: Thiết kế template HTML tùy chỉnh với biến `{{column}}` và vòng lặp `{{#each rows}}`
 - **Dashboard Page Builder**: Kéo-thả widget thành trang dashboard, xem trước trực tiếp
 - **Reports & Preview**: Trang báo cáo doanh thu/bán hàng từ dữ liệu thực tế
+- **Widget Activity Monitoring**: Tự động ghi lại mọi lần gọi API widget (endpoint, user, thời gian phản hồi, status code); background service phát hiện widget không hoạt động → tự vô hiệu hoá + ghi alert log
 - **Scheduling**: Hangfire scheduler với cron expressions, interval, on-demand
 - **Caching**: In-memory, Redis, file-based cache với TTL và invalidation
 - **Live Data**: Real-time dashboard qua SignalR, auto-refresh
@@ -67,6 +72,20 @@ Extract từ legacy DB → Clean data → Transform format → Load to warehouse
 ```
 Tạo HTML template: <table>{{#each rows}}<tr><td>{{product}}</td><td>{{revenue}}</td></tr>{{/each}}</table>
 Widget tự điền dữ liệu thực tế → Dashboard Page → Xuất PDF/HTML
+```
+
+### 5. Form Widget — Thu thập dữ liệu
+```
+Admin định nghĩa schema: email, textarea, select…
+/form.html tự render form → POST /api/form/{id} → lưu FormSubmission
+Admin xem submissions qua GET /api/form/{id}/submissions
+```
+
+### 6. Widget Activity Monitoring
+```
+Mọi lần gọi /api/widgets/{id}/execute|data|export đều được ghi WidgetApiActivity
+Background service chạy mỗi 60 phút → phát hiện widget không hoạt động > N ngày
+→ Tự vô hiệu hoá widget (nếu bật) + ghi InactivityAlert vào AuditLog
 ```
 
 ## 🚀 Quick Start
@@ -140,12 +159,50 @@ Truy cập:
 
 ## 💻 Technology Stack
 
-**Backend**: ASP.NET Core 10.0, EF Core, Hangfire, SignalR, QuestPDF  
+**Backend**: ASP.NET Core 10.0, EF Core, Hangfire, SignalR, QuestPDF, ClosedXML  
 **Frontend (Blazor)**: Blazor Server, MudBlazor, ChartJs, BlazorMonaco  
 **Frontend (Standalone)**: Vanilla HTML/CSS/JS, WidgetEngine library (zero-dep)  
 **Infrastructure**: .NET Aspire, YARP Gateway, SQLite, Docker, Serilog  
 
 👉 [Chi tiết Technology](doc/architecture.md#technology-stack)
+
+## 🔌 API Endpoints (tóm tắt)
+
+| Nhóm | Endpoint | Quyền | Mô tả |
+|---|---|---|---|
+| **Widget** | `POST /api/widgets/{id}/execute` | Auth | Thực thi widget, ghi `WidgetExecution` |
+| **Widget** | `GET /api/widgets/{id}/data` | Auth | Lấy dữ liệu theo nguồn (DB/CSV/JSON/Excel/API) |
+| **Form** | `GET /api/form/{id}/schema` | Public | Lấy schema field của Form widget |
+| **Form** | `POST /api/form/{id}` | Public | Gửi submission; validate required fields |
+| **Form** | `GET /api/form/{id}/submissions` | Admin/Manager | Xem danh sách submission |
+| **Form** | `DELETE /api/form/submissions/{id}` | Admin | Xoá submission |
+| **Activity** | `GET /api/widget-activity/{widgetId}` | Admin/Manager | Log hoạt động API theo widget |
+| **Activity** | `GET /api/widget-activity/{widgetId}/summary` | Admin/Manager | Tổng hợp: tổng lời gọi, user, top endpoints |
+| **Activity** | `GET /api/widget-activity/inactive` | Admin | Danh sách widget không hoạt động |
+| **Activity** | `GET /api/widget-activity/alerts` | Admin | Tất cả `InactivityAlert` trong AuditLog |
+
+## ⚙️ Cấu hình
+
+### Inactivity Monitor (`appsettings.json`)
+
+```json
+"InactivityMonitor": {
+  "CheckIntervalMinutes": 60,
+  "DefaultThresholdDays": 30
+}
+```
+
+Background service chạy theo `CheckIntervalMinutes`. Widget nào có `InactivityAutoDisableEnabled = true` và không được gọi trong `InactivityThresholdDays` ngày sẽ bị đặt `IsActive = false` tự động.
+
+### Data Source — Multi-Source Config
+
+| Loại nguồn | Config cần thiết |
+|---|---|
+| `Database` | `ConnectionString` (SQLite/SQL), `Query` |
+| `CSV` | `ConnectionString` = đường dẫn file; `delimiter`, `hasHeader` |
+| `JSON` | `ConnectionString` = đường dẫn file; `jsonPath` (nested array) |
+| `Excel` | `ConnectionString` = đường dẫn file; `sheet`, `hasHeader` |
+| `RestApi` | `ApiEndpoint`, `ApiKey`; `jsonPath` |
 
 ## 📚 Documentation
 
@@ -229,9 +286,24 @@ Truy cập:
 </table>
 ```
 
+## 📝 Example: Form Widget Schema
+
+```json
+{
+  "fields": [
+    { "name": "email",   "label": "Email",    "type": "email",    "required": true  },
+    { "name": "message", "label": "Nội dung", "type": "textarea", "required": false }
+  ],
+  "submitLabel": "Gửi",
+  "successMessage": "Cảm ơn bạn đã gửi thông tin!"
+}
+```
+
+Lưu config này vào `Widget.Configuration`. Trang `/form.html` (wwwroot) tự render form từ `GET /api/form/{id}/schema` và submit qua `POST /api/form/{id}`. Có thể nhúng vào bất kỳ trang HTML nào qua `<iframe>`.
+
 ## 🚦 Roadmap
 
-- ✅ **v1.0** (Q2 2026) - MVP: Core widgets, scheduling, Blazor UI, .NET Aspire, HTML Designer, Dashboard Pages, Reports, Store module, Demo Shop (standalone + blazor-web)
+- ✅ **v1.0** (Q2 2026) - MVP: Core widgets, scheduling, Blazor UI, .NET Aspire, HTML Designer, Dashboard Pages, Reports, Store module, Demo Shop (standalone + blazor-web), **Multi-source data** (CSV/JSON/Excel/API), **Form widget** (custom schema + submissions), **Activity Monitoring** (auto-disable + alert log)
 - 🔄 **v1.5** (Q3 2026) - Advanced charts, templates
 - 📅 **v2.0** (Q4 2026) - AI features, Power BI integration
 - 📅 **v2.5** (Q1 2027) - Visual ETL, multi-tenancy

@@ -14,6 +14,20 @@
  *     WidgetEngine.init({ baseUrl: 'https://api.example.com/api' });
  *     await WidgetEngine.auth.login('user@example.com', 'password');
  *     await WidgetEngine.page.load('pages/products.json', document.getElementById('app'));
+ *
+ * Available API modules:
+ *   WidgetEngine.auth            – login / refresh / logout
+ *   WidgetEngine.widgets         – CRUD + execute / getData / export / deliver / config-archives
+ *   WidgetEngine.widgetGroups    – manage widget groups (pages)
+ *   WidgetEngine.dataSources     – CRUD + test
+ *   WidgetEngine.deliveryTargets – manage delivery targets
+ *   WidgetEngine.schedules       – CRUD + enable / disable
+ *   WidgetEngine.dashboard       – stats
+ *   WidgetEngine.form            – schema / submit / submissions
+ *   WidgetEngine.widgetActivity  – activity / summary / inactive / alerts
+ *   WidgetEngine.ideaBoard       – posts / results / subscriptions
+ *   WidgetEngine.store           – categories / products / orders (AllowAnonymous)
+ *   WidgetEngine.reports         – pages / html / widget data
  */
 (function (global) {
   'use strict';
@@ -250,19 +264,16 @@
 
     /**
      * Execute a widget and return data.
-     * @param {number} id
-     * @param {object} [parameters] – key/value pairs for the widget's parameters
-     * @param {boolean} [forceRefresh]
+     * @param {number}  id
+     * @param {number}  [scheduleId] – optional schedule context (forwarded as query param)
+     * @returns {Promise<{data: Array, columns: Array, executedAt: string}>}
      */
-    execute(id, parameters, forceRefresh = false) {
-      return Http.post(`/widgets/${id}/execute`, { parameters: parameters || {}, forceRefresh });
+    execute(id, scheduleId) {
+      const qs = scheduleId != null ? `?scheduleId=${encodeURIComponent(scheduleId)}` : '';
+      return Http.post(`/widgets/${id}/execute${qs}`);
     },
 
-    /**
-     * Get cached data for a widget.
-     * @param {number} id
-     * @param {object} [params] – page, pageSize, format
-     */
+    /** Get cached data for a widget. */
     getData(id, params) {
       return Http.get(`/widgets/${id}/data`, params);
     },
@@ -270,6 +281,64 @@
     /** Get execution history for a widget. */
     getHistory(id, params) {
       return Http.get(`/widgets/${id}/history`, params);
+    },
+
+    /**
+     * Export widget data as a file.
+     * @param {number} id
+     * @param {string} [format] – 'csv' | 'excel' | 'json' (default: 'csv')
+     * @returns {Promise<Response>} raw fetch Response (use .blob() or .text())
+     */
+    export(id, format = 'csv') {
+      return Http.get(`/widgets/${id}/export`, { format });
+    },
+
+    /**
+     * Deliver widget data to a delivery target.
+     * @param {number} id               – widget ID
+     * @param {number} deliveryTargetId – delivery target ID
+     */
+    deliver(id, deliveryTargetId) {
+      return Http.post(`/widgets/${id}/deliver/${deliveryTargetId}`);
+    },
+
+    /** List delivery execution history for a widget. */
+    getDeliveries(id) {
+      return Http.get(`/widgets/${id}/deliveries`);
+    },
+
+    // ── Config Archives ──────────────────────────────────────
+
+    /** List config archives for a widget. */
+    getConfigArchives(id) {
+      return Http.get(`/widgets/${id}/config-archives`);
+    },
+
+    /**
+     * Create a config archive snapshot for a widget.
+     * @param {number} id
+     * @param {object} dto – { note?: string }
+     */
+    createConfigArchive(id, dto) {
+      return Http.post(`/widgets/${id}/config-archives`, dto);
+    },
+
+    /**
+     * Restore a widget config from an archive.
+     * @param {number} id        – widget ID
+     * @param {number} archiveId – archive ID
+     */
+    restoreConfigArchive(id, archiveId) {
+      return Http.post(`/widgets/${id}/config-archives/${archiveId}/restore`);
+    },
+
+    /**
+     * Delete a config archive.
+     * @param {number} id        – widget ID
+     * @param {number} archiveId – archive ID
+     */
+    deleteConfigArchive(id, archiveId) {
+      return Http.del(`/widgets/${id}/config-archives/${archiveId}`);
     },
 
     /** Create a new widget. */
@@ -318,6 +387,193 @@
    * ======================================================= */
   const Dashboard = {
     stats() { return Http.get('/dashboard/stats'); },
+  };
+
+  /* =========================================================
+   *  Form API Module (PR #23)
+   *
+   *  Public endpoints (no auth needed):
+   *    Form.getSchema(id)       → GET /api/form/{id}/schema
+   *    Form.submit(id, data)    → POST /api/form/{id}
+   *
+   *  Admin/Manager endpoints:
+   *    Form.getSubmissions(id)         → GET /api/form/{id}/submissions
+   *    Form.deleteSubmission(subId)    → DELETE /api/form/submissions/{subId}
+   * ======================================================= */
+  const Form = {
+    getSchema(widgetId) {
+      return Http.get(`/form/${widgetId}/schema`);
+    },
+    submit(widgetId, data) {
+      return Http.post(`/form/${widgetId}`, data);
+    },
+    getSubmissions(widgetId) {
+      return Http.get(`/form/${widgetId}/submissions`);
+    },
+    deleteSubmission(id) {
+      return Http.del(`/form/submissions/${id}`);
+    },
+  };
+
+  /* =========================================================
+   *  Widget Activity API Module (PR #22)
+   *
+   *  All endpoints require Admin or Manager role.
+   *    WidgetActivity.getActivity(widgetId, params)  → GET /api/widget-activity/{widgetId}
+   *    WidgetActivity.getSummary(widgetId)            → GET /api/widget-activity/{widgetId}/summary
+   *    WidgetActivity.getInactive(thresholdDays)      → GET /api/widget-activity/inactive
+   *    WidgetActivity.getAlerts()                     → GET /api/widget-activity/alerts
+   * ======================================================= */
+  const WidgetActivity = {
+    getActivity(widgetId, params) {
+      return Http.get(`/widget-activity/${widgetId}`, params);
+    },
+    getSummary(widgetId) {
+      return Http.get(`/widget-activity/${widgetId}/summary`);
+    },
+    getInactive(thresholdDays = 30) {
+      return Http.get('/widget-activity/inactive', { thresholdDays });
+    },
+    getAlerts() {
+      return Http.get('/widget-activity/alerts');
+    },
+  };
+
+  /* =========================================================
+   *  Widget Groups API Module
+   *
+   *  Manages named groups (pages) of widgets.
+   *    WidgetGroups.list()              → GET /api/widget-groups
+   *    WidgetGroups.get(id)             → GET /api/widget-groups/{id}
+   *    WidgetGroups.create(dto)         → POST /api/widget-groups        [Admin,Manager]
+   *    WidgetGroups.update(id, dto)     → PUT /api/widget-groups/{id}    [Admin,Manager]
+   *    WidgetGroups.delete(id)          → DELETE /api/widget-groups/{id} [Admin]
+   * ======================================================= */
+  const WidgetGroups = {
+    list()             { return Http.get('/widget-groups'); },
+    get(id)            { return Http.get(`/widget-groups/${id}`); },
+    create(dto)        { return Http.post('/widget-groups', dto); },
+    update(id, dto)    { return Http.put(`/widget-groups/${id}`, dto); },
+    delete(id)         { return Http.del(`/widget-groups/${id}`); },
+  };
+
+  /* =========================================================
+   *  Delivery Targets API Module
+   *
+   *    DeliveryTargets.getByWidget(widgetId) → GET /api/delivery-targets/widget/{widgetId}
+   *    DeliveryTargets.get(id)               → GET /api/delivery-targets/{id}
+   *    DeliveryTargets.create(dto)           → POST /api/delivery-targets    [Admin,Manager]
+   *    DeliveryTargets.update(id, dto)       → PUT /api/delivery-targets/{id} [Admin,Manager]
+   *    DeliveryTargets.delete(id)            → DELETE /api/delivery-targets/{id} [Admin,Manager]
+   * ======================================================= */
+  const DeliveryTargets = {
+    getByWidget(widgetId)  { return Http.get(`/delivery-targets/widget/${widgetId}`); },
+    get(id)                { return Http.get(`/delivery-targets/${id}`); },
+    create(dto)            { return Http.post('/delivery-targets', dto); },
+    update(id, dto)        { return Http.put(`/delivery-targets/${id}`, dto); },
+    delete(id)             { return Http.del(`/delivery-targets/${id}`); },
+  };
+
+  /* =========================================================
+   *  Idea Board API Module
+   *
+   *  Posts:
+   *    IdeaBoard.createPost(dto)                       → POST /api/idea-board/posts
+   *    IdeaBoard.getPost(id)                           → GET /api/idea-board/posts/{id}
+   *    IdeaBoard.getPostsByWidget(widgetId)            → GET /api/idea-board/widgets/{widgetId}/posts
+   *
+   *  Results:
+   *    IdeaBoard.getResults(postId)                    → GET /api/idea-board/posts/{id}/results
+   *    IdeaBoard.submitResult(postId, subId, dto)      → POST /api/idea-board/posts/{id}/results
+   *
+   *  Subscriptions:
+   *    IdeaBoard.getSubscriptions(widgetId)            → GET /api/idea-board/widgets/{widgetId}/subscriptions
+   *    IdeaBoard.createSubscription(dto)               → POST /api/idea-board/subscriptions [Admin,Manager]
+   *    IdeaBoard.updateSubscription(id, dto)           → PUT /api/idea-board/subscriptions/{id} [Admin,Manager]
+   *    IdeaBoard.deleteSubscription(id)                → DELETE /api/idea-board/subscriptions/{id} [Admin,Manager]
+   * ======================================================= */
+  const IdeaBoard = {
+    // Posts
+    createPost(dto)              { return Http.post('/idea-board/posts', dto); },
+    getPost(id)                  { return Http.get(`/idea-board/posts/${id}`); },
+    getPostsByWidget(widgetId)   { return Http.get(`/idea-board/widgets/${widgetId}/posts`); },
+
+    // Results
+    getResults(postId)           { return Http.get(`/idea-board/posts/${postId}/results`); },
+    submitResult(postId, subscriptionId, dto) {
+      return Http.post(
+        `/idea-board/posts/${postId}/results${Utils.toQuery({ subscriptionId })}`,
+        dto,
+      );
+    },
+
+    // Subscriptions
+    getSubscriptions(widgetId)        { return Http.get(`/idea-board/widgets/${widgetId}/subscriptions`); },
+    createSubscription(dto)           { return Http.post('/idea-board/subscriptions', dto); },
+    updateSubscription(id, dto)       { return Http.put(`/idea-board/subscriptions/${id}`, dto); },
+    deleteSubscription(id)            { return Http.del(`/idea-board/subscriptions/${id}`); },
+  };
+
+  /* =========================================================
+   *  Store API Module  (AllowAnonymous – no JWT required)
+   *
+   *    Store.getCategories()              → GET /api/store/categories
+   *    Store.getProducts(params)          → GET /api/store/products?categoryId=&search=&page=&pageSize=
+   *    Store.getProduct(id)               → GET /api/store/products/{id}
+   *    Store.placeOrder(dto)              → POST /api/store/orders
+   *
+   *  PlaceOrder dto shape:
+   *    {
+   *      customerName:    string,   (required)
+   *      customerPhone:   string,   (required)
+   *      customerAddress: string,
+   *      paymentMethod:   'cash' | 'bank_transfer' | 'credit_card',
+   *      note:            string,
+   *      items: [{ productId: number, quantity: number }, ...]
+   *    }
+   * ======================================================= */
+  const Store = {
+    getCategories()          { return Http.get('/store/categories'); },
+    getProducts(params)      { return Http.get('/store/products', params); },
+    getProduct(id)           { return Http.get(`/store/products/${id}`); },
+    placeOrder(dto)          { return Http.post('/store/orders', dto); },
+  };
+
+  /* =========================================================
+   *  Reports API Module
+   *
+   *    Reports.getPages()                          → GET /api/reports/pages
+   *    Reports.getPage(id)                         → GET /api/reports/pages/{id}
+   *    Reports.getPageHtml(id, standalone, cssUrl) → GET /api/reports/pages/{id}/html (AllowAnonymous)
+   *    Reports.getWidgetData(id)                   → GET /api/reports/widgets/{id}/data
+   *
+   *  getPageHtml returns a full HTML string (text/html) suitable for iframe src
+   *  or direct document.write.  Use standalone=false to get an embeddable fragment.
+   * ======================================================= */
+  const Reports = {
+    getPages()  { return Http.get('/reports/pages'); },
+    getPage(id) { return Http.get(`/reports/pages/${id}`); },
+
+    /**
+     * Fetch a server-rendered HTML page for a widget group.
+     * @param {number}  id
+     * @param {boolean} [standalone=true]  – full DOCTYPE document vs inner fragment
+     * @param {string}  [cssUrl]           – optional external CSS URL
+     * @returns {Promise<string>}          – HTML string
+     */
+    async getPageHtml(id, standalone = true, cssUrl) {
+      const params = { standalone };
+      if (cssUrl) params.cssUrl = cssUrl;
+      const url = _state.baseUrl + `/reports/pages/${id}/html` + Utils.toQuery(params);
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        if (resp.status === 404) throw new WidgetEngineError('NOT_FOUND', `Report page ${id} not found`);
+        throw new WidgetEngineError(`HTTP_${resp.status}`, resp.statusText);
+      }
+      return resp.text();
+    },
+
+    getWidgetData(id) { return Http.get(`/reports/widgets/${id}/data`); },
   };
 
   /* =========================================================
@@ -416,10 +672,11 @@
     /**
      * Render a widget into a given DOM element.
      *
-     * Supports two modes:
+     * Supports three modes:
      *   1. Static content  – supply `staticData` (object or array) + `template` in config;
      *                        no API call is made.  Great for landing pages, product cards, etc.
      *   2. API-backed data – supply `id` to fetch data from the WidgetData server.
+     *   3. Form widget     – supply `formId` to render a dynamic form from the server schema.
      *
      * @param {HTMLElement} container
      * @param {object}      widgetConfig
@@ -428,10 +685,10 @@
       if (!container) throw new WidgetEngineError('INVALID_CONTAINER', 'Container element not found');
 
       container.classList.add('we-widget');
-      container.setAttribute('data-widget-id', widgetConfig.id || '');
+      container.setAttribute('data-widget-id', widgetConfig.id || widgetConfig.formId || '');
 
       // Static-content widgets skip the loading spinner for a snappier feel
-      if (!Renderer._isStatic(widgetConfig)) {
+      if (!Renderer._isStatic(widgetConfig) && !Renderer._isForm(widgetConfig)) {
         Renderer._setLoading(container, true);
       }
 
@@ -440,6 +697,9 @@
         let html;
         if (Renderer._isStatic(widgetConfig)) {
           html = Renderer._renderStatic(widgetConfig);
+        } else if (Renderer._isForm(widgetConfig)) {
+          await Renderer._renderForm(container, widgetConfig);
+          return; // _renderForm manages the DOM directly
         } else {
           const result = await Renderer._fetchData(widgetConfig);
           const tpl = widgetConfig.template
@@ -475,6 +735,93 @@
       return cfg.staticData !== undefined;
     },
 
+    /** Returns true when the widget is a Form widget backed by the Form API. */
+    _isForm(cfg) {
+      return cfg.formId !== undefined;
+    },
+
+    /**
+     * Render a Form widget by fetching the schema from the Form API.
+     * On submit, POST data to the Form API and show success/error message.
+     * Falls back to a static placeholder if the API is unreachable.
+     *
+     * @param {HTMLElement} container
+     * @param {object}      cfg  – must have `formId`
+     */
+    async _renderForm(container, cfg) {
+      const title = cfg.title || 'Liên hệ';
+      container.innerHTML = `<div class="we-title">${Utils.escapeHtml(title)}</div>` +
+        `<div class="we-body"><div class="we-loading"><span class="we-spinner"></span> Đang tải form…</div></div>`;
+
+      let schema;
+      try {
+        schema = await Form.getSchema(cfg.formId);
+      } catch (_) {
+        // No API available – render a static placeholder
+        container.innerHTML = `<div class="we-title">${Utils.escapeHtml(title)}</div>` +
+          `<div class="we-body"><div class="we-form-placeholder">` +
+          `<p>📝 Form Widget demo — kết nối WidgetData.API để hiển thị form thực tế.</p>` +
+          `<p style="font-size:13px;color:#718096">Endpoint: <code>GET /api/form/${cfg.formId}/schema</code></p>` +
+          `</div></div>`;
+        return;
+      }
+
+      const fields = schema.fields || [];
+      const submitLabel = schema.submitLabel || 'Gửi';
+      const successMessage = schema.successMessage || 'Cảm ơn bạn đã gửi thông tin!';
+
+      const fieldHtml = fields.map(f => {
+        const req = f.required ? ' required' : '';
+        const label = `<label class="we-form-label">${Utils.escapeHtml(f.label || f.name)}${f.required ? ' <span class="we-required">*</span>' : ''}</label>`;
+        let input;
+        if (f.type === 'textarea') {
+          input = `<textarea class="we-form-input" name="${Utils.escapeHtml(f.name)}" rows="4" placeholder="${Utils.escapeHtml(f.label || '')}"${req}></textarea>`;
+        } else if (f.type === 'select' && Array.isArray(f.options)) {
+          const opts = f.options.map(o => `<option value="${Utils.escapeHtml(o)}">${Utils.escapeHtml(o)}</option>`).join('');
+          input = `<select class="we-form-input" name="${Utils.escapeHtml(f.name)}"${req}><option value="">-- Chọn --</option>${opts}</select>`;
+        } else {
+          input = `<input class="we-form-input" type="${Utils.escapeHtml(f.type || 'text')}" name="${Utils.escapeHtml(f.name)}" placeholder="${Utils.escapeHtml(f.label || '')}"${req}>`;
+        }
+        return `<div class="we-form-group">${label}${input}</div>`;
+      }).join('');
+
+      const formId = `we-form-${cfg.formId}-${Math.random().toString(36).slice(2, 7)}`;
+      container.innerHTML = `<div class="we-title">${Utils.escapeHtml(title)}</div>` +
+        `<div class="we-body">` +
+        `<form id="${formId}" class="we-form" novalidate>` +
+        fieldHtml +
+        `<div class="we-form-msg" id="${formId}-msg" style="display:none"></div>` +
+        `<button type="submit" class="we-btn we-btn-primary we-form-submit">${Utils.escapeHtml(submitLabel)}</button>` +
+        `</form></div>`;
+
+      const formEl = document.getElementById(formId);
+      const msgEl = document.getElementById(`${formId}-msg`);
+
+      formEl.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = formEl.querySelector('.we-form-submit');
+        submitBtn.disabled = true;
+        msgEl.style.display = 'none';
+
+        const data = {};
+        new FormData(formEl).forEach((v, k) => { data[k] = v; });
+
+        try {
+          await Form.submit(cfg.formId, data);
+          formEl.reset();
+          msgEl.className = 'we-form-msg we-form-msg--success';
+          msgEl.textContent = successMessage;
+          msgEl.style.display = 'block';
+        } catch (err) {
+          msgEl.className = 'we-form-msg we-form-msg--error';
+          msgEl.textContent = err.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
+          msgEl.style.display = 'block';
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+    },
+
     /**
      * Render a static widget from its inline `staticData` + `template`.
      * `staticData` can be:
@@ -492,7 +839,7 @@
 
     /** Fetch widget data from the server. */
     async _fetchData(cfg) {
-      const result = await Widgets.execute(cfg.id, cfg.parameters, cfg.forceRefresh || false);
+      const result = await Widgets.execute(cfg.id, cfg.scheduleId);
       // Attach server-side htmlTemplate if the widget detail has one (optional extra call)
       // For perf, we only fetch the widget detail when we need the template
       if (!cfg.template && !result.htmlTemplate) {
@@ -754,9 +1101,16 @@
 
     auth: Auth,
     widgets: Widgets,
+    widgetGroups: WidgetGroups,
     dataSources: DataSources,
+    deliveryTargets: DeliveryTargets,
     schedules: Schedules,
     dashboard: Dashboard,
+    form: Form,
+    widgetActivity: WidgetActivity,
+    ideaBoard: IdeaBoard,
+    store: Store,
+    reports: Reports,
     template: Template,
     page: Page,
     utils: Utils,

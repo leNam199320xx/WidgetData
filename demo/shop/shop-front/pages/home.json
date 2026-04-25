@@ -5,7 +5,7 @@
   "widgets": [
     {
       "staticData": {
-        "badge": "🚀 Ra mắt phiên bản 2.0",
+        "badge": "✨ v1.0 — Multi-source · Form widget · Activity Monitoring",
         "headline": "Dữ liệu thông minh cho trang bán hàng của bạn",
         "subheadline": "WidgetData giúp bạn nhúng biểu đồ, số liệu, và bảng dữ liệu trực tiếp vào landing page và trang giới thiệu sản phẩm — không cần lập trình phức tạp.",
         "cta_primary": "Dùng thử miễn phí",
@@ -27,12 +27,12 @@
         "title": "Tại sao chọn WidgetData?",
         "subtitle": "Giải pháp toàn diện để hiển thị dữ liệu kinh doanh trên mọi trang web của bạn.",
         "rows": [
-          { "icon": "📊", "name": "Widget đa dạng",      "desc": "Biểu đồ, bảng, số liệu — hơn 20 loại widget sẵn sàng sử dụng ngay." },
-          { "icon": "⚡", "name": "Hiệu năng cao",       "desc": "Cache thông minh, tải dữ liệu song song, cập nhật real-time khi cần." },
+          { "icon": "📊", "name": "Widget đa dạng",      "desc": "Biểu đồ, bảng, số liệu, form — hơn 20 loại widget sẵn sàng sử dụng ngay." },
+          { "icon": "⚡", "name": "Hiệu năng cao",        "desc": "Cache thông minh, tải dữ liệu song song, cập nhật real-time khi cần." },
           { "icon": "🎨", "name": "Tuỳ biến hoàn toàn",  "desc": "Template HTML tự do, CSS theo brand của bạn, không phụ thuộc framework." },
-          { "icon": "🔒", "name": "Bảo mật tích hợp",    "desc": "JWT, refresh token tự động, phân quyền theo từng widget." },
-          { "icon": "📱", "name": "Responsive chuẩn",    "desc": "Hiển thị hoàn hảo trên desktop, tablet và mobile không cần chỉnh sửa thêm." },
-          { "icon": "🔌", "name": "Kết nối mọi nguồn",   "desc": "SQL Server, MySQL, PostgreSQL, REST API, và nhiều nguồn dữ liệu khác." }
+          { "icon": "🔌", "name": "Đa nguồn dữ liệu",    "desc": "SQL/SQLite, CSV, JSON, Excel, REST API — tất cả qua cùng một giao diện thống nhất." },
+          { "icon": "📝", "name": "Form Widget",          "desc": "Tạo form thu thập dữ liệu với schema tùy chỉnh. Submission lưu DB, xem trong Admin." },
+          { "icon": "📡", "name": "Activity Monitoring",  "desc": "Theo dõi lượt gọi API widget, phát hiện widget không hoạt động, tự vô hiệu hoá." }
         ]
       },
       "template": "<div class=\"we-section we-section-center\"><h2 class=\"we-section-title\">{{title}}</h2><p class=\"we-section-subtitle\">{{subtitle}}</p><div class=\"we-features\">{{#each rows}}<div class=\"we-feature-card\"><span class=\"we-feature-icon\">{{icon}}</span><h3 class=\"we-feature-title\">{{name}}</h3><p class=\"we-feature-desc\">{{desc}}</p></div>{{/each}}</div></div>"
