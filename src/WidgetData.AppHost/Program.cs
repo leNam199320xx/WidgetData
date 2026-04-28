@@ -13,4 +13,20 @@ builder.AddProject<Projects.WidgetData_Web>("widgetdata-web")
     .WaitFor(api)
     .WithExternalHttpEndpoints();
 
+// ── Demo web projects ──────────────────────────────────────────────────────
+builder.AddProject<Projects.shop_admin>("shop-admin")
+    .WithReference(api)
+    .WaitFor(api)
+    .WithExternalHttpEndpoints();
+
+builder.AddProject<Projects.news_front>("news-front")
+    .WithReference(api)
+    .WaitFor(api)
+    .WithExternalHttpEndpoints();
+
+builder.AddProject<Projects.course_front>("course-front")
+    .WithReference(api)
+    .WaitFor(api)
+    .WithExternalHttpEndpoints();
+
 await builder.Build().RunAsync();

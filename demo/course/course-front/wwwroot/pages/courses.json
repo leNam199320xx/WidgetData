@@ -1,0 +1,50 @@
+{
+  "title": "Khóa học – EduViet",
+  "layout": "flex",
+  "auth": { "required": false },
+  "widgets": [
+    {
+      "staticData": {
+        "headline": "Tất cả khóa học",
+        "subheadline": "Hơn 1.200 khóa học từ các chuyên gia hàng đầu — học theo tốc độ của bạn."
+      },
+      "template": "<div class=\"we-hero\" style=\"padding:48px 24px 40px;background:linear-gradient(135deg,#ebf4ff,#e9d8fd)\"><h1 class=\"we-hero-headline\">{{headline}}</h1><p class=\"we-hero-subheadline\">{{subheadline}}</p></div>"
+    },
+    {
+      "staticData": {
+        "title": "Lập trình & Công nghệ",
+        "subtitle": "Từ web development đến AI — nắm bắt xu hướng công nghệ với các khóa học thực chiến.",
+        "rows": [
+          { "icon": "🐍", "name": "Python nâng cao — Design Patterns & Clean Code",  "instructor": "Nguyễn Văn An",     "duration": "36 giờ", "students": "8.200",  "rating": "4.9", "level": "Nâng cao",  "price": "699.000₫",  "old_price": "999.000₫",  "badge": "Bestseller", "href": "#" },
+          { "icon": "☁️", "name": "AWS Certified Solutions Architect — tiếng Việt",   "instructor": "Trần Minh Khoa",    "duration": "48 giờ", "students": "4.600",  "rating": "4.8", "level": "Trung cấp", "price": "899.000₫",  "old_price": "1.299.000₫","badge": "Hot",       "href": "#" },
+          { "icon": "⚛️", "name": "React 19 + TypeScript — xây dựng SPA chuyên nghiệp","instructor": "Lê Thành Đạt",    "duration": "52 giờ", "students": "6.800",  "rating": "4.9", "level": "Trung cấp", "price": "749.000₫",  "old_price": "1.099.000₫","badge": "Mới",       "href": "#" },
+          { "icon": "🔐", "name": "An ninh mạng — Ethical Hacking cơ bản đến nâng cao","instructor": "Phạm Đức Trung",  "duration": "44 giờ", "students": "3.400",  "rating": "4.7", "level": "Nâng cao",  "price": "849.000₫",  "old_price": "",          "badge": "",          "href": "#" },
+          { "icon": "📱", "name": "Flutter & Dart — lập trình ứng dụng di động đa nền","instructor": "Ngô Thị Mai",     "duration": "38 giờ", "students": "5.700",  "rating": "4.8", "level": "Mọi trình độ","price": "649.000₫", "old_price": "949.000₫",  "badge": "Trending",  "href": "#" },
+          { "icon": "🤖", "name": "Prompt Engineering — Làm chủ ChatGPT & LLM",        "instructor": "Hoàng Gia Bảo",   "duration": "18 giờ", "students": "11.200", "rating": "4.8", "level": "Cơ bản",    "price": "299.000₫",  "old_price": "499.000₫",  "badge": "Hot",       "href": "#" }
+        ]
+      },
+      "template": "<div class=\"we-section\"><h2 class=\"we-section-title\" style=\"margin-bottom:6px\">{{title}}</h2><p class=\"we-section-subtitle\" style=\"margin-bottom:20px\">{{subtitle}}</p><div class=\"we-products\">{{#each rows}}<div class=\"we-product-card\"><div class=\"we-product-img\" style=\"font-size:44px;display:flex;align-items:center;justify-content:center;height:100px;background:linear-gradient(135deg,#ebf4ff,#e9d8fd);border-radius:10px 10px 0 0\">{{icon}}</div><div class=\"we-product-body\"><div style=\"font-size:11px;color:#4c51bf;font-weight:700;margin-bottom:4px\">{{level}} · {{duration}}</div>{{#if badge}}<span class=\"we-product-badge\" style=\"background:#4c51bf;color:#fff\">{{badge}}</span>{{/if}}<h3 class=\"we-product-name\" style=\"font-size:13px;margin:5px 0 4px;line-height:1.4\">{{name}}</h3><div style=\"font-size:11px;color:#718096;margin-bottom:3px\">👨‍🏫 {{instructor}}</div><div style=\"font-size:11px;color:#718096;margin-bottom:6px\">⭐ {{rating}} · {{students}} học viên</div><div style=\"display:flex;align-items:baseline;gap:6px;margin-bottom:8px\"><span style=\"color:#4c51bf;font-weight:700;font-size:15px\">{{price}}</span>{{#if old_price}}<span style=\"font-size:11px;color:#a0aec0;text-decoration:line-through\">{{old_price}}</span>{{/if}}</div><a class=\"we-btn we-btn-primary\" href=\"{{href}}\" style=\"background:#4c51bf;color:#fff;border-color:#4c51bf;display:block;text-align:center;font-size:12px\">🎓 Đăng ký học</a></div></div>{{/each}}</div></div>"
+    },
+    {
+      "staticData": {
+        "title": "Kinh doanh & Marketing",
+        "subtitle": "Xây dựng sự nghiệp và phát triển doanh nghiệp với kiến thức thực chiến từ các chuyên gia.",
+        "rows": [
+          { "icon": "📈", "name": "Growth Hacking — tăng trưởng nhanh không tốn tiền",  "instructor": "Vũ Hoàng Nam",   "duration": "22 giờ", "students": "7.800",  "rating": "4.8", "level": "Mọi trình độ","price": "399.000₫", "old_price": "599.000₫",  "badge": "Bestseller", "href": "#" },
+          { "icon": "💡", "name": "Khởi nghiệp từ 0 — Business Model Canvas & Lean Startup","instructor": "Đặng Hữu Hiệp","duration": "30 giờ","students": "5.400",  "rating": "4.7", "level": "Cơ bản",    "price": "499.000₫", "old_price": "699.000₫",  "badge": "",           "href": "#" },
+          { "icon": "🎯", "name": "Facebook & TikTok Ads 2026 — chạy ads hiệu quả",     "instructor": "Nguyễn Thị Cẩm","duration": "25 giờ", "students": "9.200",  "rating": "4.6", "level": "Cơ bản",    "price": "349.000₫", "old_price": "549.000₫",  "badge": "Trending",   "href": "#" },
+          { "icon": "✍️", "name": "Content Marketing — viết content triệu view",         "instructor": "Lý Thị Trang",  "duration": "20 giờ", "students": "6.100",  "rating": "4.8", "level": "Mọi trình độ","price": "299.000₫", "old_price": "",           "badge": "Mới",        "href": "#" }
+        ]
+      },
+      "template": "<div class=\"we-section\" style=\"background:#f7fafc\"><h2 class=\"we-section-title\" style=\"margin-bottom:6px\">{{title}}</h2><p class=\"we-section-subtitle\" style=\"margin-bottom:20px\">{{subtitle}}</p><div class=\"we-products\">{{#each rows}}<div class=\"we-product-card\"><div class=\"we-product-img\" style=\"font-size:44px;display:flex;align-items:center;justify-content:center;height:100px;background:linear-gradient(135deg,#f0fff4,#c6f6d5);border-radius:10px 10px 0 0\">{{icon}}</div><div class=\"we-product-body\"><div style=\"font-size:11px;color:#38a169;font-weight:700;margin-bottom:4px\">{{level}} · {{duration}}</div>{{#if badge}}<span class=\"we-product-badge\" style=\"background:#38a169;color:#fff\">{{badge}}</span>{{/if}}<h3 class=\"we-product-name\" style=\"font-size:13px;margin:5px 0 4px;line-height:1.4\">{{name}}</h3><div style=\"font-size:11px;color:#718096;margin-bottom:3px\">👨‍🏫 {{instructor}}</div><div style=\"font-size:11px;color:#718096;margin-bottom:6px\">⭐ {{rating}} · {{students}} học viên</div><div style=\"display:flex;align-items:baseline;gap:6px;margin-bottom:8px\"><span style=\"color:#38a169;font-weight:700;font-size:15px\">{{price}}</span>{{#if old_price}}<span style=\"font-size:11px;color:#a0aec0;text-decoration:line-through\">{{old_price}}</span>{{/if}}</div><a class=\"we-btn we-btn-primary\" href=\"{{href}}\" style=\"background:#38a169;color:#fff;border-color:#38a169;display:block;text-align:center;font-size:12px\">🎓 Đăng ký học</a></div></div>{{/each}}</div></div>"
+    },
+    {
+      "staticData": {
+        "title": "Cam kết học tập",
+        "subtitle": "Mua một lần, học mãi mãi. Không hài lòng — hoàn tiền trong 30 ngày.",
+        "cta": "Xem tất cả 1.200+ khóa học"
+      },
+      "template": "<div class=\"we-section\"><div class=\"we-cta-banner\" style=\"background:linear-gradient(135deg,#434190,#4c51bf)\"><h2 class=\"we-cta-title\">{{title}}</h2><p class=\"we-cta-subtitle\">{{subtitle}}</p><a class=\"we-btn we-btn-cta\" href=\"#\" style=\"background:#fff;color:#4c51bf;border-color:#fff\">{{cta}}</a></div></div>"
+    }
+  ]
+}

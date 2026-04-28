@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduViet – Nền tảng học trực tuyến hàng đầu Việt Nam</title>
+  <link rel="stylesheet" href="lib/widget-engine.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+
+  <header>
+    <span class="logo">🎓 EduViet</span>
+    <nav>
+      <a href="#" class="active" data-page="pages/home.json"     onclick="switchPage(this, event)">Trang chủ</a>
+      <a href="#"               data-page="pages/courses.json"   onclick="switchPage(this, event)">Khóa học</a>
+      <a href="#"               data-page="pages/instructors.json" onclick="switchPage(this, event)">Giảng viên</a>
+      <a href="#"               data-page="pages/contact.json"   onclick="switchPage(this, event)">Liên hệ</a>
+    </nav>
+    <div class="header-right">
+      <a class="nav-link" href="dashboard.html">📊 Dashboard</a>
+      <a class="nav-cta" href="#" data-page="pages/courses.json" onclick="switchPage(this, event)">Học ngay</a>
+    </div>
+  </header>
+
+  <main>
+    <div id="app"></div>
+  </main>
+
+  <footer>
+    <p>© 2026 EduViet – Demo được xây dựng bằng WidgetData Engine. &nbsp;|&nbsp;
+      <a href="dashboard.html">Dashboard</a>
+    </p>
+  </footer>
+
+  <script src="lib/widget-engine.js"></script>
+  <script>
+    WidgetEngine.init({ baseUrl: '' });
+    WidgetEngine.page.load('pages/home.json', document.getElementById('app'));
+
+    function switchPage(link, e) {
+      e.preventDefault();
+      document.querySelectorAll('header nav a, header .nav-cta').forEach(a => a.classList.remove('active'));
+      link.classList.add('active');
+      WidgetEngine.page.load(link.dataset.page, document.getElementById('app'))
+        .then(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    }
+  </script>
+
+</body>
+</html>
