@@ -1,13 +1,23 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using WidgetData.Domain.Entities;
+using WidgetData.Domain.Interfaces;
 
 namespace WidgetData.Infrastructure.Data;
 
 public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+    private readonly ITenantContext? _tenantContext;
 
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ITenantContext? tenantContext = null)
+        : base(options)
+    {
+        _tenantContext = tenantContext;
+    }
+
+    public DbSet<Tenant> Tenants => Set<Tenant>();
+    public DbSet<Page> Pages => Set<Page>();
+    public DbSet<PageWidget> PageWidgets => Set<PageWidget>();
     public DbSet<DataSource> DataSources => Set<DataSource>();
     public DbSet<Widget> Widgets => Set<Widget>();
     public DbSet<WidgetSchedule> WidgetSchedules => Set<WidgetSchedule>();
@@ -31,11 +41,70 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
         base.OnModelCreating(builder);
 
+        // ── Tenant ────────────────────────────────────────────────────────────
+        builder.Entity<Tenant>()
+            .HasIndex(t => t.Slug).IsUnique();
+
+        // ── Page ──────────────────────────────────────────────────────────────
+        builder.Entity<Page>()
+            .HasOne(p => p.Tenant)
+            .WithMany(t => t.Pages)
+            .HasForeignKey(p => p.TenantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<Page>()
+            .HasIndex(p => new { p.TenantId, p.Slug }).IsUnique();
+
+        // ── PageWidget ────────────────────────────────────────────────────────
+        builder.Entity<PageWidget>()
+            .HasOne(pw => pw.Page)
+            .WithMany(p => p.PageWidgets)
+            .HasForeignKey(pw => pw.PageId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<PageWidget>()
+            .HasOne(pw => pw.Widget)
+            .WithMany()
+            .HasForeignKey(pw => pw.WidgetId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // ── ApplicationUser → Tenant ──────────────────────────────────────────
+        builder.Entity<ApplicationUser>()
+            .HasOne(u => u.Tenant)
+            .WithMany(t => t.Users)
+            .HasForeignKey(u => u.TenantId)
+            .OnDelete(DeleteBehavior.SetNull)
+            .IsRequired(false);
+
+        // ── DataSource → Tenant ───────────────────────────────────────────────
+        builder.Entity<DataSource>()
+            .HasOne(d => d.Tenant)
+            .WithMany(t => t.DataSources)
+            .HasForeignKey(d => d.TenantId)
+            .OnDelete(DeleteBehavior.SetNull)
+            .IsRequired(false);
+
+        // ── Widget → Tenant ───────────────────────────────────────────────────
+        builder.Entity<Widget>()
+            .HasOne(w => w.Tenant)
+            .WithMany(t => t.Widgets)
+            .HasForeignKey(w => w.TenantId)
+            .OnDelete(DeleteBehavior.SetNull)
+            .IsRequired(false);
+
         builder.Entity<Widget>()
             .HasOne(w => w.DataSource)
             .WithMany(d => d.Widgets)
             .HasForeignKey(w => w.DataSourceId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // ── WidgetGroup → Tenant ──────────────────────────────────────────────
+        builder.Entity<WidgetGroup>()
+            .HasOne(g => g.Tenant)
+            .WithMany()
+            .HasForeignKey(g => g.TenantId)
+            .OnDelete(DeleteBehavior.SetNull)
+            .IsRequired(false);
 
         builder.Entity<WidgetSchedule>()
             .HasOne(s => s.Widget)
@@ -147,5 +216,36 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .WithMany()
             .HasForeignKey(fs => fs.WidgetId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // ── Global query filters (tenant isolation) ───────────────────────────
+        // Applied only when ITenantContext is available AND not SuperAdmin AND TenantId is set.
+        builder.Entity<Widget>()
+            .HasQueryFilter(w => _tenantContext == null || _tenantContext.IsSuperAdmin
+                || _tenantContext.CurrentTenantId == null
+                || w.TenantId == null
+                || w.TenantId == _tenantContext.CurrentTenantId);
+
+        builder.Entity<DataSource>()
+            .HasQueryFilter(d => _tenantContext == null || _tenantContext.IsSuperAdmin
+                || _tenantContext.CurrentTenantId == null
+                || d.TenantId == null
+                || d.TenantId == _tenantContext.CurrentTenantId);
+
+        builder.Entity<WidgetGroup>()
+            .HasQueryFilter(g => _tenantContext == null || _tenantContext.IsSuperAdmin
+                || _tenantContext.CurrentTenantId == null
+                || g.TenantId == null
+                || g.TenantId == _tenantContext.CurrentTenantId);
+
+        builder.Entity<FormSubmission>()
+            .HasQueryFilter(fs => _tenantContext == null || _tenantContext.IsSuperAdmin
+                || _tenantContext.CurrentTenantId == null
+                || fs.TenantId == null
+                || fs.TenantId == _tenantContext.CurrentTenantId);
+
+        builder.Entity<Page>()
+            .HasQueryFilter(p => _tenantContext == null || _tenantContext.IsSuperAdmin
+                || _tenantContext.CurrentTenantId == null
+                || p.TenantId == _tenantContext.CurrentTenantId);
     }
 }

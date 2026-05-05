@@ -16,8 +16,14 @@ public static class DependencyInjection
     {
         QuestPDF.Settings.License = LicenseType.Community;
 
-        services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlite(configuration.GetConnectionString("DefaultConnection") ?? "Data Source=widgetdata.db"));
+        // ITenantContext is scoped (per-request) – must be registered before DbContext
+        services.AddScoped<TenantContext>();
+        services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
+
+        services.AddDbContext<ApplicationDbContext>((sp, options) =>
+        {
+            options.UseSqlite(configuration.GetConnectionString("DefaultConnection") ?? "Data Source=widgetdata.db");
+        });
 
         services.AddScoped<IWidgetRepository, WidgetRepository>();
         services.AddScoped<IDataSourceRepository, DataSourceRepository>();
@@ -26,6 +32,8 @@ public static class DependencyInjection
         services.AddScoped<IWidgetConfigArchiveRepository, WidgetConfigArchiveRepository>();
         services.AddScoped<IIdeaBoardRepository, IdeaBoardRepository>();
         services.AddScoped<IWidgetActivityRepository, WidgetActivityRepository>();
+        services.AddScoped<ITenantRepository, TenantRepository>();
+        services.AddScoped<IPageRepository, PageRepository>();
 
         services.AddScoped<IWidgetService, WidgetService>();
         services.AddScoped<IDataSourceService, DataSourceService>();
@@ -41,6 +49,8 @@ public static class DependencyInjection
         services.AddScoped<IPageHtmlService, PageHtmlService>();
         services.AddScoped<IWidgetActivityService, WidgetActivityService>();
         services.AddScoped<IFormService, FormService>();
+        services.AddScoped<ITenantService, TenantService>();
+        services.AddScoped<IPageService, PageService>();
 
         services.AddHostedService<InactivityMonitorService>();
 

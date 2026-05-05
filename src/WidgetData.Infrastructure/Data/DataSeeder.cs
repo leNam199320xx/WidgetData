@@ -22,15 +22,50 @@ public class DataSeeder
     {
         await _context.Database.EnsureCreatedAsync();
 
-        string[] roles = { "Admin", "Manager", "Developer", "Viewer" };
+        string[] roles = { "Admin", "Manager", "Developer", "Viewer", "SuperAdmin", "TenantAdmin", "TenantUser" };
         foreach (var role in roles)
         {
             if (!await _roleManager.RoleExistsAsync(role))
                 await _roleManager.CreateAsync(new IdentityRole(role));
         }
 
+        // Ensure demo tenant exists
+        Tenant demoTenant;
+        var existingDemo = await _context.Tenants.FirstOrDefaultAsync(t => t.Slug == "demo");
+        if (existingDemo == null)
+        {
+            demoTenant = new Tenant
+            {
+                Name = "Demo Tenant",
+                Slug = "demo",
+                IsActive = true,
+                Plan = "free",
+                ContactEmail = "demo@widgetdata.com",
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.Tenants.Add(demoTenant);
+            await _context.SaveChangesAsync();
+        }
+        else
+        {
+            demoTenant = existingDemo;
+        }
+
         if (!await _userManager.Users.AnyAsync())
         {
+            var superAdmin = new ApplicationUser
+            {
+                UserName = "superadmin@widgetdata.com",
+                Email = "superadmin@widgetdata.com",
+                DisplayName = "Super Admin",
+                EmailConfirmed = true,
+                IsActive = true,
+                TenantId = null  // SuperAdmin không thuộc tenant nào
+            };
+            var saResult = await _userManager.CreateAsync(superAdmin, "SuperAdmin@123!");
+            if (saResult.Succeeded)
+                await _userManager.AddToRoleAsync(superAdmin, "SuperAdmin");
+
             var admin = new ApplicationUser
             {
                 UserName = "admin@widgetdata.com",
@@ -87,7 +122,8 @@ public class DataSeeder
                 IsActive = true,
                 CreatedBy = "system",
                 LastTestedAt = DateTime.UtcNow,
-                LastTestResult = "Connection successful"
+                LastTestResult = "Connection successful",
+                TenantId = demoTenant.Id
             };
             var dsApi = new DataSource
             {
@@ -99,7 +135,8 @@ public class DataSeeder
                 IsActive = true,
                 CreatedBy = "system",
                 LastTestedAt = DateTime.UtcNow.AddHours(-1),
-                LastTestResult = "Connection successful"
+                LastTestResult = "Connection successful",
+                TenantId = demoTenant.Id
             };
             var dsCourse = new DataSource
             {
@@ -110,7 +147,8 @@ public class DataSeeder
                 IsActive = true,
                 CreatedBy = "system",
                 LastTestedAt = DateTime.UtcNow,
-                LastTestResult = "Connection successful"
+                LastTestResult = "Connection successful",
+                TenantId = demoTenant.Id
             };
             var dsNews = new DataSource
             {
@@ -121,7 +159,8 @@ public class DataSeeder
                 IsActive = true,
                 CreatedBy = "system",
                 LastTestedAt = DateTime.UtcNow,
-                LastTestResult = "Connection successful"
+                LastTestResult = "Connection successful",
+                TenantId = demoTenant.Id
             };
             _context.DataSources.AddRange(dsSales, dsApi, dsCourse, dsNews);
             await _context.SaveChangesAsync();
@@ -132,28 +171,32 @@ public class DataSeeder
                 Name = "Tổng quan doanh thu",
                 Description = "Dashboard tổng quan về doanh thu, đơn hàng và hiệu suất kinh doanh",
                 IsActive = true,
-                CreatedBy = "system"
+                CreatedBy = "system",
+                TenantId = demoTenant.Id
             };
             var grpProducts = new WidgetGroup
             {
                 Name = "Báo cáo sản phẩm",
                 Description = "Phân tích doanh số theo sản phẩm và danh mục",
                 IsActive = true,
-                CreatedBy = "system"
+                CreatedBy = "system",
+                TenantId = demoTenant.Id
             };
             var grpCustomers = new WidgetGroup
             {
                 Name = "Báo cáo khách hàng",
                 Description = "Thống kê khách hàng, doanh thu theo khách hàng",
                 IsActive = true,
-                CreatedBy = "system"
+                CreatedBy = "system",
+                TenantId = demoTenant.Id
             };
             var grpPayments = new WidgetGroup
             {
                 Name = "Báo cáo thanh toán",
                 Description = "Phân tích phương thức thanh toán và trạng thái giao dịch",
                 IsActive = true,
-                CreatedBy = "system"
+                CreatedBy = "system",
+                TenantId = demoTenant.Id
             };
             _context.WidgetGroups.AddRange(grpOverview, grpProducts, grpCustomers, grpPayments);
             await _context.SaveChangesAsync();

@@ -38,6 +38,8 @@ public class AuthResponseDto
     public string Email { get; set; } = string.Empty;
     public string? DisplayName { get; set; }
     public IList<string> Roles { get; set; } = new List<string>();
+    public int? TenantId { get; set; }
+    public string? TenantSlug { get; set; }
 }
 
 public class RefreshTokenRequestDto

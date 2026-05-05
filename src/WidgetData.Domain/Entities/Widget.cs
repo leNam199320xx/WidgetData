@@ -25,6 +25,8 @@ public class Widget
     public string? CreatedBy { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
+    public int? TenantId { get; set; }
+    public Tenant? Tenant { get; set; }
 
     public DataSource DataSource { get; set; } = null!;
     public ICollection<WidgetGroupMember> GroupMembers { get; set; } = new List<WidgetGroupMember>();

@@ -23,6 +23,8 @@ public class DataSource
     public DateTime? UpdatedAt { get; set; }
     public DateTime? LastTestedAt { get; set; }
     public string? LastTestResult { get; set; }
+    public int? TenantId { get; set; }
+    public Tenant? Tenant { get; set; }
 
     public ICollection<Widget> Widgets { get; set; } = new List<Widget>();
 }

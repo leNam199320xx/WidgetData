@@ -12,6 +12,7 @@ public class FormSubmission
     public string? SubmittedBy { get; set; }
     public string? IpAddress { get; set; }
     public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
+    public int? TenantId { get; set; }
 
     public Widget Widget { get; set; } = null!;
 }
