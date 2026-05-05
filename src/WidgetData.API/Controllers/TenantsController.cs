@@ -62,4 +62,27 @@ public class TenantsController : ControllerBase
         var result = await _service.DeleteAsync(id);
         return result ? NoContent() : NotFound();
     }
+
+    // ── User management ────────────────────────────────────────────────────
+
+    /// <summary>Liệt kê tất cả user thuộc tenant.</summary>
+    [HttpGet("{id:int}/users")]
+    public async Task<IActionResult> GetUsers(int id)
+        => Ok(await _service.GetUsersAsync(id));
+
+    /// <summary>Gán user vào tenant với role chỉ định (TenantAdmin hoặc TenantUser).</summary>
+    [HttpPost("{id:int}/users")]
+    public async Task<IActionResult> AssignUser(int id, [FromBody] AssignUserToTenantDto dto)
+    {
+        var result = await _service.AssignUserAsync(id, dto);
+        return result == null ? NotFound() : Ok(result);
+    }
+
+    /// <summary>Gỡ user khỏi tenant (xóa TenantId và role tenant).</summary>
+    [HttpDelete("{id:int}/users/{userId}")]
+    public async Task<IActionResult> RemoveUser(int id, string userId)
+    {
+        var result = await _service.RemoveUserAsync(id, userId);
+        return result ? NoContent() : NotFound();
+    }
 }

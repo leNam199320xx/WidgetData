@@ -130,4 +130,83 @@ public class TenantService : ITenantService
             WidgetCount = widgetCount
         };
     }
+
+    // ── User management ────────────────────────────────────────────────────
+
+    public async Task<IEnumerable<UserDto>> GetUsersAsync(int tenantId)
+    {
+        var tenant = await _repo.GetByIdAsync(tenantId);
+        if (tenant == null) return Enumerable.Empty<UserDto>();
+
+        var users = await _userManager.Users
+            .IgnoreQueryFilters()
+            .Where(u => u.TenantId == tenantId)
+            .ToListAsync();
+
+        var result = new List<UserDto>();
+        foreach (var u in users)
+        {
+            var roles = await _userManager.GetRolesAsync(u);
+            result.Add(MapUserToDto(u, roles));
+        }
+        return result;
+    }
+
+    public async Task<UserDto?> AssignUserAsync(int tenantId, AssignUserToTenantDto dto)
+    {
+        var tenant = await _repo.GetByIdAsync(tenantId);
+        if (tenant == null) return null;
+
+        var user = await _userManager.FindByIdAsync(dto.UserId);
+        if (user == null) return null;
+
+        // Update TenantId
+        user.TenantId = tenantId;
+        await _userManager.UpdateAsync(user);
+
+        // Remove old tenant roles, add new one
+        var oldRoles = (await _userManager.GetRolesAsync(user))
+            .Where(r => r == "TenantAdmin" || r == "TenantUser")
+            .ToList();
+        if (oldRoles.Any())
+            await _userManager.RemoveFromRolesAsync(user, oldRoles);
+
+        var targetRole = dto.Role is "TenantAdmin" or "TenantUser" ? dto.Role : "TenantUser";
+        await _userManager.AddToRoleAsync(user, targetRole);
+
+        var roles = await _userManager.GetRolesAsync(user);
+        return MapUserToDto(user, roles);
+    }
+
+    public async Task<bool> RemoveUserAsync(int tenantId, string userId)
+    {
+        var user = await _userManager.Users
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.Id == userId && u.TenantId == tenantId);
+        if (user == null) return false;
+
+        user.TenantId = null;
+        await _userManager.UpdateAsync(user);
+
+        // Remove tenant-specific roles
+        var tenantRoles = (await _userManager.GetRolesAsync(user))
+            .Where(r => r == "TenantAdmin" || r == "TenantUser")
+            .ToList();
+        if (tenantRoles.Any())
+            await _userManager.RemoveFromRolesAsync(user, tenantRoles);
+
+        return true;
+    }
+
+    private static UserDto MapUserToDto(ApplicationUser u, IList<string> roles) => new()
+    {
+        Id = u.Id,
+        Email = u.Email,
+        DisplayName = u.DisplayName,
+        IsActive = u.IsActive,
+        CreatedAt = u.CreatedAt,
+        LastLoginAt = u.LastLoginAt,
+        Roles = roles,
+        TenantId = u.TenantId
+    };
 }

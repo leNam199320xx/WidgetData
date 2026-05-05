@@ -11,4 +11,9 @@ public interface ITenantService
     Task<TenantDto?> UpdateAsync(int id, UpdateTenantDto dto);
     Task<bool> DeleteAsync(int id);
     Task<AdminStatsDto> GetAdminStatsAsync();
+
+    // User management per tenant
+    Task<IEnumerable<UserDto>> GetUsersAsync(int tenantId);
+    Task<UserDto?> AssignUserAsync(int tenantId, AssignUserToTenantDto dto);
+    Task<bool> RemoveUserAsync(int tenantId, string userId);
 }

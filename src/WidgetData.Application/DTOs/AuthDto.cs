@@ -27,6 +27,10 @@ public class RegisterDto
 
     [StringLength(100)]
     public string? DisplayName { get; set; }
+
+    /// <summary>Nếu cung cấp, user sẽ được gán vào tenant tương ứng với role TenantUser.</summary>
+    [StringLength(100)]
+    public string? TenantSlug { get; set; }
 }
 
 public class AuthResponseDto

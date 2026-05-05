@@ -83,11 +83,23 @@ public class AuthController : ControllerBase
             EmailConfirmed = true,
             IsActive = true
         };
+
+        // Bind user to tenant if tenantSlug provided
+        if (!string.IsNullOrWhiteSpace(dto.TenantSlug))
+        {
+            var tenant = await _context.Tenants
+                .FirstOrDefaultAsync(t => t.Slug == dto.TenantSlug && t.IsActive);
+            if (tenant == null)
+                return BadRequest(new { message = "Tenant không tồn tại hoặc không hoạt động." });
+            user.TenantId = tenant.Id;
+        }
+
         var result = await _userManager.CreateAsync(user, dto.Password);
         if (!result.Succeeded)
             return BadRequest(result.Errors);
 
-        await _userManager.AddToRoleAsync(user, "Viewer");
+        var role = user.TenantId.HasValue ? "TenantUser" : "Viewer";
+        await _userManager.AddToRoleAsync(user, role);
         return Ok(new { message = "User registered successfully" });
     }
 

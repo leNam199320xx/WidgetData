@@ -962,6 +962,116 @@ public class DataSeeder
             }
             _context.WidgetExecutions.AddRange(newsExecs);
             await _context.SaveChangesAsync();
+
+            // ── Demo Pages ────────────────────────────────────────────────────
+            await SeedDemoPagesAsync(demoTenant.Id);
         }
+    }
+
+    private async Task SeedDemoPagesAsync(int demoTenantId)
+    {
+        if (await _context.Pages.IgnoreQueryFilters().AnyAsync(p => p.TenantId == demoTenantId))
+            return;
+
+        // Sales demo page
+        var salesPage = new Page
+        {
+            TenantId = demoTenantId,
+            Title = "Cửa hàng - Sales Dashboard",
+            Slug = "sales",
+            Description = "Dashboard tổng quan bán hàng: doanh thu, đơn hàng, khách hàng và thanh toán",
+            IsActive = true,
+            CreatedBy = "system"
+        };
+        _context.Pages.Add(salesPage);
+        await _context.SaveChangesAsync();
+
+        var salesWidgetNames = new[]
+        {
+            "total_revenue_metric", "total_orders_metric", "avg_order_value_metric",
+            "total_customers_metric", "monthly_revenue_trend", "revenue_by_category_chart",
+            "order_status_summary", "recent_orders_table"
+        };
+        var salesWidgets = await _context.Widgets.IgnoreQueryFilters()
+            .Where(w => salesWidgetNames.Contains(w.Name))
+            .OrderBy(w => Array.IndexOf(salesWidgetNames, w.Name))
+            .ToListAsync();
+        for (int i = 0; i < salesWidgets.Count; i++)
+            _context.PageWidgets.Add(new PageWidget
+            {
+                PageId = salesPage.Id,
+                WidgetId = salesWidgets[i].Id,
+                Position = i,
+                Width = i < 4 ? 3 : 6
+            });
+        await _context.SaveChangesAsync();
+
+        // Course demo page
+        var coursePage = new Page
+        {
+            TenantId = demoTenantId,
+            Title = "EduViet - Learning Dashboard",
+            Slug = "course",
+            Description = "Dashboard theo dõi khóa học, học viên và doanh thu nền tảng học trực tuyến",
+            IsActive = true,
+            CreatedBy = "system"
+        };
+        _context.Pages.Add(coursePage);
+        await _context.SaveChangesAsync();
+
+        var courseWidgetNames = new[]
+        {
+            "course_enrollments_today", "course_active_courses_count",
+            "course_completion_rate", "course_revenue_today",
+            "course_enrollments_by_category", "course_popular_courses",
+            "course_completion_progress_chart", "course_recent_student_activity"
+        };
+        var courseWidgets = await _context.Widgets.IgnoreQueryFilters()
+            .Where(w => courseWidgetNames.Contains(w.Name))
+            .OrderBy(w => Array.IndexOf(courseWidgetNames, w.Name))
+            .ToListAsync();
+        for (int i = 0; i < courseWidgets.Count; i++)
+            _context.PageWidgets.Add(new PageWidget
+            {
+                PageId = coursePage.Id,
+                WidgetId = courseWidgets[i].Id,
+                Position = i,
+                Width = i < 4 ? 3 : 6
+            });
+        await _context.SaveChangesAsync();
+
+        // News demo page
+        var newsPage = new Page
+        {
+            TenantId = demoTenantId,
+            Title = "VietNews - News Analytics",
+            Slug = "news",
+            Description = "Dashboard phân tích tin tức: lượt xem, bài viết, độc giả và tác giả",
+            IsActive = true,
+            CreatedBy = "system"
+        };
+        _context.Pages.Add(newsPage);
+        await _context.SaveChangesAsync();
+
+        var newsWidgetNames = new[]
+        {
+            "news_total_views_today", "news_articles_published_today",
+            "news_new_readers_today", "news_read_completion_rate",
+            "news_views_by_category", "news_popular_articles_week",
+            "news_traffic_sources", "news_recent_reader_activity"
+        };
+        var newsWidgets = await _context.Widgets.IgnoreQueryFilters()
+            .Where(w => newsWidgetNames.Contains(w.Name))
+            .OrderBy(w => Array.IndexOf(newsWidgetNames, w.Name))
+            .ToListAsync();
+        for (int i = 0; i < newsWidgets.Count; i++)
+            _context.PageWidgets.Add(new PageWidget
+            {
+                PageId = newsPage.Id,
+                WidgetId = newsWidgets[i].Id,
+                Position = i,
+                Width = i < 4 ? 3 : 6
+            });
+        await _context.SaveChangesAsync();
     }
 }

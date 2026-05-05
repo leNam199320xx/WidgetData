@@ -11,10 +11,12 @@ namespace WidgetData.Infrastructure.Services;
 public class DataSourceService : IDataSourceService
 {
     private readonly IDataSourceRepository _repo;
+    private readonly ITenantContext? _tenantContext;
 
-    public DataSourceService(IDataSourceRepository repo)
+    public DataSourceService(IDataSourceRepository repo, ITenantContext? tenantContext = null)
     {
         _repo = repo;
+        _tenantContext = tenantContext;
     }
 
     public async Task<IEnumerable<DataSourceDto>> GetAllAsync()
@@ -45,7 +47,8 @@ public class DataSourceService : IDataSourceService
             ApiEndpoint = dto.ApiEndpoint,
             ApiKey = dto.ApiKey,
             AdditionalConfig = dto.AdditionalConfig,
-            CreatedBy = userId
+            CreatedBy = userId,
+            TenantId = _tenantContext?.CurrentTenantId
         };
         var created = await _repo.CreateAsync(entity);
         return MapToDto(created);
