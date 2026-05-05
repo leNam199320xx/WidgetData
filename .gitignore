@@ -60,6 +60,9 @@ Thumbs.db
 *.db-shm
 *.db-wal
 
+# Allow seeded demo databases in data/
+!data/*.db
+
 # Logs
 *.log
 logs/
