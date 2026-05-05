@@ -312,7 +312,7 @@ CREATE INDEX IF NOT EXISTS idx_comments_article     ON comments(article_id);
             pars["@aut"].Value = auth;
             pars["@tit"].Value = title;
             pars["@slu"].Value = $"bai-{idx:D4}-{cat}-{daysAgo}";
-            pars["@exc"].Value = $"{title.Substring(0, Math.Min(80, title.Length))}...";
+            pars["@exc"].Value = $"{title[..Math.Min(80, title.Length)]}...";
             pars["@wrd"].Value = words;
             pars["@fea"].Value = featured;
             pars["@vie"].Value = views;

@@ -342,13 +342,24 @@ CREATE INDEX IF NOT EXISTS idx_courses_category ON courses(category_id);
             ["@ago"]  = cmd.Parameters.Add("@ago",  SqliteType.Integer),
         };
 
+        string[] descTemplates =
+        [
+            "Khóa học {0} — kiến thức từ cơ bản đến nâng cao, áp dụng ngay vào thực tế với {1} bài học thực hành.",
+            "Nắm vững {0} qua {1} bài giảng video chất lượng cao, bài tập và dự án thực tế từ chuyên gia hàng đầu.",
+            "Lộ trình học {0} được thiết kế bài bản: {1} bài học, dự án cuối khóa và chứng chỉ hoàn thành.",
+            "Từ người mới đến chuyên nghiệp với {0} — {1} bài học thực chiến, hỗ trợ 1:1 từ giảng viên.",
+            "Khám phá {0} toàn diện qua {1} bài học video, quiz kiểm tra và tài liệu đi kèm chi tiết.",
+        ];
+
+        int descIdx = 0;
         foreach (var (cat, ins, title, slug, level, price, origPrice, dur, lessons, featured, rating, ratings, enrollments, daysAgo) in courses)
         {
             p["@cat"].Value  = cat;
             p["@ins"].Value  = ins;
             p["@tit"].Value  = title;
             p["@slu"].Value  = slug;
-            p["@desc"].Value = $"Khóa học {title} — cung cấp kiến thức thực chiến cho người học.";
+            p["@desc"].Value = string.Format(descTemplates[descIdx % descTemplates.Length], title, lessons);
+            descIdx++;
             p["@lev"].Value  = level;
             p["@pri"].Value  = price;
             p["@ori"].Value  = origPrice;

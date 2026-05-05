@@ -631,7 +631,7 @@ public class DataSeeder
                 WidgetType = WidgetType.Metric,
                 Description = "KPI: tỷ lệ hoàn thành khóa học (%)",
                 DataSourceId = dsCourse.Id,
-                Configuration = "{\"query\": \"SELECT ROUND(100.0 * COUNT(CASE WHEN status='completed' THEN 1 END) / MAX(COUNT(*), 1), 1) as value FROM enrollments\", \"label\": \"Tỷ lệ hoàn thành (%)\", \"format\": \"percent\"}",
+                Configuration = "{\"query\": \"SELECT ROUND(100.0 * SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0), 1) as value FROM enrollments\", \"label\": \"Tỷ lệ hoàn thành (%)\", \"format\": \"percent\"}",
                 IsActive = true, CacheEnabled = true, CacheTtlMinutes = 30, CreatedBy = "system",
                 LastExecutedAt = DateTime.UtcNow.AddMinutes(-10), LastRowCount = 1
             };
