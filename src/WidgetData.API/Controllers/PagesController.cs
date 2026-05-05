@@ -158,7 +158,7 @@ public class PagesController : ControllerBase
     private bool CanManagePage(PageDto page)
     {
         if (_tenantContext.IsSuperAdmin) return true;
-        return !_tenantContext.CurrentTenantId.HasValue
-            || page.TenantId == _tenantContext.CurrentTenantId.Value;
+        return _tenantContext.CurrentTenantId.HasValue
+            && page.TenantId == _tenantContext.CurrentTenantId.Value;
     }
 }
