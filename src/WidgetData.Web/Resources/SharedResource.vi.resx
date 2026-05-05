@@ -726,4 +726,31 @@
   <data name="Del_Running" xml:space="preserve">
     <value>&#x23F3; Đang chạy</value>
   </data>
+  <data name="Nav_Pages" xml:space="preserve">
+    <value>Trang</value>
+  </data>
+  <data name="Nav_Admin" xml:space="preserve">
+    <value>Quản trị hệ thống</value>
+  </data>
+  <data name="Nav_Tenants" xml:space="preserve">
+    <value>Quản lý Tenant</value>
+  </data>
+  <data name="Pages_Title" xml:space="preserve">
+    <value>Danh sách trang</value>
+  </data>
+  <data name="Pages_AddPage" xml:space="preserve">
+    <value>Thêm trang</value>
+  </data>
+  <data name="Pages_EditPage" xml:space="preserve">
+    <value>Sửa trang</value>
+  </data>
+  <data name="Pages_Slug" xml:space="preserve">
+    <value>Slug (đường dẫn URL)</value>
+  </data>
+  <data name="Admin_Title" xml:space="preserve">
+    <value>Quản trị hệ thống</value>
+  </data>
+  <data name="Admin_Tenants" xml:space="preserve">
+    <value>Quản lý Tenant</value>
+  </data>
 </root>

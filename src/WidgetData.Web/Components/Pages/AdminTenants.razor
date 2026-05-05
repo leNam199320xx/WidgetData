@@ -1,0 +1,161 @@
+@page "/admin/tenants"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@inject WidgetData.Web.Services.ApiService ApiService
+@inject ISnackbar Snackbar
+@inject IStringLocalizer<SharedResource> L
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "SuperAdmin")]
+
+<PageTitle>@L["Nav_Tenants"] - WidgetData</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">@L["Admin_Tenants"]</MudText>
+
+@if (_showForm)
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="3">
+        <MudText Typo="Typo.h6" Class="mb-3">@(_editingId == null ? "Thêm Tenant mới" : "Sửa Tenant")</MudText>
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_form.Name" Label="Tên tenant" Required="true" Variant="Variant.Outlined" />
+            </MudItem>
+            @if (_editingId == null)
+            {
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="_form.Slug" Label="Slug" Required="true" Variant="Variant.Outlined"
+                                  HelperText="Chỉ dùng chữ thường, số, dấu gạch ngang. VD: my-company" />
+                </MudItem>
+            }
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_form.ContactEmail" Label="Email liên hệ" Variant="Variant.Outlined"
+                              InputType="InputType.Email" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_form.Plan" Label="Gói dịch vụ" Variant="Variant.Outlined"
+                              HelperText="free / starter / pro / enterprise" />
+            </MudItem>
+            @if (_editingId != null)
+            {
+                <MudItem xs="12" sm="4">
+                    <MudSwitch @bind-Value="_formUpdate.IsActive" Label="Đang hoạt động" Color="Color.Success" />
+                </MudItem>
+            }
+        </MudGrid>
+        <MudStack Row="true" Class="mt-3">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveTenant">@L["Save"]</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="CancelForm">@L["Cancel"]</MudButton>
+        </MudStack>
+    </MudPaper>
+}
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+           OnClick="ShowAddForm" Class="mb-3">Thêm Tenant</MudButton>
+
+@if (_tenants == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else if (!_tenants.Any())
+{
+    <MudAlert Severity="Severity.Info">Chưa có tenant nào.</MudAlert>
+}
+else
+{
+    <MudTable Items="_tenants" Dense="true" Hover="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Tên</MudTh>
+            <MudTh>Slug</MudTh>
+            <MudTh>Plan</MudTh>
+            <MudTh>Email</MudTh>
+            <MudTh>Trạng thái</MudTh>
+            <MudTh>Users</MudTh>
+            <MudTh>Trang</MudTh>
+            <MudTh>Widget</MudTh>
+            <MudTh>Ngày tạo</MudTh>
+            <MudTh>Thao tác</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.Name</MudTd>
+            <MudTd><MudChip T="string" Size="Size.Small">@context.Slug</MudChip></MudTd>
+            <MudTd>@context.Plan</MudTd>
+            <MudTd>@context.ContactEmail</MudTd>
+            <MudTd>
+                <MudChip T="string" Size="Size.Small" Color="@(context.IsActive ? Color.Success : Color.Default)">
+                    @(context.IsActive ? "Active" : "Inactive")
+                </MudChip>
+            </MudTd>
+            <MudTd>@context.UserCount</MudTd>
+            <MudTd>@context.PageCount</MudTd>
+            <MudTd>@context.WidgetCount</MudTd>
+            <MudTd>@context.CreatedAt.ToString("dd/MM/yyyy")</MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                               OnClick="() => ShowEditForm(context)" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                               OnClick="() => DeleteTenant(context.Id)" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    List<TenantDto>? _tenants;
+    bool _showForm;
+    int? _editingId;
+    CreateTenantDto _form = new();
+    UpdateTenantDto _formUpdate = new() { IsActive = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTenants();
+    }
+
+    async Task LoadTenants()
+    {
+        _tenants = (await ApiService.GetTenantsAsync())?.ToList();
+    }
+
+    void ShowAddForm()
+    {
+        _editingId = null;
+        _form = new CreateTenantDto();
+        _formUpdate = new UpdateTenantDto { IsActive = true };
+        _showForm = true;
+    }
+
+    void ShowEditForm(TenantDto t)
+    {
+        _editingId = t.Id;
+        _form = new CreateTenantDto { Name = t.Name, Slug = t.Slug, Plan = t.Plan, ContactEmail = t.ContactEmail };
+        _formUpdate = new UpdateTenantDto { Name = t.Name, Plan = t.Plan, ContactEmail = t.ContactEmail, IsActive = t.IsActive };
+        _showForm = true;
+    }
+
+    void CancelForm() => _showForm = false;
+
+    async Task SaveTenant()
+    {
+        try
+        {
+            if (_editingId == null)
+                await ApiService.CreateTenantAsync(_form);
+            else
+                await ApiService.UpdateTenantAsync(_editingId.Value, _formUpdate);
+
+            _showForm = false;
+            await LoadTenants();
+            Snackbar.Add("Đã lưu tenant", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Lỗi: " + ex.Message, Severity.Error);
+        }
+    }
+
+    async Task DeleteTenant(int id)
+    {
+        await ApiService.DeleteTenantAsync(id);
+        await LoadTenants();
+        Snackbar.Add("Đã xóa tenant", Severity.Success);
+    }
+}

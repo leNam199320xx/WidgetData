@@ -726,4 +726,31 @@
   <data name="Del_Running" xml:space="preserve">
     <value>&#x23F3; Running</value>
   </data>
+  <data name="Nav_Pages" xml:space="preserve">
+    <value>Pages</value>
+  </data>
+  <data name="Nav_Admin" xml:space="preserve">
+    <value>Admin</value>
+  </data>
+  <data name="Nav_Tenants" xml:space="preserve">
+    <value>Tenants</value>
+  </data>
+  <data name="Pages_Title" xml:space="preserve">
+    <value>Pages</value>
+  </data>
+  <data name="Pages_AddPage" xml:space="preserve">
+    <value>Add Page</value>
+  </data>
+  <data name="Pages_EditPage" xml:space="preserve">
+    <value>Edit Page</value>
+  </data>
+  <data name="Pages_Slug" xml:space="preserve">
+    <value>Slug (URL path)</value>
+  </data>
+  <data name="Admin_Title" xml:space="preserve">
+    <value>System Admin</value>
+  </data>
+  <data name="Admin_Tenants" xml:space="preserve">
+    <value>Tenant Management</value>
+  </data>
 </root>

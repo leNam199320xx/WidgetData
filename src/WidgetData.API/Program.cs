@@ -75,6 +75,12 @@ try
             else
                 throw new InvalidOperationException("CorsSettings:AllowedOrigins must be configured in non-development environments.");
         });
+
+        // Policy mở cho embed widget từ bất kỳ origin nào
+        options.AddPolicy("WidgetEmbed", policy =>
+        {
+            policy.AllowAnyOrigin().AllowAnyHeader().WithMethods("GET", "POST");
+        });
     });
 
     builder.Services.AddHealthChecks();
@@ -131,6 +137,7 @@ try
     app.UseRateLimiter();
     app.UseAuthentication();
     app.UseAuthorization();
+    app.UseMiddleware<TenantContextMiddleware>();
     app.UseMiddleware<WidgetActivityMiddleware>();
     app.MapControllers();
     app.MapHealthChecks("/health");

@@ -1,10 +1,13 @@
 @using MudBlazor
 @inject NavigationManager Nav
 @inject IStringLocalizer<SharedResource> L
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
 
 <MudNavMenu>
     <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">@L["Nav_Dashboard"]</MudNavLink>
     <MudNavLink Href="/reports" Icon="@Icons.Material.Filled.Assessment">@L["Nav_Reports"]</MudNavLink>
+    <MudNavLink Href="/site-pages" Icon="@Icons.Material.Filled.WebAsset">@L["Nav_Pages"]</MudNavLink>
     <MudNavLink Href="/pages" Icon="@Icons.Material.Filled.GridView">@L["Nav_DashboardPages"]</MudNavLink>
     <MudNavLink Href="/widgets" Icon="@Icons.Material.Filled.Widgets">@L["Nav_Widgets"]</MudNavLink>
     <MudNavLink Href="/widget-groups" Icon="@Icons.Material.Filled.FolderSpecial">@L["Nav_WidgetGroups"]</MudNavLink>
@@ -14,4 +17,12 @@
     <MudNavLink Href="/deliveries" Icon="@Icons.Material.Filled.Send">@L["Nav_DeliveryHistory"]</MudNavLink>
     <MudNavLink Href="/users" Icon="@Icons.Material.Filled.People">@L["Nav_Users"]</MudNavLink>
     <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings">@L["Nav_Settings"]</MudNavLink>
+    <AuthorizeView Roles="SuperAdmin">
+        <Authorized>
+            <MudNavGroup Title="@L["Nav_Admin"]" Icon="@Icons.Material.Filled.AdminPanelSettings">
+                <MudNavLink Href="/admin" Icon="@Icons.Material.Filled.Dashboard">@L["Admin_Title"]</MudNavLink>
+                <MudNavLink Href="/admin/tenants" Icon="@Icons.Material.Filled.Business">@L["Nav_Tenants"]</MudNavLink>
+            </MudNavGroup>
+        </Authorized>
+    </AuthorizeView>
 </MudNavMenu>
