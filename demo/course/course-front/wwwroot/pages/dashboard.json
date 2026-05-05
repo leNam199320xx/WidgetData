@@ -5,49 +5,49 @@
   "auth": { "required": true },
   "widgets": [
     {
-      "id": 1,
+      "id": 20,
       "title": "Tổng đăng ký mới hôm nay",
       "colSpan": 1,
       "autoRefreshSeconds": 60
     },
     {
-      "id": 2,
+      "id": 21,
       "title": "Khóa học đang hoạt động",
       "colSpan": 1,
       "autoRefreshSeconds": 120
     },
     {
-      "id": 3,
+      "id": 22,
       "title": "Tỷ lệ hoàn thành",
       "colSpan": 1,
       "autoRefreshSeconds": 120
     },
     {
-      "id": 4,
+      "id": 23,
       "title": "Doanh thu hôm nay",
       "colSpan": 1,
       "autoRefreshSeconds": 120
     },
     {
-      "id": 5,
+      "id": 24,
       "title": "Đăng ký theo danh mục",
       "colSpan": 2,
       "autoRefreshSeconds": 300
     },
     {
-      "id": 6,
+      "id": 25,
       "title": "Khóa học phổ biến nhất",
       "colSpan": 2,
       "autoRefreshSeconds": 300
     },
     {
-      "id": 14,
+      "id": 27,
       "title": "Hoạt động học viên gần đây",
       "colSpan": 3,
       "autoRefreshSeconds": 30
     },
     {
-      "id": 7,
+      "id": 26,
       "title": "Tiến độ hoàn thành",
       "colSpan": 1,
       "autoRefreshSeconds": 60

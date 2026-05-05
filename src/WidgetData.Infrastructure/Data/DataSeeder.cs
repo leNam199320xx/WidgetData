@@ -68,9 +68,13 @@ public class DataSeeder
                 await _userManager.AddToRoleAsync(dev, "Developer");
         }
 
-        // Ensure sales.db exists
-        var salesDbPath = Path.Combine(AppContext.BaseDirectory, "sales.db");
+        // Ensure SQLite demo databases exist
+        var salesDbPath  = Path.Combine(AppContext.BaseDirectory, "sales.db");
+        var courseDbPath = Path.Combine(AppContext.BaseDirectory, "course.db");
+        var newsDbPath   = Path.Combine(AppContext.BaseDirectory, "news.db");
         SalesDataSeeder.EnsureSalesDatabase(salesDbPath);
+        CourseDataSeeder.EnsureCourseDatabase(courseDbPath);
+        NewsDataSeeder.EnsureNewsDatabase(newsDbPath);
 
         if (!await _context.DataSources.AnyAsync())
         {
@@ -97,7 +101,29 @@ public class DataSeeder
                 LastTestedAt = DateTime.UtcNow.AddHours(-1),
                 LastTestResult = "Connection successful"
             };
-            _context.DataSources.AddRange(dsSales, dsApi);
+            var dsCourse = new DataSource
+            {
+                Name = "EduViet - Course DB",
+                SourceType = DataSourceType.SQLite,
+                Description = "Cơ sở dữ liệu SQLite cho nền tảng học trực tuyến EduViet: khóa học, học viên, đăng ký, thanh toán",
+                ConnectionString = $"Data Source={courseDbPath}",
+                IsActive = true,
+                CreatedBy = "system",
+                LastTestedAt = DateTime.UtcNow,
+                LastTestResult = "Connection successful"
+            };
+            var dsNews = new DataSource
+            {
+                Name = "VietNews - News DB",
+                SourceType = DataSourceType.SQLite,
+                Description = "Cơ sở dữ liệu SQLite cho cổng tin tức VietNews: bài viết, độc giả, lượt xem, bình luận",
+                ConnectionString = $"Data Source={newsDbPath}",
+                IsActive = true,
+                CreatedBy = "system",
+                LastTestedAt = DateTime.UtcNow,
+                LastTestResult = "Connection successful"
+            };
+            _context.DataSources.AddRange(dsSales, dsApi, dsCourse, dsNews);
             await _context.SaveChangesAsync();
 
             // --- Widget Groups (Report Pages) ---
@@ -560,6 +586,338 @@ public class DataSeeder
                 new IdeaResult { IdeaPostId = ideaPost1.Id, IdeaSubscriptionId = ideaSub.Id, ResultContent = "{\"status\":\"acknowledged\",\"assignedTo\":\"dev@widgetdata.com\",\"note\":\"Sẽ triển khai bộ lọc giá trong sprint Q3-2026\"}", Status = "Processed", CreatedAt = DateTime.UtcNow.AddDays(-8) },
                 new IdeaResult { IdeaPostId = ideaPost3.Id, IdeaSubscriptionId = ideaSub.Id, ResultContent = "{\"status\":\"acknowledged\",\"note\":\"Đã ghi nhận, sẽ thêm conditional formatting trong UI update tháng 6\"}", Status = "Received", CreatedAt = DateTime.UtcNow.AddDays(-2) }
             );
+            await _context.SaveChangesAsync();
+
+            // ── EduViet Course Demo — Widget Group & Widgets ──────────────────
+            var grpCourse = new WidgetGroup
+            {
+                Name = "Phân tích học tập — EduViet",
+                Description = "Dashboard theo dõi đăng ký khóa học, tiến độ học viên và doanh thu nền tảng học trực tuyến",
+                IsActive = true,
+                CreatedBy = "system"
+            };
+            _context.WidgetGroups.Add(grpCourse);
+            await _context.SaveChangesAsync();
+
+            var wCEnrollToday = new Widget
+            {
+                Name = "course_enrollments_today",
+                FriendlyLabel = "Đăng ký mới hôm nay",
+                HelpText = "Tổng số học viên đăng ký mới trong ngày hôm nay",
+                WidgetType = WidgetType.Metric,
+                Description = "KPI: số đăng ký mới trong ngày",
+                DataSourceId = dsCourse.Id,
+                Configuration = "{\"query\": \"SELECT COUNT(*) as value FROM enrollments WHERE date(enrolled_at) = date('now')\", \"label\": \"Đăng ký mới\", \"format\": \"number\"}",
+                IsActive = true, CacheEnabled = false, CacheTtlMinutes = 5, CreatedBy = "system",
+                LastExecutedAt = DateTime.UtcNow.AddMinutes(-5), LastRowCount = 1
+            };
+            var wCActiveCourses = new Widget
+            {
+                Name = "course_active_courses_count",
+                FriendlyLabel = "Khóa học đang hoạt động",
+                HelpText = "Số lượng khóa học đang được phát hành và có học viên",
+                WidgetType = WidgetType.Metric,
+                Description = "KPI: tổng khóa học đang active",
+                DataSourceId = dsCourse.Id,
+                Configuration = "{\"query\": \"SELECT COUNT(*) as value FROM courses WHERE is_published = 1\", \"label\": \"Khóa học\", \"format\": \"number\"}",
+                IsActive = true, CacheEnabled = true, CacheTtlMinutes = 60, CreatedBy = "system",
+                LastExecutedAt = DateTime.UtcNow.AddMinutes(-10), LastRowCount = 1
+            };
+            var wCCompletionRate = new Widget
+            {
+                Name = "course_completion_rate",
+                FriendlyLabel = "Tỷ lệ hoàn thành",
+                HelpText = "Phần trăm học viên đã hoàn thành khóa học so với tổng đăng ký",
+                WidgetType = WidgetType.Metric,
+                Description = "KPI: tỷ lệ hoàn thành khóa học (%)",
+                DataSourceId = dsCourse.Id,
+                Configuration = "{\"query\": \"SELECT ROUND(100.0 * COUNT(CASE WHEN status='completed' THEN 1 END) / MAX(COUNT(*), 1), 1) as value FROM enrollments\", \"label\": \"Tỷ lệ hoàn thành (%)\", \"format\": \"percent\"}",
+                IsActive = true, CacheEnabled = true, CacheTtlMinutes = 30, CreatedBy = "system",
+                LastExecutedAt = DateTime.UtcNow.AddMinutes(-10), LastRowCount = 1
+            };
+            var wCTodayRevenue = new Widget
+            {
+                Name = "course_revenue_today",
+                FriendlyLabel = "Doanh thu hôm nay",
+                HelpText = "Tổng doanh thu từ thanh toán khóa học trong ngày hôm nay",
+                WidgetType = WidgetType.Metric,
+                Description = "KPI: doanh thu khóa học trong ngày",
+                DataSourceId = dsCourse.Id,
+                Configuration = "{\"query\": \"SELECT COALESCE(ROUND(SUM(amount), 0), 0) as value FROM course_payments WHERE status='success' AND date(paid_at) = date('now')\", \"label\": \"Doanh thu hôm nay (VNĐ)\", \"format\": \"currency\"}",
+                IsActive = true, CacheEnabled = false, CacheTtlMinutes = 5, CreatedBy = "system",
+                LastExecutedAt = DateTime.UtcNow.AddMinutes(-5), LastRowCount = 1
+            };
+            var wCEnrollByCategory = new Widget
+            {
+                Name = "course_enrollments_by_category",
+                FriendlyLabel = "Đăng ký theo danh mục",
+                HelpText = "Biểu đồ cột số lượng đăng ký theo danh mục khóa học",
+                WidgetType = WidgetType.Chart,
+                Description = "Bar chart đăng ký theo danh mục",
+                DataSourceId = dsCourse.Id,
+                Configuration = "{\"query\": \"SELECT c.name as category, COUNT(e.id) as enrollments FROM enrollments e JOIN courses co ON e.course_id=co.id JOIN categories c ON co.category_id=c.id GROUP BY c.name ORDER BY enrollments DESC\", \"xAxis\": \"category\", \"yAxis\": \"enrollments\"}",
+                ChartConfig = "{\"type\": \"Bar\", \"xAxis\": \"category\", \"yAxis\": \"enrollments\", \"seriesLabel\": \"Số đăng ký\"}",
+                IsActive = true, CacheEnabled = true, CacheTtlMinutes = 30, CreatedBy = "system",
+                LastExecutedAt = DateTime.UtcNow.AddMinutes(-10), LastRowCount = 8
+            };
+            var wCPopularCourses = new Widget
+            {
+                Name = "course_popular_courses",
+                FriendlyLabel = "Khóa học phổ biến nhất",
+                HelpText = "Top 10 khóa học có nhiều học viên đăng ký nhất",
+                WidgetType = WidgetType.Table,
+                Description = "Bảng top khóa học theo số đăng ký",
+                DataSourceId = dsCourse.Id,
+                Configuration = "{\"query\": \"SELECT co.title as 'Khóa học', i.full_name as 'Giảng viên', ROUND(co.rating, 1) as 'Đánh giá', co.total_enrollments as 'Học viên', ROUND(co.price, 0) as 'Học phí' FROM courses co JOIN instructors i ON co.instructor_id=i.id WHERE co.is_published=1 ORDER BY co.total_enrollments DESC LIMIT 10\"}",
+                IsActive = true, CacheEnabled = true, CacheTtlMinutes = 30, CreatedBy = "system",
+                LastExecutedAt = DateTime.UtcNow.AddMinutes(-10), LastRowCount = 10
+            };
+            var wCProgressChart = new Widget
+            {
+                Name = "course_completion_progress_chart",
+                FriendlyLabel = "Tiến độ hoàn thành",
+                HelpText = "Biểu đồ tròn phân bổ trạng thái tiến độ học viên",
+                WidgetType = WidgetType.Chart,
+                Description = "Pie chart trạng thái đăng ký",
+                DataSourceId = dsCourse.Id,
+                Configuration = "{\"query\": \"SELECT CASE status WHEN 'completed' THEN 'Hoàn thành' WHEN 'active' THEN 'Đang học' WHEN 'paused' THEN 'Tạm dừng' ELSE status END as label, COUNT(*) as value FROM enrollments GROUP BY status ORDER BY value DESC\", \"xAxis\": \"label\", \"yAxis\": \"value\"}",
+                ChartConfig = "{\"type\": \"Donut\", \"xAxis\": \"label\", \"yAxis\": \"value\", \"seriesLabel\": \"Học viên\"}",
+                IsActive = true, CacheEnabled = true, CacheTtlMinutes = 30, CreatedBy = "system",
+                LastExecutedAt = DateTime.UtcNow.AddMinutes(-10), LastRowCount = 3
+            };
+            var wCRecentActivity = new Widget
+            {
+                Name = "course_recent_student_activity",
+                FriendlyLabel = "Hoạt động học viên gần đây",
+                HelpText = "20 lượt đăng ký khóa học mới nhất trong hệ thống",
+                WidgetType = WidgetType.Table,
+                Description = "Bảng hoạt động học viên gần đây",
+                DataSourceId = dsCourse.Id,
+                Configuration = "{\"query\": \"SELECT s.full_name as 'Học viên', co.title as 'Khóa học', ROUND(e.progress_percent, 0) as 'Tiến độ %', e.status as 'Trạng thái', strftime('%d/%m/%Y', e.enrolled_at) as 'Ngày đăng ký' FROM enrollments e JOIN students s ON e.student_id=s.id JOIN courses co ON e.course_id=co.id ORDER BY e.enrolled_at DESC LIMIT 20\"}",
+                IsActive = true, CacheEnabled = false, CacheTtlMinutes = 5, CreatedBy = "system",
+                LastExecutedAt = DateTime.UtcNow.AddMinutes(-5), LastRowCount = 20
+            };
+            var wCMonthlyRevenue = new Widget
+            {
+                Name = "course_monthly_revenue_trend",
+                FriendlyLabel = "Doanh thu theo tháng",
+                HelpText = "Biểu đồ đường doanh thu khóa học 12 tháng gần nhất",
+                WidgetType = WidgetType.Chart,
+                Description = "Line chart doanh thu theo tháng",
+                DataSourceId = dsCourse.Id,
+                Configuration = "{\"query\": \"SELECT strftime('%Y-%m', paid_at) as month, ROUND(SUM(amount), 0) as revenue FROM course_payments WHERE status='success' AND paid_at >= date('now','-12 months') GROUP BY strftime('%Y-%m', paid_at) ORDER BY month ASC\", \"xAxis\": \"month\", \"yAxis\": \"revenue\"}",
+                ChartConfig = "{\"type\": \"Line\", \"xAxis\": \"month\", \"yAxis\": \"revenue\", \"seriesLabel\": \"Doanh thu\"}",
+                IsActive = true, CacheEnabled = true, CacheTtlMinutes = 60, CreatedBy = "system",
+                LastExecutedAt = DateTime.UtcNow.AddMinutes(-10), LastRowCount = 12
+            };
+            var wCTopInstructors = new Widget
+            {
+                Name = "course_top_instructors",
+                FriendlyLabel = "Top giảng viên",
+                HelpText = "Danh sách giảng viên có nhiều học viên và đánh giá cao nhất",
+                WidgetType = WidgetType.Table,
+                Description = "Bảng top giảng viên theo số học viên",
+                DataSourceId = dsCourse.Id,
+                Configuration = "{\"query\": \"SELECT i.full_name as 'Giảng viên', i.specialization as 'Chuyên môn', i.total_courses as 'Số khóa', i.total_students as 'Học viên', ROUND(i.rating, 1) as 'Đánh giá' FROM instructors i WHERE i.is_active=1 ORDER BY i.total_students DESC LIMIT 10\"}",
+                IsActive = true, CacheEnabled = true, CacheTtlMinutes = 60, CreatedBy = "system",
+                LastExecutedAt = DateTime.UtcNow.AddMinutes(-10), LastRowCount = 10
+            };
+
+            var allCourseWidgets = new[]
+            {
+                wCEnrollToday, wCActiveCourses, wCCompletionRate, wCTodayRevenue,
+                wCEnrollByCategory, wCPopularCourses, wCProgressChart, wCRecentActivity,
+                wCMonthlyRevenue, wCTopInstructors
+            };
+            _context.Widgets.AddRange(allCourseWidgets);
+            await _context.SaveChangesAsync();
+
+            foreach (var w in allCourseWidgets)
+                _context.WidgetGroupMembers.Add(new WidgetGroupMember { WidgetGroupId = grpCourse.Id, WidgetId = w.Id });
+            await _context.SaveChangesAsync();
+
+            _context.WidgetSchedules.Add(new WidgetSchedule
+            {
+                WidgetId = wCMonthlyRevenue.Id, CronExpression = "0 7 * * *",
+                Timezone = "Asia/Ho_Chi_Minh", IsEnabled = true, RetryOnFailure = true, MaxRetries = 3,
+                LastRunAt = DateTime.UtcNow.AddHours(-19), LastRunStatus = ExecutionStatus.Success,
+                NextRunAt = DateTime.UtcNow.AddHours(5)
+            });
+            await _context.SaveChangesAsync();
+
+            var courseExecs = new List<WidgetExecution>();
+            foreach (var w in allCourseWidgets)
+            {
+                courseExecs.Add(new WidgetExecution { WidgetId = w.Id, Status = ExecutionStatus.Success, TriggeredBy = ExecutionTrigger.Scheduler, StartedAt = DateTime.UtcNow.AddHours(-3), CompletedAt = DateTime.UtcNow.AddHours(-3).AddMilliseconds(150), ExecutionTimeMs = 150, RowCount = w.LastRowCount ?? 0 });
+                courseExecs.Add(new WidgetExecution { WidgetId = w.Id, Status = ExecutionStatus.Success, TriggeredBy = ExecutionTrigger.Manual, StartedAt = DateTime.UtcNow.AddMinutes(-20), CompletedAt = DateTime.UtcNow.AddMinutes(-20).AddMilliseconds(160), ExecutionTimeMs = 160, RowCount = w.LastRowCount ?? 0 });
+            }
+            _context.WidgetExecutions.AddRange(courseExecs);
+            await _context.SaveChangesAsync();
+
+            // ── VietNews Demo — Widget Group & Widgets ────────────────────────
+            var grpNews = new WidgetGroup
+            {
+                Name = "Phân tích tin tức — VietNews",
+                Description = "Dashboard theo dõi lượt xem bài viết, độc giả, bình luận và nguồn truy cập cổng tin tức",
+                IsActive = true,
+                CreatedBy = "system"
+            };
+            _context.WidgetGroups.Add(grpNews);
+            await _context.SaveChangesAsync();
+
+            var wNViewsToday = new Widget
+            {
+                Name = "news_total_views_today",
+                FriendlyLabel = "Tổng lượt xem hôm nay",
+                HelpText = "Tổng số lượt xem bài viết trong ngày hôm nay",
+                WidgetType = WidgetType.Metric,
+                Description = "KPI: lượt xem bài viết trong ngày",
+                DataSourceId = dsNews.Id,
+                Configuration = "{\"query\": \"SELECT COUNT(*) as value FROM article_views WHERE date(viewed_at) = date('now')\", \"label\": \"Lượt xem\", \"format\": \"number\"}",
+                IsActive = true, CacheEnabled = false, CacheTtlMinutes = 5, CreatedBy = "system",
+                LastExecutedAt = DateTime.UtcNow.AddMinutes(-5), LastRowCount = 1
+            };
+            var wNArticlesToday = new Widget
+            {
+                Name = "news_articles_published_today",
+                FriendlyLabel = "Bài đăng hôm nay",
+                HelpText = "Số bài viết được xuất bản trong ngày hôm nay",
+                WidgetType = WidgetType.Metric,
+                Description = "KPI: số bài viết xuất bản hôm nay",
+                DataSourceId = dsNews.Id,
+                Configuration = "{\"query\": \"SELECT COUNT(*) as value FROM articles WHERE date(published_at) = date('now') AND status='published'\", \"label\": \"Bài đăng mới\", \"format\": \"number\"}",
+                IsActive = true, CacheEnabled = false, CacheTtlMinutes = 5, CreatedBy = "system",
+                LastExecutedAt = DateTime.UtcNow.AddMinutes(-5), LastRowCount = 1
+            };
+            var wNNewReaders = new Widget
+            {
+                Name = "news_new_readers_today",
+                FriendlyLabel = "Độc giả mới",
+                HelpText = "Số độc giả đăng ký tài khoản mới trong ngày hôm nay",
+                WidgetType = WidgetType.Metric,
+                Description = "KPI: độc giả mới đăng ký hôm nay",
+                DataSourceId = dsNews.Id,
+                Configuration = "{\"query\": \"SELECT COUNT(*) as value FROM readers WHERE date(registered_at) = date('now')\", \"label\": \"Độc giả mới\", \"format\": \"number\"}",
+                IsActive = true, CacheEnabled = false, CacheTtlMinutes = 5, CreatedBy = "system",
+                LastExecutedAt = DateTime.UtcNow.AddMinutes(-5), LastRowCount = 1
+            };
+            var wNReadCompletion = new Widget
+            {
+                Name = "news_read_completion_rate",
+                FriendlyLabel = "Tỷ lệ đọc trọn bài",
+                HelpText = "Phần trăm bài viết được đọc hơn 80% nội dung trong 7 ngày qua",
+                WidgetType = WidgetType.Metric,
+                Description = "KPI: tỷ lệ đọc hết bài trung bình (%)",
+                DataSourceId = dsNews.Id,
+                Configuration = "{\"query\": \"SELECT ROUND(AVG(read_completion_percent), 1) as value FROM article_views WHERE viewed_at >= datetime('now','-7 days')\", \"label\": \"Đọc trọn bài (%)\", \"format\": \"percent\"}",
+                IsActive = true, CacheEnabled = true, CacheTtlMinutes = 30, CreatedBy = "system",
+                LastExecutedAt = DateTime.UtcNow.AddMinutes(-10), LastRowCount = 1
+            };
+            var wNViewsByCategory = new Widget
+            {
+                Name = "news_views_by_category",
+                FriendlyLabel = "Lượt xem theo chuyên mục",
+                HelpText = "Biểu đồ cột tổng lượt xem bài viết theo từng chuyên mục",
+                WidgetType = WidgetType.Chart,
+                Description = "Bar chart lượt xem theo chuyên mục",
+                DataSourceId = dsNews.Id,
+                Configuration = "{\"query\": \"SELECT c.name as category, COUNT(av.id) as views FROM article_views av JOIN articles a ON av.article_id=a.id JOIN categories c ON a.category_id=c.id GROUP BY c.name ORDER BY views DESC\", \"xAxis\": \"category\", \"yAxis\": \"views\"}",
+                ChartConfig = "{\"type\": \"Bar\", \"xAxis\": \"category\", \"yAxis\": \"views\", \"seriesLabel\": \"Lượt xem\"}",
+                IsActive = true, CacheEnabled = true, CacheTtlMinutes = 30, CreatedBy = "system",
+                LastExecutedAt = DateTime.UtcNow.AddMinutes(-10), LastRowCount = 8
+            };
+            var wNPopularArticles = new Widget
+            {
+                Name = "news_popular_articles_week",
+                FriendlyLabel = "Bài viết phổ biến nhất trong tuần",
+                HelpText = "Top 10 bài viết có nhiều lượt xem nhất trong 7 ngày qua",
+                WidgetType = WidgetType.Table,
+                Description = "Bảng top bài viết theo lượt xem trong tuần",
+                DataSourceId = dsNews.Id,
+                Configuration = "{\"query\": \"SELECT a.title as 'Bài viết', c.name as 'Chuyên mục', auth.full_name as 'Tác giả', a.view_count as 'Lượt xem', a.comment_count as 'Bình luận' FROM articles a JOIN categories c ON a.category_id=c.id JOIN authors auth ON a.author_id=auth.id WHERE a.status='published' AND a.published_at >= date('now','-7 days') ORDER BY a.view_count DESC LIMIT 10\"}",
+                IsActive = true, CacheEnabled = true, CacheTtlMinutes = 15, CreatedBy = "system",
+                LastExecutedAt = DateTime.UtcNow.AddMinutes(-10), LastRowCount = 10
+            };
+            var wNTrafficSources = new Widget
+            {
+                Name = "news_traffic_sources",
+                FriendlyLabel = "Nguồn truy cập",
+                HelpText = "Biểu đồ tròn phân bổ nguồn truy cập bài viết (Google, Direct, Social, Email)",
+                WidgetType = WidgetType.Chart,
+                Description = "Pie chart nguồn truy cập",
+                DataSourceId = dsNews.Id,
+                Configuration = "{\"query\": \"SELECT source as label, COUNT(*) as value FROM article_views GROUP BY source ORDER BY value DESC\", \"xAxis\": \"label\", \"yAxis\": \"value\"}",
+                ChartConfig = "{\"type\": \"Pie\", \"xAxis\": \"label\", \"yAxis\": \"value\", \"seriesLabel\": \"Truy cập\"}",
+                IsActive = true, CacheEnabled = true, CacheTtlMinutes = 60, CreatedBy = "system",
+                LastExecutedAt = DateTime.UtcNow.AddMinutes(-10), LastRowCount = 5
+            };
+            var wNRecentActivity = new Widget
+            {
+                Name = "news_recent_reader_activity",
+                FriendlyLabel = "Hoạt động độc giả gần đây",
+                HelpText = "20 lượt xem bài viết mới nhất trong hệ thống",
+                WidgetType = WidgetType.Table,
+                Description = "Bảng hoạt động độc giả gần đây",
+                DataSourceId = dsNews.Id,
+                Configuration = "{\"query\": \"SELECT COALESCE(r.full_name, 'Khách') as 'Độc giả', a.title as 'Bài viết', av.source as 'Nguồn', av.device as 'Thiết bị', ROUND(av.read_completion_percent, 0) as 'Đọc %', strftime('%d/%m/%Y %H:%M', av.viewed_at) as 'Thời gian' FROM article_views av LEFT JOIN readers r ON av.reader_id=r.id JOIN articles a ON av.article_id=a.id ORDER BY av.viewed_at DESC LIMIT 20\"}",
+                IsActive = true, CacheEnabled = false, CacheTtlMinutes = 5, CreatedBy = "system",
+                LastExecutedAt = DateTime.UtcNow.AddMinutes(-5), LastRowCount = 20
+            };
+            var wNMonthlyViews = new Widget
+            {
+                Name = "news_monthly_views_trend",
+                FriendlyLabel = "Xu hướng lượt xem theo tháng",
+                HelpText = "Biểu đồ đường tổng lượt xem bài viết theo tháng trong 12 tháng qua",
+                WidgetType = WidgetType.Chart,
+                Description = "Line chart lượt xem theo tháng",
+                DataSourceId = dsNews.Id,
+                Configuration = "{\"query\": \"SELECT strftime('%Y-%m', viewed_at) as month, COUNT(*) as views FROM article_views WHERE viewed_at >= date('now','-12 months') GROUP BY strftime('%Y-%m', viewed_at) ORDER BY month ASC\", \"xAxis\": \"month\", \"yAxis\": \"views\"}",
+                ChartConfig = "{\"type\": \"Line\", \"xAxis\": \"month\", \"yAxis\": \"views\", \"seriesLabel\": \"Lượt xem\"}",
+                IsActive = true, CacheEnabled = true, CacheTtlMinutes = 60, CreatedBy = "system",
+                LastExecutedAt = DateTime.UtcNow.AddMinutes(-10), LastRowCount = 12
+            };
+            var wNTopAuthors = new Widget
+            {
+                Name = "news_top_authors",
+                FriendlyLabel = "Tác giả nổi bật",
+                HelpText = "Danh sách tác giả có nhiều bài viết và lượt xem cao nhất",
+                WidgetType = WidgetType.Table,
+                Description = "Bảng top tác giả theo lượt xem",
+                DataSourceId = dsNews.Id,
+                Configuration = "{\"query\": \"SELECT a.full_name as 'Tác giả', a.total_articles as 'Số bài', a.total_views as 'Lượt xem' FROM authors a WHERE a.is_active=1 ORDER BY a.total_views DESC LIMIT 10\"}",
+                IsActive = true, CacheEnabled = true, CacheTtlMinutes = 60, CreatedBy = "system",
+                LastExecutedAt = DateTime.UtcNow.AddMinutes(-10), LastRowCount = 10
+            };
+
+            var allNewsWidgets = new[]
+            {
+                wNViewsToday, wNArticlesToday, wNNewReaders, wNReadCompletion,
+                wNViewsByCategory, wNPopularArticles, wNTrafficSources, wNRecentActivity,
+                wNMonthlyViews, wNTopAuthors
+            };
+            _context.Widgets.AddRange(allNewsWidgets);
+            await _context.SaveChangesAsync();
+
+            foreach (var w in allNewsWidgets)
+                _context.WidgetGroupMembers.Add(new WidgetGroupMember { WidgetGroupId = grpNews.Id, WidgetId = w.Id });
+            await _context.SaveChangesAsync();
+
+            _context.WidgetSchedules.Add(new WidgetSchedule
+            {
+                WidgetId = wNMonthlyViews.Id, CronExpression = "0 6 * * *",
+                Timezone = "Asia/Ho_Chi_Minh", IsEnabled = true, RetryOnFailure = true, MaxRetries = 3,
+                LastRunAt = DateTime.UtcNow.AddHours(-18), LastRunStatus = ExecutionStatus.Success,
+                NextRunAt = DateTime.UtcNow.AddHours(6)
+            });
+            await _context.SaveChangesAsync();
+
+            var newsExecs = new List<WidgetExecution>();
+            foreach (var w in allNewsWidgets)
+            {
+                newsExecs.Add(new WidgetExecution { WidgetId = w.Id, Status = ExecutionStatus.Success, TriggeredBy = ExecutionTrigger.Scheduler, StartedAt = DateTime.UtcNow.AddHours(-2), CompletedAt = DateTime.UtcNow.AddHours(-2).AddMilliseconds(120), ExecutionTimeMs = 120, RowCount = w.LastRowCount ?? 0 });
+                newsExecs.Add(new WidgetExecution { WidgetId = w.Id, Status = ExecutionStatus.Success, TriggeredBy = ExecutionTrigger.Manual, StartedAt = DateTime.UtcNow.AddMinutes(-15), CompletedAt = DateTime.UtcNow.AddMinutes(-15).AddMilliseconds(130), ExecutionTimeMs = 130, RowCount = w.LastRowCount ?? 0 });
+            }
+            _context.WidgetExecutions.AddRange(newsExecs);
             await _context.SaveChangesAsync();
         }
     }
