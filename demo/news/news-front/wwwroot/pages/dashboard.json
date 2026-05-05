@@ -5,49 +5,49 @@
   "auth": { "required": true },
   "widgets": [
     {
-      "id": 1,
+      "id": 30,
       "title": "Tổng lượt xem hôm nay",
       "colSpan": 1,
       "autoRefreshSeconds": 60
     },
     {
-      "id": 2,
+      "id": 31,
       "title": "Bài đăng hôm nay",
       "colSpan": 1,
       "autoRefreshSeconds": 120
     },
     {
-      "id": 3,
+      "id": 32,
       "title": "Độc giả mới",
       "colSpan": 1,
       "autoRefreshSeconds": 120
     },
     {
-      "id": 4,
+      "id": 33,
       "title": "Tỷ lệ đọc trọn bài",
       "colSpan": 1,
       "autoRefreshSeconds": 120
     },
     {
-      "id": 5,
+      "id": 34,
       "title": "Lượt xem theo chuyên mục",
       "colSpan": 2,
       "autoRefreshSeconds": 300
     },
     {
-      "id": 6,
+      "id": 35,
       "title": "Bài viết phổ biến nhất trong tuần",
       "colSpan": 2,
       "autoRefreshSeconds": 300
     },
     {
-      "id": 14,
+      "id": 37,
       "title": "Hoạt động độc giả gần đây",
       "colSpan": 3,
       "autoRefreshSeconds": 30
     },
     {
-      "id": 7,
+      "id": 36,
       "title": "Nguồn truy cập",
       "colSpan": 1,
       "autoRefreshSeconds": 60
