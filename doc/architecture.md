@@ -20,20 +20,27 @@
 │  │  WidgetService | ScheduleService | CacheService    │         │
 │  └──────────────────────┬──────────────────────────────┘         │
 └─────────────────────────┼────────────────────────────────────────┘
+                          │ Shared Infrastructure (EF Core, Repos)
+┌─────────────────────────┴────────────────────────────────────────┐
+│                  WIDGETDATA.WORKER (BackgroundService)            │
+│  SchedulerWorkerService — polling 30s                            │
+│  GetDueAsync → ExecuteAsync → update NextRunAt / LastRunStatus   │
+│  Retry support (MaxRetries, 5s delay) | In-progress guard        │
+└─────────────────────────┬────────────────────────────────────────┘
                           │
 ┌─────────────────────────┴────────────────────────────────────────┐
 │                   INFRASTRUCTURE LAYER                           │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │ EF Core      │  │   Hangfire   │  │    Redis     │          │
-│  │ Repository   │  │   Scheduler  │  │    Cache     │          │
+│  │ EF Core      │  │   Cronos     │  │    Redis     │          │
+│  │ Repository   │  │  (NextRunAt) │  │    Cache     │          │
 │  └──────┬───────┘  └──────┬───────┘  └──────────────┘          │
 └─────────┼──────────────────┼──────────────────────────────────────┘
           │                  │
 ┌─────────┴──────────────────┴──────────────────────────────────────┐
 │                      DATA SOURCES                                 │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐           │
-│  │SQL Server│ │PostgreSQL│ │   Files  │ │   APIs   │           │
-│  │          │ │  MySQL   │ │CSV/JSON  │ │ REST/etc │           │
+│  │  SQLite  │ │   Files  │ │  Excel   │ │   APIs   │           │
+│  │          │ │ CSV/JSON │ │(ClosedXML│ │ REST/etc │           │
 │  └──────────┘ └──────────┘ └──────────┘ └──────────┘           │
 └───────────────────────────────────────────────────────────────────┘
 ```
@@ -61,17 +68,22 @@ User Request → API Controller → WidgetService
 
 ### 2. Scheduled Widget Flow
 ```
-Hangfire Scheduler (Cron/Interval)
+WidgetData.Worker — SchedulerWorkerService (BackgroundService)
+         ↓ poll every 30s
+  GetDueAsync(now): IsEnabled=true AND NextRunAt <= now
          ↓
-  Trigger WidgetService.Execute()
+  RunScheduleAsync (per-schedule, parallel, in-progress guard)
          ↓
-  Execute Widget → Cache Result
+  WidgetService.ExecuteAsync(widgetId, "scheduler", scheduleId)
          ↓
-  Log to History
+  Execute Widget → Log WidgetExecution
+         ↓
+  On failure + RetryOnFailure=true → retry up to MaxRetries (5s delay)
+         ↓
+  Update LastRunAt / LastRunStatus
+  Recalculate NextRunAt = CronUtils.GetNextOccurrence(cron, timezone, now)
          ↓
   SignalR Broadcast (to live subscribers)
-         ↓
-  Send Alerts (if threshold met)
 ```
 
 ## Layered Architecture
@@ -143,48 +155,72 @@ public interface IWidgetExecutorFactory {
 ## Technology Stack
 
 ### Backend (.NET Core)
-- **Framework**: ASP.NET Core 8.0 / 9.0
+- **Framework**: ASP.NET Core 10.0
 - **API**: ASP.NET Core Web API (REST)
-- **ORM**: Entity Framework Core
-- **Database**: SQL Server (primary), PostgreSQL, MySQL, SQLite
-- **Job Scheduler**: Hangfire / Quartz.NET
-- **Cache**: Redis (IDistributedCache), In-Memory Cache (IMemoryCache)
-- **File Processing**: EPPlus/ClosedXML (Excel), CsvHelper (CSV)
+- **ORM**: Entity Framework Core 10.0
+- **Database**: SQLite (primary)
+- **Cron Scheduler**: **WidgetData.Worker** — .NET Worker Service + **Cronos 0.8.4** (cron expression parser, NextRunAt calculation)
+- **Cache**: In-Memory Cache (IMemoryCache)
+- **File Processing**: ClosedXML (Excel), System.Text.Json, SSH.NET
+- **PDF**: QuestPDF
+- **Email**: MailKit/MimeKit
+- **Telegram**: Telegram.Bot
 - **Real-time**: SignalR
-- **Authentication**: ASP.NET Core Identity / JWT
+- **Authentication**: ASP.NET Core Identity + JWT
+- **Logging**: Serilog
 
 ### Frontend (Blazor)
-- **Framework**: Blazor Server / Blazor WebAssembly (.NET 8/9)
-- **UI Components**: MudBlazor / Radzen Blazor / Ant Design Blazor
-- **Charts**: ChartJs.Blazor / ApexCharts.Blazor / Plotly.Blazor
+- **Framework**: Blazor Web App (.NET 10)
+- **UI Components**: MudBlazor
+- **Charts**: ChartJs.Blazor
 - **Real-time**: SignalR (native integration)
 - **Code Editor**: BlazorMonaco (SQL/JSON editing)
-- **Data Grid**: MudBlazor DataGrid / Radzen DataGrid
 
 ### Storage & Infrastructure
-- **Configuration**: appsettings.json / Azure App Configuration
-- **Cache Storage**: Redis / SQL Server / File system
-- **Logging**: Serilog → File / SQL Server / Seq
-- **Deployment**: IIS / Docker / Azure App Service
+- **Database**: SQLite (EF Core)
+- **Logging**: Serilog → Console / File
+- **Orchestration**: .NET Aspire AppHost
+- **Gateway**: YARP (WidgetData.Gateway)
+- **Deployment**: .NET Aspire / Docker
 
 ## Packages chính (.NET)
 
 ```
-# Backend
-Microsoft.EntityFrameworkCore.SqlServer
-Microsoft.AspNetCore.SignalR
-Hangfire.AspNetCore
-StackExchange.Redis
-EPPlus / ClosedXML
-CsvHelper
+# WidgetData.Infrastructure
+Microsoft.AspNetCore.Identity.EntityFrameworkCore
+Microsoft.EntityFrameworkCore.Sqlite
+ClosedXML
+Cronos (0.8.4) — cron expression parser, NextRunAt calculation
+Hangfire.Core / Hangfire.InMemory — retained for background job utilities
+MailKit / MimeKit
+QuestPDF
 Serilog.AspNetCore
-Dapper
+SSH.NET
+Telegram.Bot
 
-# Frontend (Blazor)
-Microsoft.AspNetCore.Components.WebAssembly (hoặc Blazor Server)
-MudBlazor / Radzen.Blazor
-ChartJs.Blazor / ApexCharts.Blazor
+# WidgetData.API
+Microsoft.AspNetCore.Authentication.JwtBearer
+Microsoft.AspNetCore.OpenApi
+Scalar.AspNetCore (API docs)
+Serilog.AspNetCore
+
+# WidgetData.Worker (BackgroundService — cron job executor)
+Microsoft.NET.Sdk.Worker
+Serilog.AspNetCore
+(references Infrastructure + ServiceDefaults)
+
+# WidgetData.Web (Blazor)
+MudBlazor
+ChartJs.Blazor / ApexCharts
 BlazorMonaco
+
+# WidgetData.Gateway
+Microsoft.ReverseProxy (YARP)
+
+# WidgetData.ServiceDefaults (.NET Aspire shared)
+OpenTelemetry.Extensions.Hosting
+Microsoft.Extensions.Http.Resilience
+Microsoft.Extensions.ServiceDiscovery
 ```
 
 ## Lợi thế của stack Full .NET (Backend + Blazor)
@@ -228,11 +264,12 @@ BlazorMonaco
 | Method | Endpoint | Mô tả | Auth |
 |--------|----------|-------|------|
 | `GET` | `/api/schedules` | Danh sách schedules | ✅ |
-| `POST` | `/api/schedules` | Tạo schedule | Manager/Admin |
-| `PUT` | `/api/schedules/{id}` | Cập nhật schedule | Owner/Admin |
+| `POST` | `/api/schedules` | Tạo schedule (NextRunAt tự tính) | Manager/Admin |
+| `PUT` | `/api/schedules/{id}` | Cập nhật schedule (NextRunAt tự tính lại) | Owner/Admin |
 | `DELETE` | `/api/schedules/{id}` | Xóa schedule | Admin |
-| `POST` | `/api/schedules/{id}/enable` | Kích hoạt | Manager/Admin |
+| `POST` | `/api/schedules/{id}/enable` | Kích hoạt (NextRunAt tính lại) | Manager/Admin |
 | `POST` | `/api/schedules/{id}/disable` | Tắt | Manager/Admin |
+| `POST` | `/api/schedules/{id}/trigger` | Chạy thủ công ngay lập tức | Manager/Admin |
 
 ### Auth API
 

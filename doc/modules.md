@@ -94,29 +94,69 @@ public async Task<List<SalesDto>> ReadExcelAsync(string path)
 
 | Module | Library | Version | Purpose |
 |--------|---------|---------|---------|
-| **Job Scheduler** | Hangfire.Core | 1.8.6 | Background jobs |
-| **SQL Storage** | Hangfire.SqlServer | 1.8.6 | Job persistence |
-| **Cron Parser** | Cronos | 0.8.3 | Parse cron expressions |
+| **Worker Service** | Microsoft.NET.Sdk.Worker | 10.0 | BackgroundService host cho cron jobs |
+| **Cron Parser** | Cronos | 0.8.4 | Parse & tính `NextRunAt` từ cron expression + timezone |
+| **Hangfire (retained)** | Hangfire.Core | 1.8.23 | Background job utilities (InMemory) |
 
 ```bash
-dotnet add package Hangfire.Core --version 1.8.6
-dotnet add package Hangfire.SqlServer --version 1.8.6
-dotnet add package Cronos --version 0.8.3
+dotnet add package Cronos --version 0.8.4
 ```
 
-**Ví dụ:**
-```csharp
-// Configure Hangfire
-services.AddHangfire(config => 
-    config.UseSqlServerStorage(connectionString));
-services.AddHangfireServer();
+**Cấu trúc WidgetData.Worker:**
+```
+src/WidgetData.Worker/
+├── Program.cs                      # Host setup (AddInfrastructure + Serilog)
+├── Workers/
+│   └── SchedulerWorkerService.cs  # BackgroundService chính
+├── appsettings.json                # PollingIntervalSeconds config
+└── WidgetData.Worker.csproj
+```
 
-// Schedule recurring job
-RecurringJob.AddOrUpdate<WidgetRefreshService>(
-    "refresh-sales-widget",
-    service => service.RefreshAsync(123),
-    "*/5 * * * *" // Every 5 minutes
-);
+**SchedulerWorkerService — logic:**
+```csharp
+// Mỗi PollingIntervalSeconds (mặc định 30s):
+protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+{
+    while (!stoppingToken.IsCancellationRequested)
+    {
+        // 1. Lấy schedule đến hạn
+        var due = await scheduleRepo.GetDueAsync(DateTime.UtcNow);
+        // 2. Chạy song song, mỗi schedule trong scope riêng
+        await Task.WhenAll(due.Select(s => RunScheduleAsync(s.Id, stoppingToken)));
+        await Task.Delay(_pollingInterval, stoppingToken);
+    }
+}
+
+// Sau mỗi lần chạy:
+schedule.LastRunAt     = now;
+schedule.LastRunStatus = status;                              // Success | Failed
+schedule.NextRunAt     = CronUtils.GetNextOccurrence(
+    schedule.CronExpression, schedule.Timezone, now);
+await scheduleRepo.UpdateAsync(schedule);
+```
+
+**CronUtils helper (`Infrastructure/Helpers/CronUtils.cs`):**
+```csharp
+// Tính lần chạy tiếp theo (timezone-aware)
+var next = CronUtils.GetNextOccurrence("0 */6 * * *", "Asia/Ho_Chi_Minh");
+// → DateTime UTC của lần chạy tiếp theo sau now
+
+// Kiểm tra cron expression có hợp lệ
+bool ok = CronUtils.IsValid("0 */6 * * *"); // true
+```
+
+**Ví dụ tạo schedule (NextRunAt tự tính):**
+```csharp
+// POST /api/schedules
+{
+  "widgetId": 5,
+  "cronExpression": "0 8 * * 1-5",  // 8h sáng, thứ 2–6
+  "timezone": "Asia/Ho_Chi_Minh",
+  "isEnabled": true,
+  "retryOnFailure": true,
+  "maxRetries": 3
+}
+// Response sẽ có NextRunAt = lần 8h sáng ngày làm việc tiếp theo
 ```
 
 ---
@@ -438,62 +478,70 @@ public class SqlServerConnector : IDataSourceConnector
 
 ## 📦 Complete Package List
 
-### Backend
+### WidgetData.Infrastructure
 
 ```xml
 <ItemGroup>
   <!-- Framework -->
-  <PackageReference Include="Microsoft.AspNetCore.App" />
-  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
-  
+  <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.7" />
+  <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.7" />
+
   <!-- Data Processing -->
-  <PackageReference Include="CsvHelper" Version="30.0.1" />
-  <PackageReference Include="EPPlus" Version="7.0.0" />
-  <PackageReference Include="ClosedXML" Version="0.102.0" />
-  <PackageReference Include="Dapper" Version="2.1.0" />
-  
-  <!-- Scheduling -->
-  <PackageReference Include="Hangfire.Core" Version="1.8.6" />
-  <PackageReference Include="Hangfire.SqlServer" Version="1.8.6" />
-  <PackageReference Include="Cronos" Version="0.8.3" />
-  
-  <!-- Caching -->
-  <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="8.0.0" />
-  <PackageReference Include="StackExchange.Redis" Version="2.7.0" />
-  
-  <!-- Auth & Security -->
-  <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.0" />
-  <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.0.0" />
-  
+  <PackageReference Include="ClosedXML" Version="0.105.0" />
+
+  <!-- Scheduling (cron expression + NextRunAt) -->
+  <PackageReference Include="Cronos" Version="0.8.4" />
+
+  <!-- Background job utilities (retained) -->
+  <PackageReference Include="Hangfire.Core" Version="1.8.23" />
+  <PackageReference Include="Hangfire.InMemory" Version="1.0.0" />
+  <PackageReference Include="Hangfire.AspNetCore" Version="1.8.23" />
+
+  <!-- Email / Notifications -->
+  <PackageReference Include="MailKit" Version="4.16.0" />
+  <PackageReference Include="MimeKit" Version="4.16.0" />
+  <PackageReference Include="Telegram.Bot" Version="22.9.6.1" />
+
+  <!-- PDF -->
+  <PackageReference Include="QuestPDF" Version="2026.2.4" />
+
+  <!-- SSH -->
+  <PackageReference Include="SSH.NET" Version="2025.1.0" />
+
   <!-- Logging -->
-  <PackageReference Include="Serilog.AspNetCore" Version="8.0.0" />
-  <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
-  <PackageReference Include="Serilog.Sinks.Console" Version="5.0.0" />
-  
-  <!-- Real-time -->
-  <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="8.0.0" />
-  
-  <!-- Utilities -->
-  <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.0" />
-  <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
-  <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+  <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
 </ItemGroup>
 ```
 
-### Frontend (Blazor)
+### WidgetData.API
 
 ```xml
 <ItemGroup>
-  <!-- Blazor -->
-  <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.0" />
-  
-  <!-- UI Components -->
-  <PackageReference Include="MudBlazor" Version="6.11.0" />
-  <PackageReference Include="ChartJs.Blazor" Version="2.0.2" />
-  <PackageReference Include="BlazorMonaco" Version="3.1.0" />
-  
-  <!-- HTTP -->
-  <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+  <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.7" />
+  <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
+  <PackageReference Include="Scalar.AspNetCore" Version="2.14.4" />
+  <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+  <PackageReference Include="MailKit" Version="4.16.0" />
+</ItemGroup>
+```
+
+### WidgetData.Worker
+
+```xml
+<ItemGroup>
+  <!-- Worker SDK: Microsoft.NET.Sdk.Worker -->
+  <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+  <!-- References: WidgetData.Infrastructure + WidgetData.ServiceDefaults -->
+</ItemGroup>
+```
+
+### WidgetData.Web (Blazor)
+
+```xml
+<ItemGroup>
+  <!-- UI -->
+  <PackageReference Include="MudBlazor" />
+  <!-- Charts, Monaco Editor, ... -->
 </ItemGroup>
 ```
 

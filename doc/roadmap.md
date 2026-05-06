@@ -1,13 +1,26 @@
 # Roadmap & Tính năng tương lai
 
 ## Version 1.0 (MVP) - Q2 2026 ✅
-- [x] Core widget engine
-- [x] Database & file data sources
-- [x] Basic scheduling (Hangfire)
+- [x] Core widget engine (multi-source: SQLite, CSV, JSON, Excel, REST API)
+- [x] **Standalone Cron Job Scheduler** — `WidgetData.Worker` (BackgroundService)
+  - [x] Tách hoàn toàn khỏi API thành project riêng
+  - [x] Cronos 0.8.4 — cron expression parser, timezone-aware `NextRunAt`
+  - [x] `SchedulerWorkerService` — polling 30s, parallel execution, in-progress guard
+  - [x] Retry support (`RetryOnFailure`, `MaxRetries`, 5s delay)
+  - [x] `CronUtils` helper trong Infrastructure
+  - [x] `IScheduleRepository.GetDueAsync` — query theo NextRunAt
+  - [x] `ScheduleService` tự tính `NextRunAt` khi Create/Update/Trigger
 - [x] In-memory caching
-- [x] Blazor dashboard
-- [x] User authentication
-- [x] REST API
+- [x] Blazor dashboard (MudBlazor)
+- [x] .NET Aspire AppHost + YARP Gateway
+- [x] JWT Authentication + ASP.NET Identity
+- [x] REST API (Scalar docs)
+- [x] HTML Designer + Dashboard Page Builder
+- [x] Reports (doanh thu/bán hàng)
+- [x] Store module (sản phẩm, đơn hàng)
+- [x] Demo Shop (standalone HTML/JS + Blazor admin)
+- [x] Form Widget (custom schema + submissions)
+- [x] Activity Monitoring (auto-disable + InactivityAlert)
 
 ## Version 1.5 - Q3 2026
 - [ ] Advanced charting (more chart types)

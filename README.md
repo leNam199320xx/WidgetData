@@ -34,7 +34,7 @@ Widget Data là platform cho phép bạn:
 - **Dashboard Page Builder**: Kéo-thả widget thành trang dashboard, xem trước trực tiếp
 - **Reports & Preview**: Trang báo cáo doanh thu/bán hàng từ dữ liệu thực tế
 - **Widget Activity Monitoring**: Tự động ghi lại mọi lần gọi API widget (endpoint, user, thời gian phản hồi, status code); background service phát hiện widget không hoạt động → tự vô hiệu hoá + ghi alert log
-- **Scheduling**: Hangfire scheduler với cron expressions, interval, on-demand
+- **Scheduling**: Cron job tự động qua **WidgetData.Worker** (BackgroundService + Cronos), hỗ trợ retry, NextRunAt, timezone
 - **Caching**: In-memory, Redis, file-based cache với TTL và invalidation
 - **Live Data**: Real-time dashboard qua SignalR, auto-refresh
 - **Security**: ASP.NET Identity, JWT, MFA, RBAC, encryption → [📖 Chi tiết](doc/security.md)
@@ -105,12 +105,13 @@ cd widget-data
 # Restore packages
 dotnet restore
 
-# Chạy toàn bộ hệ thống qua .NET Aspire
+# Chạy toàn bộ hệ thống qua .NET Aspire (API + Worker + Web + Gateway + Demos)
 dotnet run --project src/WidgetData.AppHost
 
 # Hoặc chạy riêng từng service
 dotnet run --project src/WidgetData.Web
 dotnet run --project src/WidgetData.API
+dotnet run --project src/WidgetData.Worker
 ```
 
 Truy cập:
@@ -137,7 +138,10 @@ Truy cập:
 │  WidgetData.API (ASP.NET Core)                          │
 │    Execute widget | schedule | cache | auth | reports   │
 │                         ↓                               │
-│  EF Core + SQLite | Hangfire | Redis | SignalR           │
+│  WidgetData.Worker (BackgroundService)                  │
+│    Cron job executor | NextRunAt | retry | timezone     │
+│                         ↓                               │
+│  EF Core + SQLite | Cronos | Redis | SignalR             │
 └─────────────────────────┬───────────────────────────────┘
                           │ Platform deploy cho đơn vị nghiệp vụ
 ┌─────────────────────────▼───────────────────────────────┐
@@ -159,7 +163,8 @@ Truy cập:
 
 ## 💻 Technology Stack
 
-**Backend**: ASP.NET Core 10.0, EF Core, Hangfire, SignalR, QuestPDF, ClosedXML  
+**Backend**: ASP.NET Core 10.0, EF Core, Cronos, SignalR, QuestPDF, ClosedXML  
+**Worker**: .NET Worker Service, Cronos 0.8.4, BackgroundService (SchedulerWorkerService)  
 **Frontend (Blazor)**: Blazor Server, MudBlazor, ChartJs, BlazorMonaco  
 **Frontend (Standalone)**: Vanilla HTML/CSS/JS, WidgetEngine library (zero-dep)  
 **Infrastructure**: .NET Aspire, YARP Gateway, SQLite, Docker, Serilog  
@@ -182,6 +187,16 @@ Truy cập:
 | **Activity** | `GET /api/widget-activity/alerts` | Admin | Tất cả `InactivityAlert` trong AuditLog |
 
 ## ⚙️ Cấu hình
+
+### SchedulerWorker (`appsettings.json`)
+
+```json
+"SchedulerWorker": {
+  "PollingIntervalSeconds": 30
+}
+```
+
+`WidgetData.Worker` polling mỗi `PollingIntervalSeconds` giây. Schedule nào có `IsEnabled = true` và `NextRunAt <= now` sẽ được tự động thực thi. Sau mỗi lần chạy, `NextRunAt` được tính lại từ cron expression + timezone. Nếu `RetryOnFailure = true`, service sẽ retry tối đa `MaxRetries` lần (5 giây giữa mỗi lần).
 
 ### Inactivity Monitor (`appsettings.json`)
 
@@ -303,7 +318,7 @@ Lưu config này vào `Widget.Configuration`. Trang `/form.html` (wwwroot) tự 
 
 ## 🚦 Roadmap
 
-- ✅ **v1.0** (Q2 2026) - MVP: Core widgets, scheduling, Blazor UI, .NET Aspire, HTML Designer, Dashboard Pages, Reports, Store module, Demo Shop (standalone + blazor-web), **Multi-source data** (CSV/JSON/Excel/API), **Form widget** (custom schema + submissions), **Activity Monitoring** (auto-disable + alert log)
+- ✅ **v1.0** (Q2 2026) - MVP: Core widgets, scheduling với **WidgetData.Worker** (cron job project riêng, NextRunAt, retry, timezone), Blazor UI, .NET Aspire, HTML Designer, Dashboard Pages, Reports, Store module, Demo Shop (standalone + blazor-web), **Multi-source data** (CSV/JSON/Excel/API), **Form widget** (custom schema + submissions), **Activity Monitoring** (auto-disable + alert log)
 - 🔄 **v1.5** (Q3 2026) - Advanced charts, templates
 - 📅 **v2.0** (Q4 2026) - AI features, Power BI integration
 - 📅 **v2.5** (Q1 2027) - Visual ETL, multi-tenancy
