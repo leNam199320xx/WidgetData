@@ -1,3 +1,5 @@
+using WidgetData.Application.DTOs;
+
 namespace WidgetData.Application.Interfaces;
 
 /// <summary>
@@ -8,17 +10,24 @@ namespace WidgetData.Application.Interfaces;
 public interface IPageHtmlService
 {
     /// <summary>
-    /// Renders all widgets belonging to <paramref name="pageId"/> into HTML.
+    /// Renders all widgets belonging to <paramref name="pageId"/> (WidgetGroup) into HTML.
     /// </summary>
-    /// <param name="pageId">ID of the WidgetGroup / page.</param>
-    /// <param name="standalone">
-    ///   <c>true</c>  – returns a full <c>&lt;!DOCTYPE html&gt;</c> document with embedded CSS. <br/>
-    ///   <c>false</c> – returns only the inner grid fragment (useful for embedding in an existing page).
-    /// </param>
-    /// <param name="cssUrl">
-    ///   Optional URL to an external widget-engine.css stylesheet.
-    ///   When supplied, a <c>&lt;link&gt;</c> tag is used instead of the embedded CSS.
-    /// </param>
-    /// <returns>Rendered HTML string.</returns>
     Task<string> BuildAsync(int pageId, bool standalone = true, string? cssUrl = null);
+
+    /// <summary>
+    /// Renders a <see cref="PageDto"/> (Site Page) to HTML using the widget list
+    /// already attached to the DTO.
+    /// </summary>
+    Task<string> BuildFromPageAsync(PageDto page, bool standalone = true, string? cssUrl = null);
+
+    /// <summary>
+    /// Renders each page to a standalone HTML file and returns a ZIP archive as bytes.
+    /// Each file inside the ZIP is named <c>{slug}.html</c>.
+    /// </summary>
+    Task<byte[]> BuildMultiPageZipAsync(IList<PageDto> pages);
+
+    /// <summary>
+    /// Renders all pages into a single SPA <c>index.html</c> with hash-based navigation.
+    /// </summary>
+    Task<string> BuildSpaHtmlAsync(IList<PageDto> pages);
 }

@@ -234,4 +234,22 @@ public class ApiService
     public Task AddWidgetToPageAsync(int pageId, int widgetId, int position, int width)
         => PostAsync<object>($"api/pages/{pageId}/widgets", new PageWidgetLayoutDto { WidgetId = widgetId, Position = position, Width = width });
     public Task RemoveWidgetFromPageAsync(int pageId, int widgetId) => DeleteAsync($"api/pages/{pageId}/widgets/{widgetId}");
+
+    public async Task<(byte[]? Data, string ContentType, string FileName)?> ExportStaticSiteAsync(
+        string mode = "multipage",
+        IList<int>? pageIds = null)
+    {
+        ApplyToken();
+        var idsParam = pageIds is { Count: > 0 }
+            ? "&" + string.Join("&", pageIds.Select(id => $"pageIds={id}"))
+            : "";
+        var response = await _http.GetAsync($"api/pages/export/static?mode={mode}{idsParam}");
+        if (!response.IsSuccessStatusCode) return null;
+        var data = await response.Content.ReadAsByteArrayAsync();
+        var ct = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
+        var fn = response.Content.Headers.ContentDisposition?.FileNameStar
+                 ?? response.Content.Headers.ContentDisposition?.FileName
+                 ?? (mode == "spa" ? "index.html" : "static-site.zip");
+        return (data, ct, fn.Trim('"'));
+    }
 }

@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
 using System.Web;
@@ -8,11 +9,12 @@ using WidgetData.Application.Interfaces;
 namespace WidgetData.Infrastructure.Services;
 
 /// <summary>
-/// Assembles a fully rendered HTML page by:
-///   1. Loading a WidgetGroup (page definition) from the database.
+/// Assembles fully rendered HTML pages by:
+///   1. Loading a WidgetGroup or PageDto (page definition) from the database.
 ///   2. Fetching live data for every widget in the page.
 ///   3. Rendering each widget's HTML template with its data via <see cref="HtmlTemplateHelper"/>.
 ///   4. Wrapping the result in a responsive grid and optionally in a standalone HTML document.
+///   5. Optionally packaging multiple pages into a ZIP or a SPA index.html.
 /// </summary>
 public class PageHtmlService : IPageHtmlService
 {
@@ -34,15 +36,131 @@ public class PageHtmlService : IPageHtmlService
         var group = await _groupService.GetByIdAsync(pageId)
             ?? throw new KeyNotFoundException($"Page {pageId} not found.");
 
-        // Load widgets + data in parallel
         var tasks = group.WidgetIds.Select(LoadWidgetWithDataAsync);
         var items = (await Task.WhenAll(tasks))
             .Where(x => x.Widget != null)
             .ToList();
 
         var gridHtml = BuildGrid(group.Name, items);
-
         return standalone ? BuildDocument(group.Name, gridHtml, cssUrl) : gridHtml;
+    }
+
+    public async Task<string> BuildFromPageAsync(PageDto page, bool standalone = true, string? cssUrl = null)
+    {
+        var orderedWidgets = page.Widgets.OrderBy(w => w.Position).ToList();
+
+        var tasks = orderedWidgets.Select(async pw =>
+        {
+            WidgetDataDto? data = null;
+            var raw = await _widgetService.GetDataAsync(pw.WidgetId);
+            if (raw != null)
+            {
+                var json = JsonSerializer.Serialize(raw, _json);
+                data = JsonSerializer.Deserialize<WidgetDataDto>(json, _json);
+            }
+
+            // Build a WidgetDto-like view from PageWidgetDto fields
+            var widget = new WidgetDto
+            {
+                Id = pw.WidgetId,
+                Name = pw.WidgetName,
+                FriendlyLabel = pw.FriendlyLabel,
+                HtmlTemplate = pw.HtmlTemplate,
+            };
+
+            return (Widget: (WidgetDto?)widget, Data: data);
+        });
+
+        var items = (await Task.WhenAll(tasks)).ToList();
+        var gridHtml = BuildGrid(page.Title, items);
+        return standalone ? BuildDocument(page.Title, gridHtml, cssUrl) : gridHtml;
+    }
+
+    public async Task<byte[]> BuildMultiPageZipAsync(IList<PageDto> pages)
+    {
+        using var ms = new MemoryStream();
+        using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            foreach (var page in pages)
+            {
+                var html = await BuildFromPageAsync(page, standalone: true);
+                var entryName = $"{SanitizeSlug(page.Slug)}.html";
+                var entry = zip.CreateEntry(entryName, CompressionLevel.Optimal);
+                await using var entryStream = entry.Open();
+                await entryStream.WriteAsync(Encoding.UTF8.GetBytes(html));
+            }
+        }
+        return ms.ToArray();
+    }
+
+    public async Task<string> BuildSpaHtmlAsync(IList<PageDto> pages)
+    {
+        var sb = new StringBuilder();
+
+        // Build nav links
+        var navLinks = new StringBuilder();
+        foreach (var p in pages)
+        {
+            var label = HttpUtility.HtmlEncode(p.Title);
+            var id = HttpUtility.HtmlAttributeEncode(SanitizeSlug(p.Slug));
+            navLinks.AppendLine($"    <a href=\"#{id}\" class=\"spa-nav-link\" data-page=\"{id}\">{label}</a>");
+        }
+
+        // Build page sections (inner grid only, no full document wrapper)
+        var sections = new StringBuilder();
+        bool first = true;
+        foreach (var p in pages)
+        {
+            var id = HttpUtility.HtmlAttributeEncode(SanitizeSlug(p.Slug));
+            var gridHtml = await BuildFromPageAsync(p, standalone: false);
+            var display = first ? "block" : "none";
+            sections.AppendLine($"  <section id=\"{id}\" class=\"spa-section\" style=\"display:{display}\">");
+            sections.Append(gridHtml);
+            sections.AppendLine("  </section>");
+            first = false;
+        }
+
+        var firstId = pages.Count > 0 ? SanitizeSlug(pages[0].Slug) : "";
+
+        return $$"""
+            <!DOCTYPE html>
+            <html lang="vi">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>WidgetData Site</title>
+              <style>
+            {{EmbeddedCss}}
+            .spa-nav{background:#1a202c;padding:0 24px;display:flex;gap:4px;flex-wrap:wrap}
+            .spa-nav-link{display:inline-block;padding:12px 18px;color:#e2e8f0;text-decoration:none;font-size:14px;font-weight:500;border-bottom:3px solid transparent}
+            .spa-nav-link:hover{color:#fff;background:rgba(255,255,255,.06)}
+            .spa-nav-link.active{color:#63b3ed;border-bottom-color:#63b3ed}
+            .spa-section{max-width:1280px;margin:0 auto;padding:28px 24px}
+              </style>
+            </head>
+            <body>
+            <nav class="spa-nav">
+            {{navLinks}}
+            </nav>
+            {{sections}}
+            <script>
+            (function(){
+              function show(hash){
+                var id = hash ? hash.replace(/^#/,'') : '{{firstId}}';
+                document.querySelectorAll('.spa-section').forEach(function(s){ s.style.display='none'; });
+                document.querySelectorAll('.spa-nav-link').forEach(function(a){ a.classList.remove('active'); });
+                var sec = document.getElementById(id);
+                if(sec){ sec.style.display='block'; }
+                var link = document.querySelector('.spa-nav-link[data-page="'+id+'"]');
+                if(link){ link.classList.add('active'); }
+              }
+              window.addEventListener('hashchange', function(){ show(location.hash); });
+              show(location.hash);
+            })();
+            </script>
+            </body>
+            </html>
+            """;
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -134,6 +252,13 @@ public class PageHtmlService : IPageHtmlService
             </body>
             </html>
             """;
+    }
+
+    private static string SanitizeSlug(string slug)
+    {
+        // Keep only alphanumeric, hyphens, underscores; fallback to "page"
+        var clean = new string(slug.Where(c => char.IsLetterOrDigit(c) || c == '-' || c == '_').ToArray());
+        return string.IsNullOrEmpty(clean) ? "page" : clean;
     }
 
     // ── Embedded CSS ─────────────────────────────────────────────────────────

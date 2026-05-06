@@ -5,6 +5,7 @@
 @inject WidgetData.Web.Services.ApiService ApiService
 @inject ISnackbar Snackbar
 @inject IStringLocalizer<SharedResource> L
+@inject IJSRuntime JS
 
 <PageTitle>@L["Pages_Title"] - WidgetData</PageTitle>
 
@@ -41,6 +42,14 @@
 
 <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
            OnClick="ShowAddForm" Class="mb-3">@L["Pages_AddPage"]</MudButton>
+<MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.FolderZip"
+           OnClick="ExportMultipage" Disabled="_exporting" Class="mb-3 ml-2">
+    @(_exporting ? "Đang tạo..." : "Export Multi-page ZIP")
+</MudButton>
+<MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Web"
+           OnClick="ExportSpa" Disabled="_exporting" Class="mb-3 ml-2">
+    @(_exporting ? "Đang tạo..." : "Export Single Page App")
+</MudButton>
 
 @if (_pages == null)
 {
@@ -243,5 +252,35 @@ else
     void CopyEmbedCode(string slug)
     {
         Snackbar.Add($"Slug: {slug} – dùng data-page-slug=\"{slug}\" để nhúng vào website", Severity.Info);
+    }
+
+    bool _exporting;
+
+    Task ExportMultipage() => ExportStatic("multipage");
+    Task ExportSpa() => ExportStatic("spa");
+
+    async Task ExportStatic(string mode)
+    {
+        _exporting = true;
+        try
+        {
+            var result = await ApiService.ExportStaticSiteAsync(mode);
+            if (result == null)
+            {
+                Snackbar.Add("Export thất bại.", Severity.Error);
+                return;
+            }
+            var (data, _, fileName) = result.Value;
+            await JS.InvokeVoidAsync("widgetAdminDownload", fileName, data);
+            Snackbar.Add($"Đã tạo {fileName}!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Lỗi: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _exporting = false;
+        }
     }
 }

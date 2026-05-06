@@ -5,6 +5,8 @@ using WidgetData.Application.DTOs;
 using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Interfaces;
 
+// ReSharper disable RouteTemplates.MethodMissingRouteParameters
+
 namespace WidgetData.API.Controllers;
 
 /// <summary>
@@ -24,11 +26,13 @@ public class PagesController : ControllerBase
 {
     private readonly IPageService _pageService;
     private readonly ITenantContext _tenantContext;
+    private readonly IPageHtmlService _pageHtmlService;
 
-    public PagesController(IPageService pageService, ITenantContext tenantContext)
+    public PagesController(IPageService pageService, ITenantContext tenantContext, IPageHtmlService pageHtmlService)
     {
         _pageService = pageService;
         _tenantContext = tenantContext;
+        _pageHtmlService = pageHtmlService;
     }
 
     // ── Public endpoint (không cần auth) ──────────────────────────────────
@@ -141,6 +145,55 @@ public class PagesController : ControllerBase
 
         await _pageService.UpdateWidgetLayoutAsync(id, widgetId, dto.Position, dto.Width);
         return Ok();
+    }
+
+    // ── Static site export ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Export các trang thành web tĩnh.
+    ///   mode=multipage – trả về file ZIP, mỗi trang một file {slug}.html
+    ///   mode=spa       – trả về một file index.html duy nhất (SPA hash routing)
+    /// </summary>
+    /// <param name="mode">multipage | spa  (mặc định: multipage)</param>
+    /// <param name="pageIds">Danh sách ID trang cần export (bỏ trống = tất cả trang active)</param>
+    [HttpGet("export/static")]
+    [Authorize(Roles = "SuperAdmin,TenantAdmin,Admin,Manager")]
+    public async Task<IActionResult> ExportStatic(
+        [FromQuery] string mode = "multipage",
+        [FromQuery] int[]? pageIds = null)
+    {
+        var tenantId = GetCurrentTenantId();
+        if (tenantId == null) return Forbid();
+
+        var allPages = (await _pageService.GetAllAsync(tenantId.Value)).ToList();
+
+        List<PageDto> pages;
+        if (pageIds is { Length: > 0 })
+        {
+            var idSet = new HashSet<int>(pageIds);
+            pages = allPages.Where(p => idSet.Contains(p.Id)).ToList();
+        }
+        else
+        {
+            pages = allPages.Where(p => p.IsActive).ToList();
+        }
+
+        if (pages.Count == 0)
+            return BadRequest(new { error = "Không có trang nào để export." });
+
+        if (string.Equals(mode, "spa", StringComparison.OrdinalIgnoreCase))
+        {
+            var html = await _pageHtmlService.BuildSpaHtmlAsync(pages);
+            return File(
+                System.Text.Encoding.UTF8.GetBytes(html),
+                "text/html; charset=utf-8",
+                "index.html");
+        }
+        else
+        {
+            var zip = await _pageHtmlService.BuildMultiPageZipAsync(pages);
+            return File(zip, "application/zip", "static-site.zip");
+        }
     }
 
     private int? GetCurrentTenantId()
