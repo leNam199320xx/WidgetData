@@ -50,6 +50,10 @@
            OnClick="ExportSpa" Disabled="_exporting" Class="mb-3 ml-2">
     @(_exporting ? "Đang tạo..." : "Export Single Page App")
 </MudButton>
+<MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.Preview"
+           OnClick="PreviewSpa" Disabled="_previewing" Class="mb-3 ml-2">
+    @(_previewing ? "Đang tạo..." : "Preview SPA")
+</MudButton>
 
 @if (_pages == null)
 {
@@ -89,6 +93,9 @@ else
                                OnClick="() => ShowEditForm(context)" />
                 <MudIconButton Icon="@Icons.Material.Filled.Layers" Size="Size.Small" Color="Color.Primary"
                                OnClick="() => ManageWidgets(context)" />
+                <MudIconButton Icon="@Icons.Material.Filled.Preview" Size="Size.Small" Color="Color.Info"
+                               Title="Xem trước trang tĩnh"
+                               OnClick="() => PreviewPage(context.Id)" />
                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
                                OnClick="() => DeletePage(context.Id)" />
             </MudTd>
@@ -281,6 +288,56 @@ else
         finally
         {
             _exporting = false;
+        }
+    }
+
+    bool _previewing;
+
+    async Task PreviewPage(int pageId)
+    {
+        _previewing = true;
+        try
+        {
+            var html = await ApiService.GetPagePreviewHtmlAsync(pageId);
+            if (string.IsNullOrEmpty(html))
+            {
+                Snackbar.Add("Không thể tải preview.", Severity.Error);
+                return;
+            }
+            var opened = await JS.InvokeAsync<bool>("widgetAdminOpenPreview", html);
+            if (!opened) Snackbar.Add("Trình duyệt đã chặn cửa sổ mới. Hãy cho phép pop-up cho trang này.", Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Lỗi preview: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _previewing = false;
+        }
+    }
+
+    async Task PreviewSpa()
+    {
+        _previewing = true;
+        try
+        {
+            var html = await ApiService.GetSpaPreviewHtmlAsync();
+            if (string.IsNullOrEmpty(html))
+            {
+                Snackbar.Add("Không thể tải SPA preview.", Severity.Error);
+                return;
+            }
+            var opened = await JS.InvokeAsync<bool>("widgetAdminOpenPreview", html);
+            if (!opened) Snackbar.Add("Trình duyệt đã chặn cửa sổ mới. Hãy cho phép pop-up cho trang này.", Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Lỗi preview SPA: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _previewing = false;
         }
     }
 }

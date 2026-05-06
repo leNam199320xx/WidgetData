@@ -150,6 +150,52 @@ public class PagesController : ControllerBase
     // ── Static site export ────────────────────────────────────────────────────
 
     /// <summary>
+    /// Preview HTML của một trang dưới dạng web tĩnh (trả về text/html, yêu cầu auth).
+    /// Dùng để xem trước trước khi export.
+    /// </summary>
+    [HttpGet("{id:int}/preview")]
+    [Authorize]
+    public async Task<IActionResult> PreviewPage(int id)
+    {
+        var page = await _pageService.GetByIdAsync(id);
+        if (page == null) return NotFound();
+        if (!_tenantContext.IsSuperAdmin && _tenantContext.CurrentTenantId.HasValue
+            && page.TenantId != _tenantContext.CurrentTenantId.Value)
+            return Forbid();
+
+        try
+        {
+            var html = await _pageHtmlService.BuildFromPageAsync(page, standalone: true);
+            return Content(html, "text/html; charset=utf-8");
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
+    /// <summary>
+    /// Preview SPA index.html cho tất cả trang active của tenant (trả về text/html, yêu cầu auth).
+    /// </summary>
+    [HttpGet("preview/spa")]
+    [Authorize]
+    public async Task<IActionResult> PreviewSpa()
+    {
+        var tenantId = GetCurrentTenantId();
+        if (tenantId == null) return Forbid();
+
+        var pages = (await _pageService.GetAllAsync(tenantId.Value))
+            .Where(p => p.IsActive)
+            .ToList();
+
+        if (pages.Count == 0)
+            return Content("<html><body><p>Không có trang nào đang Active.</p></body></html>", "text/html; charset=utf-8");
+
+        var html = await _pageHtmlService.BuildSpaHtmlAsync(pages);
+        return Content(html, "text/html; charset=utf-8");
+    }
+
+    /// <summary>
     /// Export các trang thành web tĩnh.
     ///   mode=multipage – trả về file ZIP, mỗi trang một file {slug}.html
     ///   mode=spa       – trả về một file index.html duy nhất (SPA hash routing)

@@ -29,6 +29,14 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         };
+        window.widgetAdminOpenPreview = function (html) {
+            var blob = new Blob([html], { type: 'text/html; charset=utf-8' });
+            var url = URL.createObjectURL(blob);
+            var w = window.open(url, '_blank');
+            // Revoke after tab has had time to load
+            setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
+            return w != null;
+        };
     </script>
 </body>
 

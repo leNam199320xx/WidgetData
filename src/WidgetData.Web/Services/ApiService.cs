@@ -252,4 +252,20 @@ public class ApiService
                  ?? (mode == "spa" ? "index.html" : "static-site.zip");
         return (data, ct, fn.Trim('"'));
     }
+
+    public async Task<string?> GetPagePreviewHtmlAsync(int pageId)
+    {
+        ApplyToken();
+        var response = await _http.GetAsync($"api/pages/{pageId}/preview");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadAsStringAsync();
+    }
+
+    public async Task<string?> GetSpaPreviewHtmlAsync()
+    {
+        ApplyToken();
+        var response = await _http.GetAsync("api/pages/preview/spa");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadAsStringAsync();
+    }
 }
