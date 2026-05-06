@@ -1,13 +1,236 @@
 @page "/settings"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using MudBlazor
+@using WidgetData.Application.DTOs
+@using Microsoft.AspNetCore.Components.Authorization
+@inject WidgetData.Web.Services.ApiService ApiService
+@inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
 @inject IStringLocalizer<SharedResource> L
 
 <PageTitle>@L["Settings_Title"] - WidgetData</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-4">@L["Settings_Title"]</MudText>
+<MudText Typo="Typo.h4" Class="mb-1">
+    <MudIcon Icon="@Icons.Material.Filled.Settings" Class="mr-2" />
+    @L["Settings_Title"]
+</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+    Cài đặt và thông tin tài khoản của bạn
+</MudText>
 
-<MudCard>
-    <MudCardContent>
-        <MudText Typo="Typo.body1">@L["Settings_Placeholder"]</MudText>
-    </MudCardContent>
-</MudCard>
+<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true">
+
+    @* Tab 1: Thông tin tài khoản *@
+    <MudTabPanel Text="Tài khoản" Icon="@Icons.Material.Filled.AccountCircle">
+        <MudPaper Class="pa-4 mt-3" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-3">Thông tin đăng nhập</MudText>
+            <MudGrid>
+                <MudItem xs="12" sm="4">
+                    <MudTextField Value="_currentEmail" Label="Email" Variant="Variant.Outlined" ReadOnly="true" />
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudTextField Value="_currentDisplayName" Label="Tên hiển thị" Variant="Variant.Outlined" ReadOnly="true" />
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudTextField Value="@string.Join(", ", _currentRoles)" Label="Roles" Variant="Variant.Outlined" ReadOnly="true" />
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        @* Change Password *@
+        <MudPaper Class="pa-4 mt-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-3">Đổi mật khẩu</MudText>
+            @if (_pwChangeSuccess)
+            {
+                <MudAlert Severity="Severity.Success" Class="mb-3">Đã đổi mật khẩu thành công.</MudAlert>
+            }
+            <MudGrid>
+                <MudItem xs="12" sm="5">
+                    <MudTextField @bind-Value="_currentPassword" Label="Mật khẩu hiện tại" Variant="Variant.Outlined"
+                                  InputType="InputType.Password" />
+                </MudItem>
+                <MudItem xs="12" sm="5">
+                    <MudTextField @bind-Value="_newPassword" Label="Mật khẩu mới" Variant="Variant.Outlined"
+                                  InputType="InputType.Password" HelperText="@L["Users_PasswordHelper"]" />
+                </MudItem>
+                <MudItem xs="12" sm="2" Class="d-flex align-center">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ChangePassword" Disabled="_saving">
+                        @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                        Đổi mật khẩu
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudTabPanel>
+
+    @* Tab 2: Thông tin Tenant *@
+    <MudTabPanel Text="Tenant" Icon="@Icons.Material.Filled.Business">
+        @if (_tenantLoading)
+        {
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="mt-3" />
+        }
+        else if (_tenant != null)
+        {
+            <MudPaper Class="pa-4 mt-3" Elevation="2">
+                <MudText Typo="Typo.h6" Class="mb-3">Thông tin Tenant</MudText>
+                <MudGrid>
+                    <MudItem xs="12" sm="4">
+                        <MudTextField @bind-Value="_tenantForm.Name" Label="Tên Tenant" Variant="Variant.Outlined" Required="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="3">
+                        <MudTextField Value="_tenant.Slug" Label="Slug (không đổi được)" Variant="Variant.Outlined" ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="3">
+                        <MudTextField @bind-Value="_tenantForm.ContactEmail" Label="Email liên hệ" Variant="Variant.Outlined"
+                                      InputType="InputType.Email" />
+                    </MudItem>
+                    <MudItem xs="12" sm="2">
+                        <MudTextField Value="_tenant.Plan" Label="Gói dịch vụ" Variant="Variant.Outlined" ReadOnly="true" />
+                    </MudItem>
+                </MudGrid>
+                <MudDivider Class="my-3" />
+                <MudGrid>
+                    <MudItem xs="12" sm="3">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Ngày tạo</MudText>
+                        <MudText>@_tenant.CreatedAt.ToString("dd/MM/yyyy")</MudText>
+                    </MudItem>
+                    <MudItem xs="12" sm="3">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Số người dùng</MudText>
+                        <MudText>@_tenant.UserCount</MudText>
+                    </MudItem>
+                    <MudItem xs="12" sm="3">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Số widgets</MudText>
+                        <MudText>@_tenant.WidgetCount</MudText>
+                    </MudItem>
+                    <MudItem xs="12" sm="3">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Trạng thái</MudText>
+                        <MudChip T="string" Color="@(_tenant.IsActive ? Color.Success : Color.Error)" Size="Size.Small">
+                            @(_tenant.IsActive ? "Hoạt động" : "Tạm dừng")
+                        </MudChip>
+                    </MudItem>
+                </MudGrid>
+                <MudDivider Class="my-3" />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveTenantInfo" Disabled="_saving">
+                    @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                    @L["Save"]
+                </MudButton>
+            </MudPaper>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info" Class="mt-3">
+                Không tìm thấy thông tin tenant. Tài khoản này có thể là SuperAdmin toàn cục.
+            </MudAlert>
+        }
+    </MudTabPanel>
+
+    @* Tab 3: Giao diện *@
+    <MudTabPanel Text="Giao diện" Icon="@Icons.Material.Filled.Palette">
+        <MudPaper Class="pa-4 mt-3" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-3">Ngôn ngữ & Giao diện</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Ngôn ngữ hiển thị được cấu hình tự động theo trình duyệt.
+                Hệ thống hỗ trợ: Tiếng Việt (vi) và Tiếng Anh (en).
+            </MudText>
+            <MudDivider Class="my-3" />
+            <MudAlert Severity="Severity.Info">
+                Để thay đổi ngôn ngữ, hãy thay đổi ngôn ngữ trình duyệt của bạn và tải lại trang.
+            </MudAlert>
+        </MudPaper>
+    </MudTabPanel>
+</MudTabs>
+
+@code {
+    string _currentEmail = string.Empty;
+    string _currentDisplayName = string.Empty;
+    IList<string> _currentRoles = new List<string>();
+    string? _currentUserId;
+
+    string _currentPassword = string.Empty;
+    string _newPassword = string.Empty;
+    bool _pwChangeSuccess;
+    bool _saving;
+
+    TenantDto? _tenant;
+    bool _tenantLoading;
+    UpdateTenantDto _tenantForm = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            _currentEmail = user.FindFirst("email")?.Value
+                ?? user.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                ?? user.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                ?? "";
+            _currentDisplayName = user.FindFirst("displayName")?.Value ?? _currentEmail;
+            _currentUserId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? user.FindFirst("sub")?.Value;
+            _currentRoles = user.Claims
+                .Where(c => c.Type == System.Security.Claims.ClaimTypes.Role || c.Type == "role")
+                .Select(c => c.Value).ToList();
+        }
+        await LoadTenantAsync();
+    }
+
+    async Task LoadTenantAsync()
+    {
+        _tenantLoading = true;
+        try
+        {
+            var tenants = await ApiService.GetTenantsAsync();
+            _tenant = tenants?.FirstOrDefault();
+            if (_tenant != null)
+            {
+                _tenantForm = new UpdateTenantDto
+                {
+                    Name = _tenant.Name,
+                    ContactEmail = _tenant.ContactEmail,
+                    Plan = _tenant.Plan,
+                    IsActive = _tenant.IsActive
+                };
+            }
+        }
+        catch { /* user might be SuperAdmin or tenant not found */ }
+        finally { _tenantLoading = false; }
+    }
+
+    async Task ChangePassword()
+    {
+        if (string.IsNullOrWhiteSpace(_newPassword) || _currentUserId == null) return;
+        _saving = true;
+        _pwChangeSuccess = false;
+        try
+        {
+            var dto = new ChangeUserPasswordDto { NewPassword = _newPassword };
+            var result = await ApiService.ChangeUserPasswordAsync(_currentUserId, dto);
+            if (result != null)
+            {
+                _pwChangeSuccess = true;
+                _currentPassword = string.Empty;
+                _newPassword = string.Empty;
+                Snackbar.Add("Đã đổi mật khẩu thành công.", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Đổi mật khẩu thất bại. Vui lòng kiểm tra lại.", Severity.Error);
+            }
+        }
+        finally { _saving = false; }
+    }
+
+    async Task SaveTenantInfo()
+    {
+        if (_tenant == null) return;
+        _saving = true;
+        try
+        {
+            var result = await ApiService.UpdateTenantAsync(_tenant.Id, _tenantForm);
+            Snackbar.Add(result != null ? "Đã cập nhật thông tin tenant." : "Cập nhật thất bại.", result != null ? Severity.Success : Severity.Error);
+            if (result != null) await LoadTenantAsync();
+        }
+        finally { _saving = false; }
+    }
+}

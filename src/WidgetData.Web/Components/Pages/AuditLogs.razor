@@ -1,0 +1,188 @@
+@page "/audit-logs"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@inject WidgetData.Web.Services.ApiService ApiService
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>Audit Log - WidgetData</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-1">
+    <MudIcon Icon="@Icons.Material.Filled.HistoryEdu" Class="mr-2" />
+    Audit Log
+</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+    Lịch sử các thao tác được ghi lại trong hệ thống
+</MudText>
+
+@* Filter Bar *@
+<MudPaper Elevation="1" Class="pa-3 mb-4">
+    <MudGrid>
+        <MudItem xs="12" sm="3">
+            <MudTextField @bind-Value="_filterAction" Label="Hành động" Variant="Variant.Outlined" Dense="true"
+                          Placeholder="VD: InactivityAlert" />
+        </MudItem>
+        <MudItem xs="12" sm="2">
+            <MudTextField @bind-Value="_filterEntityType" Label="Loại entity" Variant="Variant.Outlined" Dense="true"
+                          Placeholder="VD: Widget" />
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudTextField @bind-Value="_filterEmail" Label="Email người dùng" Variant="Variant.Outlined" Dense="true" />
+        </MudItem>
+        <MudItem xs="12" sm="2">
+            <MudDatePicker @bind-Date="_filterFrom" Label="Từ ngày" Variant="Variant.Outlined" Dense="true" />
+        </MudItem>
+        <MudItem xs="12" sm="2" Class="d-flex align-center gap-2">
+            <MudDatePicker @bind-Date="_filterTo" Label="Đến ngày" Variant="Variant.Outlined" Dense="true" />
+        </MudItem>
+        <MudItem xs="12">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Search"
+                       OnClick="ApplyFilter" Disabled="_loading" Size="Size.Small">
+                Lọc
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Clear"
+                       OnClick="ClearFilter" Size="Size.Small" Class="ml-2">
+                Xóa bộ lọc
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_loading)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else if (_error != null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+else if (_result != null)
+{
+    <MudTable Items="_result.Items" Dense="true" Hover="true" Striped="true" FixedHeader="true" Height="500px">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Tổng: @_result.Total bản ghi</MudText>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>#</MudTh>
+            <MudTh>Thời gian</MudTh>
+            <MudTh>Hành động</MudTh>
+            <MudTh>Loại entity</MudTh>
+            <MudTh>Entity ID</MudTh>
+            <MudTh>Người dùng</MudTh>
+            <MudTh>IP</MudTh>
+            <MudTh>Ghi chú</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.Id</MudTd>
+            <MudTd>@context.Timestamp.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</MudTd>
+            <MudTd>
+                <MudChip T="string" Size="Size.Small" Color="@GetActionColor(context.Action)">
+                    @context.Action
+                </MudChip>
+            </MudTd>
+            <MudTd>@(context.EntityType ?? "-")</MudTd>
+            <MudTd>@(context.EntityId ?? "-")</MudTd>
+            <MudTd>
+                @if (!string.IsNullOrEmpty(context.UserEmail))
+                {
+                    <MudText Typo="Typo.body2">@context.UserEmail</MudText>
+                }
+                else if (!string.IsNullOrEmpty(context.UserId))
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@context.UserId[..Math.Min(8, context.UserId.Length)]…</MudText>
+                }
+                else
+                {
+                    <span>—</span>
+                }
+            </MudTd>
+            <MudTd>@(context.IpAddress ?? "-")</MudTd>
+            <MudTd>
+                <MudTooltip Text="@(context.Notes ?? "")">
+                    <MudText Style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" Typo="Typo.caption">
+                        @(context.Notes ?? "-")
+                    </MudText>
+                </MudTooltip>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Color="Color.Secondary" Class="pa-4">Không có dữ liệu.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+
+    @* Pagination *@
+    @if (_result.TotalPages > 1)
+    {
+        <div class="d-flex justify-center mt-3">
+            <MudPagination Count="_result.TotalPages" Selected="_currentPage"
+                           SelectedChanged="OnPageChanged" Color="Color.Primary" />
+        </div>
+    }
+}
+
+@code {
+    AuditLogPagedResult? _result;
+    bool _loading;
+    string? _error;
+    int _currentPage = 1;
+    const int PageSize = 50;
+
+    string? _filterAction;
+    string? _filterEntityType;
+    string? _filterEmail;
+    DateTime? _filterFrom;
+    DateTime? _filterTo;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            _result = await ApiService.GetAuditLogsAsync(
+                page: _currentPage,
+                pageSize: PageSize,
+                action: _filterAction,
+                entityType: _filterEntityType,
+                userEmail: _filterEmail,
+                from: _filterFrom?.ToString("o"),
+                to: _filterTo?.ToString("o"));
+        }
+        catch (Exception ex) { _error = "Lỗi tải dữ liệu: " + ex.Message; }
+        finally { _loading = false; }
+    }
+
+    async Task ApplyFilter()
+    {
+        _currentPage = 1;
+        await LoadAsync();
+    }
+
+    async Task ClearFilter()
+    {
+        _filterAction = null;
+        _filterEntityType = null;
+        _filterEmail = null;
+        _filterFrom = null;
+        _filterTo = null;
+        _currentPage = 1;
+        await LoadAsync();
+    }
+
+    async Task OnPageChanged(int page)
+    {
+        _currentPage = page;
+        await LoadAsync();
+    }
+
+    static Color GetActionColor(string action) => action switch
+    {
+        var a when a.Contains("Delete") || a.Contains("Disable") => Color.Error,
+        var a when a.Contains("Create") || a.Contains("Add") => Color.Success,
+        var a when a.Contains("Update") || a.Contains("Edit") => Color.Warning,
+        var a when a.Contains("Alert") || a.Contains("Inactivity") => Color.Warning,
+        _ => Color.Default
+    };
+}

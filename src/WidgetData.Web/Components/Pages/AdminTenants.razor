@@ -48,6 +48,20 @@
     </MudPaper>
 }
 
+@* Delete confirmation *@
+@if (_deletingTenant != null)
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="3" Style="border-left: 4px solid #f44336">
+        <MudText Typo="Typo.h6" Color="Color.Error">@L["ConfirmDelete"]</MudText>
+        <MudText Class="mb-3">
+            Bạn có chắc muốn xóa tenant <b>@_deletingTenant.Name</b> (@_deletingTenant.Slug)?
+            Hành động này sẽ xóa toàn bộ dữ liệu liên quan.
+        </MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DoDeleteTenant" Class="mr-2">@L["Delete"]</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="@(() => _deletingTenant = null)">@L["Cancel"]</MudButton>
+    </MudPaper>
+}
+
 <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
            OnClick="ShowAddForm" Class="mb-3">Thêm Tenant</MudButton>
 
@@ -90,9 +104,9 @@ else
             <MudTd>@context.CreatedAt.ToString("dd/MM/yyyy")</MudTd>
             <MudTd>
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
-                               OnClick="() => ShowEditForm(context)" />
+                               OnClick="@(() => ShowEditForm(context))" />
                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
-                               OnClick="() => DeleteTenant(context.Id)" />
+                               OnClick="@(() => _deletingTenant = context)" />
             </MudTd>
         </RowTemplate>
     </MudTable>
@@ -104,6 +118,7 @@ else
     int? _editingId;
     CreateTenantDto _form = new();
     UpdateTenantDto _formUpdate = new() { IsActive = true };
+    TenantDto? _deletingTenant;
 
     protected override async Task OnInitializedAsync()
     {
@@ -152,10 +167,12 @@ else
         }
     }
 
-    async Task DeleteTenant(int id)
+    async Task DoDeleteTenant()
     {
-        await ApiService.DeleteTenantAsync(id);
+        if (_deletingTenant == null) return;
+        var ok = await ApiService.DeleteTenantAsync(_deletingTenant.Id);
+        Snackbar.Add(ok ? "Đã xóa tenant" : "Xóa thất bại.", ok ? Severity.Success : Severity.Error);
+        _deletingTenant = null;
         await LoadTenants();
-        Snackbar.Add("Đã xóa tenant", Severity.Success);
     }
 }

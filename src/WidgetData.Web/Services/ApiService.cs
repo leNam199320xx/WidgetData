@@ -135,6 +135,34 @@ public class ApiService
     // Users
     public Task<IEnumerable<UserDto>?> GetUsersAsync() => GetAsync<IEnumerable<UserDto>>("api/users");
     public Task<object?> CreateUserAsync(RegisterDto dto) => PostAsync<object>("api/users", dto);
+    public Task<UserDto?> UpdateUserAsync(string id, UpdateUserDto dto) => PutAsync<UserDto>($"api/users/{id}", dto);
+    public Task<bool> DeleteUserAsync(string id) => DeleteAsync($"api/users/{id}");
+    public Task<UserDto?> SetUserRolesAsync(string id, SetUserRolesDto dto) => PostAsync<UserDto>($"api/users/{id}/roles", dto);
+    public Task<object?> ChangeUserPasswordAsync(string id, ChangeUserPasswordDto dto) => PostAsync<object>($"api/users/{id}/change-password", dto);
+
+    // Audit Logs
+    public Task<AuditLogPagedResult?> GetAuditLogsAsync(int page = 1, int pageSize = 50,
+        string? action = null, string? entityType = null, string? userEmail = null,
+        string? from = null, string? to = null)
+    {
+        var query = $"api/audit-logs?page={page}&pageSize={pageSize}";
+        if (!string.IsNullOrWhiteSpace(action)) query += $"&action={Uri.EscapeDataString(action)}";
+        if (!string.IsNullOrWhiteSpace(entityType)) query += $"&entityType={Uri.EscapeDataString(entityType)}";
+        if (!string.IsNullOrWhiteSpace(userEmail)) query += $"&userEmail={Uri.EscapeDataString(userEmail)}";
+        if (!string.IsNullOrWhiteSpace(from)) query += $"&from={Uri.EscapeDataString(from)}";
+        if (!string.IsNullOrWhiteSpace(to)) query += $"&to={Uri.EscapeDataString(to)}";
+        return GetAsync<AuditLogPagedResult>(query);
+    }
+
+    // Widget Activity
+    public Task<WidgetActivityPagedResult?> GetWidgetActivityAsync(int widgetId, int page = 1, int pageSize = 20)
+        => GetAsync<WidgetActivityPagedResult>($"api/widget-activity/{widgetId}?page={page}&pageSize={pageSize}");
+    public Task<WidgetActivitySummaryDto?> GetWidgetActivitySummaryAsync(int widgetId)
+        => GetAsync<WidgetActivitySummaryDto>($"api/widget-activity/{widgetId}/summary");
+    public Task<IEnumerable<InactivityAlertDto>?> GetInactiveWidgetsAsync(int thresholdDays = 30)
+        => GetAsync<IEnumerable<InactivityAlertDto>>($"api/widget-activity/inactive?thresholdDays={thresholdDays}");
+    public Task<IEnumerable<InactivityAlertDto>?> GetInactivityAlertsAsync()
+        => GetAsync<IEnumerable<InactivityAlertDto>>("api/widget-activity/alerts");
 
     // Widget Groups
     public Task<IEnumerable<WidgetGroupDto>?> GetWidgetGroupsAsync() => GetAsync<IEnumerable<WidgetGroupDto>>("api/widget-groups");
