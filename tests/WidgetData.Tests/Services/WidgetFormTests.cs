@@ -52,8 +52,9 @@ public class WidgetFormTests
 
         var auditServiceMock = new Mock<IAuditService>();
         var loggerMock = new Mock<ILogger<WidgetService>>();
+        var httpClientFactoryMock = new Mock<System.Net.Http.IHttpClientFactory>();
         _service = new WidgetService(_widgetRepoMock.Object, _executionRepoMock.Object, _context,
-            _archiveRepoMock.Object, _scheduleRepoMock.Object, auditServiceMock.Object, loggerMock.Object);
+            _archiveRepoMock.Object, _scheduleRepoMock.Object, auditServiceMock.Object, loggerMock.Object, httpClientFactoryMock.Object);
     }
 
     // ─── Bước 1: Thông tin - FriendlyLabel ───────────────────────────────────

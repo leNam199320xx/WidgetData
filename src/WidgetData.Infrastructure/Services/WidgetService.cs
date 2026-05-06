@@ -21,11 +21,12 @@ public class WidgetService : IWidgetService
     private readonly IAuditService _auditService;
     private readonly ILogger<WidgetService> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ITenantContext? _tenantContext;
 
     public WidgetService(IWidgetRepository widgetRepo, IExecutionRepository executionRepo,
         ApplicationDbContext context, IWidgetConfigArchiveRepository archiveRepo,
         IScheduleRepository scheduleRepo, IAuditService auditService, ILogger<WidgetService> logger,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory, ITenantContext? tenantContext = null)
     {
         _widgetRepo = widgetRepo;
         _executionRepo = executionRepo;
@@ -35,6 +36,7 @@ public class WidgetService : IWidgetService
         _auditService = auditService;
         _logger = logger;
         _httpClientFactory = httpClientFactory;
+        _tenantContext = tenantContext;
     }
 
     public async Task<IEnumerable<WidgetDto>> GetAllAsync()
@@ -71,7 +73,8 @@ public class WidgetService : IWidgetService
             CacheTtlMinutes = dto.CacheTtlMinutes,
             InactivityAutoDisableEnabled = dto.InactivityAutoDisableEnabled,
             InactivityThresholdDays = dto.InactivityThresholdDays,
-            CreatedBy = userId
+            CreatedBy = userId,
+            TenantId = _tenantContext?.CurrentTenantId
         };
         var created = await _widgetRepo.CreateAsync(widget);
 

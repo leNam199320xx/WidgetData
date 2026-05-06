@@ -217,4 +217,21 @@ public class ApiService
     public Task<FormSchemaDto?> GetFormSchemaAsync(int widgetId) => GetAsync<FormSchemaDto>($"api/form/{widgetId}/schema");
     public Task<IEnumerable<FormSubmissionDto>?> GetFormSubmissionsAsync(int widgetId) => GetAsync<IEnumerable<FormSubmissionDto>>($"api/form/{widgetId}/submissions");
     public Task<bool> DeleteFormSubmissionAsync(int id) => DeleteAsync($"api/form/submissions/{id}");
+
+    // Tenants (SuperAdmin)
+    public Task<IEnumerable<TenantDto>?> GetTenantsAsync() => GetAsync<IEnumerable<TenantDto>>("api/tenants");
+    public Task<TenantDto?> CreateTenantAsync(CreateTenantDto dto) => PostAsync<TenantDto>("api/tenants", dto);
+    public Task<TenantDto?> UpdateTenantAsync(int id, UpdateTenantDto dto) => PutAsync<TenantDto>($"api/tenants/{id}", dto);
+    public Task<bool> DeleteTenantAsync(int id) => DeleteAsync($"api/tenants/{id}");
+    public Task<AdminStatsDto?> GetAdminStatsAsync() => GetAsync<AdminStatsDto>("api/tenants/admin-stats");
+
+    // Pages (Site pages)
+    public Task<IEnumerable<PageDto>?> GetPagesAsync() => GetAsync<IEnumerable<PageDto>>("api/pages");
+    public Task<PageDto?> GetPageByIdAsync(int id) => GetAsync<PageDto>($"api/pages/{id}");
+    public Task<PageDto?> CreatePageAsync(CreatePageDto dto) => PostAsync<PageDto>("api/pages", dto);
+    public Task<PageDto?> UpdatePageAsync(int id, UpdatePageDto dto) => PutAsync<PageDto>($"api/pages/{id}", dto);
+    public Task<bool> DeletePageAsync(int id) => DeleteAsync($"api/pages/{id}");
+    public Task AddWidgetToPageAsync(int pageId, int widgetId, int position, int width)
+        => PostAsync<object>($"api/pages/{pageId}/widgets", new PageWidgetLayoutDto { WidgetId = widgetId, Position = position, Width = width });
+    public Task RemoveWidgetFromPageAsync(int pageId, int widgetId) => DeleteAsync($"api/pages/{pageId}/widgets/{widgetId}");
 }

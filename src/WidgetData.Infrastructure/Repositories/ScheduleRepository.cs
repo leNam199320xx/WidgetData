@@ -20,8 +20,14 @@ public class ScheduleRepository : IScheduleRepository
     public async Task<IEnumerable<WidgetSchedule>> GetByWidgetIdAsync(int widgetId)
         => await _context.WidgetSchedules.Where(s => s.WidgetId == widgetId).ToListAsync();
 
+    public async Task<IEnumerable<WidgetSchedule>> GetDueAsync(DateTime asOf)
+        => await _context.WidgetSchedules
+            .Include(s => s.Widget)
+            .Where(s => s.IsEnabled && s.NextRunAt != null && s.NextRunAt <= asOf)
+            .ToListAsync();
+
     public async Task<WidgetSchedule?> GetByIdAsync(int id)
-        => await _context.WidgetSchedules.FindAsync(id);
+        => await _context.WidgetSchedules.Include(s => s.Widget).FirstOrDefaultAsync(s => s.Id == id);
 
     public async Task<WidgetSchedule> CreateAsync(WidgetSchedule schedule)
     {

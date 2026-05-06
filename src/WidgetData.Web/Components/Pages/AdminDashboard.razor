@@ -1,0 +1,90 @@
+@page "/admin"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@inject WidgetData.Web.Services.ApiService ApiService
+@inject IStringLocalizer<SharedResource> L
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "SuperAdmin")]
+
+<PageTitle>@L["Admin_Title"] - WidgetData</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">@L["Admin_Title"]</MudText>
+
+@if (_stats == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else
+{
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h4">@_stats.TotalTenants</MudText>
+                    <MudText Color="Color.Secondary">Tổng Tenant</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h4" Color="Color.Success">@_stats.ActiveTenants</MudText>
+                    <MudText Color="Color.Secondary">Tenant đang hoạt động</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h4">@_stats.ActivePages / @_stats.TotalPages</MudText>
+                    <MudText Color="Color.Secondary">Trang active / Tổng trang</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h4">@_stats.TotalApiCalls</MudText>
+                    <MudText Color="Color.Secondary">Tổng API calls</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <MudText Typo="Typo.h5" Class="mb-3">Danh sách Tenant</MudText>
+    <MudTable Items="_stats.Tenants" Dense="true" Hover="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Tên</MudTh>
+            <MudTh>Slug</MudTh>
+            <MudTh>Plan</MudTh>
+            <MudTh>Trạng thái</MudTh>
+            <MudTh>Users</MudTh>
+            <MudTh>Trang</MudTh>
+            <MudTh>Widget</MudTh>
+            <MudTh>Ngày tạo</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.Name</MudTd>
+            <MudTd><MudChip T="string" Size="Size.Small">@context.Slug</MudChip></MudTd>
+            <MudTd>@context.Plan</MudTd>
+            <MudTd>
+                <MudChip T="string" Size="Size.Small" Color="@(context.IsActive ? Color.Success : Color.Default)">
+                    @(context.IsActive ? "Active" : "Inactive")
+                </MudChip>
+            </MudTd>
+            <MudTd>@context.UserCount</MudTd>
+            <MudTd>@context.PageCount</MudTd>
+            <MudTd>@context.WidgetCount</MudTd>
+            <MudTd>@context.CreatedAt.ToString("dd/MM/yyyy")</MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    AdminStatsDto? _stats;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _stats = await ApiService.GetAdminStatsAsync();
+    }
+}

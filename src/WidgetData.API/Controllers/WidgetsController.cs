@@ -125,6 +125,21 @@ public class WidgetsController : ControllerBase
         return result == null ? NotFound() : Ok(result);
     }
 
+    /// <summary>
+    /// Endpoint công khai để nhúng widget vào website bên ngoài.
+    /// Không yêu cầu xác thực – chỉ dùng cho widget được đánh dấu IsActive.
+    /// </summary>
+    [HttpGet("{id}/embed")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetEmbedData(int id)
+    {
+        var widget = await _service.GetByIdAsync(id);
+        if (widget == null || !widget.IsActive) return NotFound();
+
+        var result = await _service.GetDataAsync(id);
+        return result == null ? NotFound() : Ok(result);
+    }
+
     [HttpGet("{id}/history")]
     public async Task<IActionResult> GetHistory(int id)
         => Ok(await _service.GetHistoryAsync(id));

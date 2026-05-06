@@ -49,6 +49,14 @@ public class AuthController : ControllerBase
         var token = GenerateToken(user, roles);
         var refreshToken = await CreateRefreshTokenAsync(user.Id);
 
+        // Load tenant slug if applicable
+        string? tenantSlug = null;
+        if (user.TenantId.HasValue)
+        {
+            var tenant = await _context.Tenants.FindAsync(user.TenantId.Value);
+            tenantSlug = tenant?.Slug;
+        }
+
         return Ok(new AuthResponseDto
         {
             Token = token,
@@ -57,7 +65,9 @@ public class AuthController : ControllerBase
             UserId = user.Id,
             Email = user.Email!,
             DisplayName = user.DisplayName,
-            Roles = roles
+            Roles = roles,
+            TenantId = user.TenantId,
+            TenantSlug = tenantSlug
         });
     }
 
@@ -73,11 +83,23 @@ public class AuthController : ControllerBase
             EmailConfirmed = true,
             IsActive = true
         };
+
+        // Bind user to tenant if tenantSlug provided
+        if (!string.IsNullOrWhiteSpace(dto.TenantSlug))
+        {
+            var tenant = await _context.Tenants
+                .FirstOrDefaultAsync(t => t.Slug == dto.TenantSlug && t.IsActive);
+            if (tenant == null)
+                return BadRequest(new { message = "Tenant không tồn tại hoặc không hoạt động." });
+            user.TenantId = tenant.Id;
+        }
+
         var result = await _userManager.CreateAsync(user, dto.Password);
         if (!result.Succeeded)
             return BadRequest(result.Errors);
 
-        await _userManager.AddToRoleAsync(user, "Viewer");
+        var role = user.TenantId.HasValue ? "TenantUser" : "Viewer";
+        await _userManager.AddToRoleAsync(user, role);
         return Ok(new { message = "User registered successfully" });
     }
 
@@ -120,6 +142,13 @@ public class AuthController : ControllerBase
         var newToken = GenerateToken(user, roles);
         var newRefreshToken = await CreateRefreshTokenAsync(user.Id);
 
+        string? tenantSlug = null;
+        if (user.TenantId.HasValue)
+        {
+            var tenant = await _context.Tenants.FindAsync(user.TenantId.Value);
+            tenantSlug = tenant?.Slug;
+        }
+
         return Ok(new AuthResponseDto
         {
             Token = newToken,
@@ -128,7 +157,9 @@ public class AuthController : ControllerBase
             UserId = user.Id,
             Email = user.Email!,
             DisplayName = user.DisplayName,
-            Roles = roles
+            Roles = roles,
+            TenantId = user.TenantId,
+            TenantSlug = tenantSlug
         });
     }
 
@@ -174,6 +205,9 @@ public class AuthController : ControllerBase
             new(ClaimTypes.NameIdentifier, user.Id)
         };
         claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
+
+        if (user.TenantId.HasValue)
+            claims.Add(new Claim("tenant_id", user.TenantId.Value.ToString()));
 
         var token = new JwtSecurityToken(
             issuer: _config["JwtSettings:Issuer"],

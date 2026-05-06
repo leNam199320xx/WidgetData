@@ -27,6 +27,10 @@ public class RegisterDto
 
     [StringLength(100)]
     public string? DisplayName { get; set; }
+
+    /// <summary>Nếu cung cấp, user sẽ được gán vào tenant tương ứng với role TenantUser.</summary>
+    [StringLength(100)]
+    public string? TenantSlug { get; set; }
 }
 
 public class AuthResponseDto
@@ -38,6 +42,8 @@ public class AuthResponseDto
     public string Email { get; set; } = string.Empty;
     public string? DisplayName { get; set; }
     public IList<string> Roles { get; set; } = new List<string>();
+    public int? TenantId { get; set; }
+    public string? TenantSlug { get; set; }
 }
 
 public class RefreshTokenRequestDto

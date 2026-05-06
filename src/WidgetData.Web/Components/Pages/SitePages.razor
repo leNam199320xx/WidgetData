@@ -1,0 +1,247 @@
+@page "/site-pages"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@inject WidgetData.Web.Services.ApiService ApiService
+@inject ISnackbar Snackbar
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["Pages_Title"] - WidgetData</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">@L["Pages_Title"]</MudText>
+
+@if (_showForm)
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="3">
+        <MudText Typo="Typo.h6" Class="mb-3">@(_editingId == null ? L["Pages_AddPage"] : L["Pages_EditPage"])</MudText>
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_form.Title" Label="@L["Name"]" Required="true" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_form.Slug" Label="@L["Pages_Slug"]" Required="true" Variant="Variant.Outlined"
+                              HelperText="vd: trang-chu, san-pham" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_form.Description" Label="@L["Description"]" Variant="Variant.Outlined" Lines="2" />
+            </MudItem>
+            @if (_editingId != null)
+            {
+                <MudItem xs="12" sm="4">
+                    <MudSwitch @bind-Value="_formUpdate.IsActive" Label="@L["Active"]" Color="Color.Success" />
+                </MudItem>
+            }
+        </MudGrid>
+        <MudStack Row="true" Class="mt-3">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SavePage">@L["Save"]</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="CancelForm">@L["Cancel"]</MudButton>
+        </MudStack>
+    </MudPaper>
+}
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+           OnClick="ShowAddForm" Class="mb-3">@L["Pages_AddPage"]</MudButton>
+
+@if (_pages == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else if (!_pages.Any())
+{
+    <MudAlert Severity="Severity.Info">Chưa có trang nào. Hãy tạo trang đầu tiên.</MudAlert>
+}
+else
+{
+    <MudTable Items="_pages" Dense="true" Hover="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Tiêu đề</MudTh>
+            <MudTh>Slug</MudTh>
+            <MudTh>Trạng thái</MudTh>
+            <MudTh>Widget</MudTh>
+            <MudTh>Ngày tạo</MudTh>
+            <MudTh>Thao tác</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.Title</MudTd>
+            <MudTd>
+                <MudChip T="string" Size="Size.Small" Color="Color.Info" OnClick="() => CopyEmbedCode(context.Slug)">
+                    @context.Slug
+                </MudChip>
+            </MudTd>
+            <MudTd>
+                <MudChip T="string" Size="Size.Small" Color="@(context.IsActive ? Color.Success : Color.Default)">
+                    @(context.IsActive ? "Active" : "Inactive")
+                </MudChip>
+            </MudTd>
+            <MudTd>@context.Widgets.Count widgets</MudTd>
+            <MudTd>@context.CreatedAt.ToString("dd/MM/yyyy")</MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                               OnClick="() => ShowEditForm(context)" />
+                <MudIconButton Icon="@Icons.Material.Filled.Layers" Size="Size.Small" Color="Color.Primary"
+                               OnClick="() => ManageWidgets(context)" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                               OnClick="() => DeletePage(context.Id)" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@if (_managingPage != null)
+{
+    <MudPaper Class="pa-4 mt-4" Elevation="3">
+        <MudText Typo="Typo.h6" Class="mb-3">Widget trong trang: @_managingPage.Title</MudText>
+        <MudText Typo="Typo.body2" Class="mb-3" Color="Color.Secondary">
+            Embed code: <code>&lt;div data-page-slug="@_managingPage.Slug" data-tenant-id="@_managingPage.TenantId" data-api-base="[API_URL]"&gt;&lt;/div&gt;</code>
+        </MudText>
+
+        <MudGrid>
+            <MudItem xs="12" sm="5">
+                <MudSelect @bind-Value="_selectedWidgetId" Label="Chọn widget để thêm" Variant="Variant.Outlined">
+                    @if (_allWidgets != null)
+                    {
+                        @foreach (var w in _allWidgets)
+                        {
+                            <MudSelectItem Value="@w.Id">@(w.FriendlyLabel ?? w.Name)</MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="6" sm="2">
+                <MudNumericField @bind-Value="_newWidgetPosition" Label="Vị trí" Variant="Variant.Outlined" Min="0" />
+            </MudItem>
+            <MudItem xs="6" sm="2">
+                <MudNumericField @bind-Value="_newWidgetWidth" Label="Độ rộng (1-12)" Variant="Variant.Outlined" Min="1" Max="12" />
+            </MudItem>
+            <MudItem xs="12" sm="3">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddWidgetToPage" Class="mt-1">
+                    Thêm vào trang
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+
+        @if (_managingPage.Widgets.Any())
+        {
+            <MudTable Items="_managingPage.Widgets" Dense="true" Class="mt-3">
+                <HeaderContent>
+                    <MudTh>Widget</MudTh>
+                    <MudTh>Loại</MudTh>
+                    <MudTh>Vị trí</MudTh>
+                    <MudTh>Độ rộng</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@(context.FriendlyLabel ?? context.WidgetName)</MudTd>
+                    <MudTd>@context.WidgetType</MudTd>
+                    <MudTd>@context.Position</MudTd>
+                    <MudTd>@context.Width</MudTd>
+                    <MudTd>
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                                       OnClick="() => RemoveWidgetFromPage(context.WidgetId)" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+
+        <MudButton Variant="Variant.Outlined" OnClick="() => _managingPage = null" Class="mt-3">Đóng</MudButton>
+    </MudPaper>
+}
+
+@code {
+    List<PageDto>? _pages;
+    bool _showForm;
+    int? _editingId;
+    CreatePageDto _form = new();
+    UpdatePageDto _formUpdate = new() { IsActive = true };
+
+    PageDto? _managingPage;
+    List<WidgetDto>? _allWidgets;
+    int _selectedWidgetId;
+    int _newWidgetPosition;
+    int _newWidgetWidth = 6;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPages();
+    }
+
+    async Task LoadPages()
+    {
+        _pages = (await ApiService.GetPagesAsync())?.ToList();
+    }
+
+    void ShowAddForm()
+    {
+        _editingId = null;
+        _form = new CreatePageDto();
+        _formUpdate = new UpdatePageDto { IsActive = true };
+        _showForm = true;
+    }
+
+    void ShowEditForm(PageDto p)
+    {
+        _editingId = p.Id;
+        _form = new CreatePageDto { Title = p.Title, Slug = p.Slug, Description = p.Description };
+        _formUpdate = new UpdatePageDto { Title = p.Title, Slug = p.Slug, Description = p.Description, IsActive = p.IsActive };
+        _showForm = true;
+    }
+
+    void CancelForm() => _showForm = false;
+
+    async Task SavePage()
+    {
+        try
+        {
+            if (_editingId == null)
+                await ApiService.CreatePageAsync(_form);
+            else
+                await ApiService.UpdatePageAsync(_editingId.Value, _formUpdate);
+
+            _showForm = false;
+            await LoadPages();
+            Snackbar.Add("Đã lưu trang", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Lỗi: " + ex.Message, Severity.Error);
+        }
+    }
+
+    async Task DeletePage(int id)
+    {
+        await ApiService.DeletePageAsync(id);
+        await LoadPages();
+        Snackbar.Add("Đã xóa trang", Severity.Success);
+    }
+
+    async Task ManageWidgets(PageDto page)
+    {
+        _managingPage = page;
+        if (_allWidgets == null)
+            _allWidgets = (await ApiService.GetWidgetsAsync())?.ToList();
+    }
+
+    async Task AddWidgetToPage()
+    {
+        if (_managingPage == null || _selectedWidgetId == 0) return;
+        await ApiService.AddWidgetToPageAsync(_managingPage.Id, _selectedWidgetId, _newWidgetPosition, _newWidgetWidth);
+        // Reload page
+        var updated = await ApiService.GetPageByIdAsync(_managingPage.Id);
+        if (updated != null) _managingPage = updated;
+        await LoadPages();
+    }
+
+    async Task RemoveWidgetFromPage(int widgetId)
+    {
+        if (_managingPage == null) return;
+        await ApiService.RemoveWidgetFromPageAsync(_managingPage.Id, widgetId);
+        var updated = await ApiService.GetPageByIdAsync(_managingPage.Id);
+        if (updated != null) _managingPage = updated;
+        await LoadPages();
+    }
+
+    void CopyEmbedCode(string slug)
+    {
+        Snackbar.Add($"Slug: {slug} – dùng data-page-slug=\"{slug}\" để nhúng vào website", Severity.Info);
+    }
+}

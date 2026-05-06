@@ -36,18 +36,24 @@ cd widget-data
 ```
 widget-data/
 ├── src/
-│   ├── WidgetData.Domain/          # Entities, interfaces
-│   ├── WidgetData.Application/     # Business logic, services
-│   ├── WidgetData.Infrastructure/  # EF Core, repositories
-│   ├── WidgetData.Web/             # ASP.NET Core API
-│   └── WidgetData.Blazor/          # Blazor frontend
+│   ├── WidgetData.Domain/          # Entities, interfaces, enums
+│   ├── WidgetData.Application/     # DTOs, service interfaces
+│   ├── WidgetData.Infrastructure/  # EF Core, repositories, services, CronUtils
+│   ├── WidgetData.API/             # ASP.NET Core Web API (JWT, Swagger/Scalar)
+│   ├── WidgetData.Web/             # Blazor Web App (MudBlazor admin dashboard)
+│   ├── WidgetData.Worker/          # .NET Worker Service (cron job executor)
+│   ├── WidgetData.Gateway/         # YARP reverse proxy
+│   ├── WidgetData.ServiceDefaults/ # .NET Aspire shared defaults (OpenTelemetry)
+│   └── WidgetData.AppHost/         # .NET Aspire orchestration host
+├── demo/
+│   ├── shop/shop-admin/            # Demo shop admin (Blazor)
+│   ├── news/news-front/            # Demo news frontend
+│   └── course/course-front/        # Demo course frontend
 ├── tests/
-│   ├── WidgetData.UnitTests/
-│   └── WidgetData.IntegrationTests/
-├── docker/
-│   ├── Dockerfile
-│   └── docker-compose.yml
-└── docs/
+│   └── WidgetData.Tests/
+├── data/                           # SQLite database files
+├── doc/                            # Documentation
+└── scripts/                        # Helper scripts
 ```
 
 ### Install Dependencies
@@ -63,76 +69,51 @@ dotnet tool install --global dotnet-ef
 ### Database Setup
 
 ```bash
-# Update connection string in appsettings.Development.json
+# Connection string mặc định dùng SQLite (widgetdata.db)
+# Kiểm tra appsettings.json trong src/WidgetData.API:
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=WidgetData;Trusted_Connection=True;TrustServerCertificate=True;"
+    "DefaultConnection": "Data Source=widgetdata.db"
   }
 }
 
-# Create database & run migrations
-cd src/WidgetData.Infrastructure
-dotnet ef database update --startup-project ../WidgetData.Web
-
-# Seed initial data
-dotnet run --project ../WidgetData.Web -- seed
-```
-
-### Redis Setup (Optional)
-
-**Windows:**
-```bash
-# Install via Chocolatey
-choco install redis-64
-
-# Start Redis
-redis-server
-```
-
-**Docker:**
-```bash
-docker run -d -p 6379:6379 --name redis redis:7-alpine
-```
-
-**Configuration:**
-```json
-{
-  "Redis": {
-    "Configuration": "localhost:6379",
-    "InstanceName": "WidgetData:"
-  }
-}
+# Chạy migrations
+dotnet ef database update --project src/WidgetData.Infrastructure --startup-project src/WidgetData.API
 ```
 
 ### Run Application
 
-**Option 1: Run backend + frontend separately**
+**Option 1: Toàn bộ hệ thống qua .NET Aspire (khuyến nghị)**
 
 ```bash
-# Terminal 1: Run API
-cd src/WidgetData.Web
-dotnet run
-# API: https://localhost:7001
-# Swagger: https://localhost:7001/swagger
-
-# Terminal 2: Run Blazor
-cd src/WidgetData.Blazor
-dotnet run
-# Frontend: https://localhost:5001
+dotnet run --project src/WidgetData.AppHost
 ```
 
-**Option 2: Run together (if configured)**
+AppHost sẽ khởi động song song: API → Worker → Web → Gateway → Demo projects.
+
+**Option 2: Chạy riêng từng service**
 
 ```bash
+# Terminal 1: API
+dotnet run --project src/WidgetData.API
+# API: https://localhost:7001
+# Scalar API docs: https://localhost:7001/scalar
+
+# Terminal 2: Worker (cron job executor)
+dotnet run --project src/WidgetData.Worker
+
+# Terminal 3: Blazor Web
 dotnet run --project src/WidgetData.Web
+# Frontend: https://localhost:5001
 ```
 
 ### Access Application
 
-- **Frontend**: https://localhost:5001
+- **Frontend (Blazor Admin)**: https://localhost:5001
 - **API**: https://localhost:7001
-- **Swagger**: https://localhost:7001/swagger
-- **Hangfire Dashboard**: https://localhost:7001/hangfire
+- **API Docs (Scalar)**: https://localhost:7001/scalar
+- **API Gateway (YARP)**: https://localhost:7000
+- **.NET Aspire Dashboard**: https://localhost:15888
 
 **Default credentials:**
 - Email: `admin@widgetdata.com`
@@ -497,55 +478,48 @@ dotnet ef database update
 
 ## 🔐 Environment Configuration
 
-### appsettings.Development.json
+### appsettings.Development.json (API)
 
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=WidgetData;Trusted_Connection=True;TrustServerCertificate=True;"
+    "DefaultConnection": "Data Source=widgetdata.db"
   },
-  "Jwt": {
-    "SecretKey": "dev-secret-key-change-in-production",
-    "Issuer": "WidgetData",
-    "Audience": "WidgetDataClients",
-    "ExpiryMinutes": 120
+  "JwtSettings": {
+    "Secret": "dev-secret-key-change-in-production",
+    "Issuer": "WidgetData.API",
+    "Audience": "WidgetData.Client",
+    "ExpirationHours": 24
   },
-  "Redis": {
-    "Configuration": "localhost:6379",
-    "InstanceName": "WidgetData:"
-  },
-  "Hangfire": {
-    "DashboardEnabled": true
+  "InactivityMonitor": {
+    "CheckIntervalMinutes": 60,
+    "DefaultThresholdDays": 30
   },
   "Logging": {
     "LogLevel": {
       "Default": "Debug",
-      "Microsoft": "Warning"
+      "Microsoft.AspNetCore": "Warning"
     }
   }
 }
 ```
 
-### appsettings.Production.json
+### appsettings.json (Worker)
 
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "" // Set via environment variable
+    "DefaultConnection": "Data Source=widgetdata.db"
   },
-  "Jwt": {
-    "SecretKey": "" // Set via Azure Key Vault
-  },
-  "Redis": {
-    "Configuration": "" // Set via environment variable
+  "SchedulerWorker": {
+    "PollingIntervalSeconds": 30
   },
   "Logging": {
     "LogLevel": {
-      "Default": "Warning",
-      "Microsoft": "Error"
+      "Default": "Information",
+      "Microsoft.Hosting.Lifetime": "Information"
     }
-  },
-  "AllowedHosts": "*.azurewebsites.net,yourdomain.com"
+  }
 }
 ```
 

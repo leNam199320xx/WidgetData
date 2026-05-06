@@ -2,6 +2,7 @@ using WidgetData.Application.DTOs;
 using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Interfaces;
+using WidgetData.Infrastructure.Helpers;
 
 namespace WidgetData.Infrastructure.Services;
 
@@ -32,7 +33,10 @@ public class ScheduleService : IScheduleService
             IsEnabled = dto.IsEnabled,
             RetryOnFailure = dto.RetryOnFailure,
             MaxRetries = dto.MaxRetries,
-            ArchiveConfigOnRun = dto.ArchiveConfigOnRun
+            ArchiveConfigOnRun = dto.ArchiveConfigOnRun,
+            NextRunAt = dto.IsEnabled
+                ? CronUtils.GetNextOccurrence(dto.CronExpression, dto.Timezone)
+                : null
         };
         var created = await _repo.CreateAsync(entity);
         return MapToDto(created);
@@ -48,6 +52,9 @@ public class ScheduleService : IScheduleService
         entity.RetryOnFailure = dto.RetryOnFailure;
         entity.MaxRetries = dto.MaxRetries;
         entity.ArchiveConfigOnRun = dto.ArchiveConfigOnRun;
+        entity.NextRunAt = dto.IsEnabled
+            ? CronUtils.GetNextOccurrence(dto.CronExpression, dto.Timezone)
+            : null;
         entity.UpdatedAt = DateTime.UtcNow;
         var updated = await _repo.UpdateAsync(entity);
         return MapToDto(updated);
@@ -99,6 +106,9 @@ public class ScheduleService : IScheduleService
 
         entity.LastRunAt = DateTime.UtcNow;
         entity.LastRunStatus = status;
+        entity.NextRunAt = entity.IsEnabled
+            ? CronUtils.GetNextOccurrence(entity.CronExpression, entity.Timezone)
+            : null;
         entity.UpdatedAt = DateTime.UtcNow;
         var updated = await _repo.UpdateAsync(entity);
         return MapToDto(updated);

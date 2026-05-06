@@ -202,6 +202,9 @@ namespace WidgetData.Infrastructure.Migrations
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("TenantId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("INTEGER");
 
@@ -217,6 +220,8 @@ namespace WidgetData.Infrastructure.Migrations
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("AspNetUsers", (string)null);
                 });
@@ -321,6 +326,9 @@ namespace WidgetData.Infrastructure.Migrations
                     b.Property<int>("SourceType")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("TenantId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TEXT");
 
@@ -328,6 +336,8 @@ namespace WidgetData.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("DataSources");
                 });
@@ -416,6 +426,9 @@ namespace WidgetData.Infrastructure.Migrations
 
                     b.Property<string>("SubmittedBy")
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("TenantId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("WidgetId")
                         .HasColumnType("INTEGER");
@@ -532,6 +545,73 @@ namespace WidgetData.Infrastructure.Migrations
                     b.ToTable("IdeaSubscriptions");
                 });
 
+            modelBuilder.Entity("WidgetData.Domain.Entities.Page", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "Slug")
+                        .IsUnique();
+
+                    b.ToTable("Pages");
+                });
+
+            modelBuilder.Entity("WidgetData.Domain.Entities.PageWidget", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PageId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("WidgetId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PageId");
+
+                    b.HasIndex("WidgetId");
+
+                    b.ToTable("PageWidgets");
+                });
+
             modelBuilder.Entity("WidgetData.Domain.Entities.RefreshToken", b =>
                 {
                     b.Property<int>("Id")
@@ -563,6 +643,44 @@ namespace WidgetData.Infrastructure.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("RefreshTokens");
+                });
+
+            modelBuilder.Entity("WidgetData.Domain.Entities.Tenant", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ContactEmail")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Plan")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.ToTable("Tenants");
                 });
 
             modelBuilder.Entity("WidgetData.Domain.Entities.UserGroupPermission", b =>
@@ -700,6 +818,9 @@ namespace WidgetData.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("TenantId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TEXT");
 
@@ -709,6 +830,8 @@ namespace WidgetData.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DataSourceId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("Widgets");
                 });
@@ -860,10 +983,15 @@ namespace WidgetData.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("TenantId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("WidgetGroups");
                 });
@@ -988,6 +1116,26 @@ namespace WidgetData.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("WidgetData.Domain.Entities.ApplicationUser", b =>
+                {
+                    b.HasOne("WidgetData.Domain.Entities.Tenant", "Tenant")
+                        .WithMany("Users")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("WidgetData.Domain.Entities.DataSource", b =>
+                {
+                    b.HasOne("WidgetData.Domain.Entities.Tenant", "Tenant")
+                        .WithMany("DataSources")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Tenant");
+                });
+
             modelBuilder.Entity("WidgetData.Domain.Entities.DeliveryExecution", b =>
                 {
                     b.HasOne("WidgetData.Domain.Entities.DeliveryTarget", "DeliveryTarget")
@@ -1062,6 +1210,36 @@ namespace WidgetData.Infrastructure.Migrations
                     b.Navigation("Widget");
                 });
 
+            modelBuilder.Entity("WidgetData.Domain.Entities.Page", b =>
+                {
+                    b.HasOne("WidgetData.Domain.Entities.Tenant", "Tenant")
+                        .WithMany("Pages")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("WidgetData.Domain.Entities.PageWidget", b =>
+                {
+                    b.HasOne("WidgetData.Domain.Entities.Page", "Page")
+                        .WithMany("PageWidgets")
+                        .HasForeignKey("PageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("WidgetData.Domain.Entities.Widget", "Widget")
+                        .WithMany()
+                        .HasForeignKey("WidgetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Page");
+
+                    b.Navigation("Widget");
+                });
+
             modelBuilder.Entity("WidgetData.Domain.Entities.RefreshToken", b =>
                 {
                     b.HasOne("WidgetData.Domain.Entities.ApplicationUser", "User")
@@ -1119,7 +1297,14 @@ namespace WidgetData.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("WidgetData.Domain.Entities.Tenant", "Tenant")
+                        .WithMany("Widgets")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("DataSource");
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("WidgetData.Domain.Entities.WidgetApiActivity", b =>
@@ -1153,6 +1338,16 @@ namespace WidgetData.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Widget");
+                });
+
+            modelBuilder.Entity("WidgetData.Domain.Entities.WidgetGroup", b =>
+                {
+                    b.HasOne("WidgetData.Domain.Entities.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("WidgetData.Domain.Entities.WidgetGroupMember", b =>
@@ -1203,6 +1398,22 @@ namespace WidgetData.Infrastructure.Migrations
             modelBuilder.Entity("WidgetData.Domain.Entities.IdeaSubscription", b =>
                 {
                     b.Navigation("Results");
+                });
+
+            modelBuilder.Entity("WidgetData.Domain.Entities.Page", b =>
+                {
+                    b.Navigation("PageWidgets");
+                });
+
+            modelBuilder.Entity("WidgetData.Domain.Entities.Tenant", b =>
+                {
+                    b.Navigation("DataSources");
+
+                    b.Navigation("Pages");
+
+                    b.Navigation("Users");
+
+                    b.Navigation("Widgets");
                 });
 
             modelBuilder.Entity("WidgetData.Domain.Entities.Widget", b =>
