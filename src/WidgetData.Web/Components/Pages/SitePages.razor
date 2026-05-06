@@ -5,6 +5,7 @@
 @inject WidgetData.Web.Services.ApiService ApiService
 @inject ISnackbar Snackbar
 @inject IStringLocalizer<SharedResource> L
+@inject IJSRuntime JS
 
 <PageTitle>@L["Pages_Title"] - WidgetData</PageTitle>
 
@@ -41,6 +42,18 @@
 
 <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
            OnClick="ShowAddForm" Class="mb-3">@L["Pages_AddPage"]</MudButton>
+<MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.FolderZip"
+           OnClick="ExportMultipage" Disabled="_exporting" Class="mb-3 ml-2">
+    @(_exporting ? "Đang tạo..." : "Export Multi-page ZIP")
+</MudButton>
+<MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Web"
+           OnClick="ExportSpa" Disabled="_exporting" Class="mb-3 ml-2">
+    @(_exporting ? "Đang tạo..." : "Export Single Page App")
+</MudButton>
+<MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.Preview"
+           OnClick="PreviewSpa" Disabled="_previewing" Class="mb-3 ml-2">
+    @(_previewing ? "Đang tạo..." : "Preview SPA")
+</MudButton>
 
 @if (_pages == null)
 {
@@ -80,6 +93,9 @@ else
                                OnClick="() => ShowEditForm(context)" />
                 <MudIconButton Icon="@Icons.Material.Filled.Layers" Size="Size.Small" Color="Color.Primary"
                                OnClick="() => ManageWidgets(context)" />
+                <MudIconButton Icon="@Icons.Material.Filled.Preview" Size="Size.Small" Color="Color.Info"
+                               Title="Xem trước trang tĩnh"
+                               OnClick="() => PreviewPage(context.Id)" />
                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
                                OnClick="() => DeletePage(context.Id)" />
             </MudTd>
@@ -243,5 +259,85 @@ else
     void CopyEmbedCode(string slug)
     {
         Snackbar.Add($"Slug: {slug} – dùng data-page-slug=\"{slug}\" để nhúng vào website", Severity.Info);
+    }
+
+    bool _exporting;
+
+    Task ExportMultipage() => ExportStatic("multipage");
+    Task ExportSpa() => ExportStatic("spa");
+
+    async Task ExportStatic(string mode)
+    {
+        _exporting = true;
+        try
+        {
+            var result = await ApiService.ExportStaticSiteAsync(mode);
+            if (result == null)
+            {
+                Snackbar.Add("Export thất bại.", Severity.Error);
+                return;
+            }
+            var (data, _, fileName) = result.Value;
+            await JS.InvokeVoidAsync("widgetAdminDownload", fileName, data);
+            Snackbar.Add($"Đã tạo {fileName}!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Lỗi: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _exporting = false;
+        }
+    }
+
+    bool _previewing;
+
+    async Task PreviewPage(int pageId)
+    {
+        _previewing = true;
+        try
+        {
+            var html = await ApiService.GetPagePreviewHtmlAsync(pageId);
+            if (string.IsNullOrEmpty(html))
+            {
+                Snackbar.Add("Không thể tải preview.", Severity.Error);
+                return;
+            }
+            var opened = await JS.InvokeAsync<bool>("widgetAdminOpenPreview", html);
+            if (!opened) Snackbar.Add("Trình duyệt đã chặn cửa sổ mới. Hãy cho phép pop-up cho trang này.", Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Lỗi preview: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _previewing = false;
+        }
+    }
+
+    async Task PreviewSpa()
+    {
+        _previewing = true;
+        try
+        {
+            var html = await ApiService.GetSpaPreviewHtmlAsync();
+            if (string.IsNullOrEmpty(html))
+            {
+                Snackbar.Add("Không thể tải SPA preview.", Severity.Error);
+                return;
+            }
+            var opened = await JS.InvokeAsync<bool>("widgetAdminOpenPreview", html);
+            if (!opened) Snackbar.Add("Trình duyệt đã chặn cửa sổ mới. Hãy cho phép pop-up cho trang này.", Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Lỗi preview SPA: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _previewing = false;
+        }
     }
 }

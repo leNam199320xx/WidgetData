@@ -16,6 +16,28 @@
     <Routes @rendermode="@(new InteractiveServerRenderMode(prerender: false))" />
     <script src="_framework/blazor.web.js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script>
+        window.widgetAdminDownload = function (fileName, data) {
+            var bytes = new Uint8Array(data);
+            var blob = new Blob([bytes]);
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+        window.widgetAdminOpenPreview = function (html) {
+            var blob = new Blob([html], { type: 'text/html; charset=utf-8' });
+            var url = URL.createObjectURL(blob);
+            var w = window.open(url, '_blank');
+            // Revoke after tab has had time to load
+            setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
+            return w != null;
+        };
+    </script>
 </body>
 
 </html>

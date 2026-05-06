@@ -21,8 +21,6 @@
     <ProjectReference Include="..\WidgetData.Worker\WidgetData.Worker.csproj" />
     <!-- Demo web projects -->
     <ProjectReference Include="..\..\demo\shop\shop-admin\shop-admin.csproj" />
-    <ProjectReference Include="..\..\demo\news\news-front\news-front.csproj" />
-    <ProjectReference Include="..\..\demo\course\course-front\course-front.csproj" />
   </ItemGroup>
 
 </Project>
