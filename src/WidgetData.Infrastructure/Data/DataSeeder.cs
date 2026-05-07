@@ -1123,19 +1123,40 @@ public class DataSeeder
         string migrationId,
         string schemaExistsQuery)
     {
+        // Derive the EF Core product version from the assembly to keep history consistent
+        var efAttr = Attribute.GetCustomAttribute(typeof(DbContext).Assembly,
+            typeof(System.Reflection.AssemblyInformationalVersionAttribute))
+            as System.Reflection.AssemblyInformationalVersionAttribute;
+        var efVersion = efAttr?.InformationalVersion ?? "10.0.0";
+        var plusIndex = efVersion.IndexOf('+');
+        if (plusIndex >= 0) efVersion = efVersion[..plusIndex];
+
         using var cmd = connection.CreateCommand();
 
         // Skip if already recorded in history
-        cmd.CommandText = $"SELECT COUNT(*) FROM \"__EFMigrationsHistory\" WHERE \"MigrationId\" = '{migrationId}'";
+        cmd.CommandText = "SELECT COUNT(*) FROM \"__EFMigrationsHistory\" WHERE \"MigrationId\" = @migrationId";
+        var p = cmd.CreateParameter();
+        p.ParameterName = "@migrationId";
+        p.Value = migrationId;
+        cmd.Parameters.Add(p);
         var alreadyRecorded = (long)(await cmd.ExecuteScalarAsync())! > 0;
         if (alreadyRecorded) return;
 
         // Only mark as applied if the schema already exists in the database
         cmd.CommandText = schemaExistsQuery;
+        cmd.Parameters.Clear();
         var schemaExists = (long)(await cmd.ExecuteScalarAsync())! > 0;
         if (!schemaExists) return;
 
-        cmd.CommandText = $"INSERT INTO \"__EFMigrationsHistory\" (\"MigrationId\", \"ProductVersion\") VALUES ('{migrationId}', '10.0.7')";
+        cmd.CommandText = "INSERT INTO \"__EFMigrationsHistory\" (\"MigrationId\", \"ProductVersion\") VALUES (@migrationId, @productVersion)";
+        var pId = cmd.CreateParameter();
+        pId.ParameterName = "@migrationId";
+        pId.Value = migrationId;
+        cmd.Parameters.Add(pId);
+        var pVer = cmd.CreateParameter();
+        pVer.ParameterName = "@productVersion";
+        pVer.Value = efVersion;
+        cmd.Parameters.Add(pVer);
         await cmd.ExecuteNonQueryAsync();
     }
 }
