@@ -148,8 +148,6 @@ try
     app.UseMiddleware<TenantContextMiddleware>();
     app.UseMiddleware<WidgetActivityMiddleware>();
     app.MapControllers();
-    app.MapHealthChecks("/health");
-
     app.Run();
 }
 catch (Exception ex)
