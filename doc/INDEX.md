@@ -25,17 +25,19 @@
 12. [Monitoring & Observability](monitoring.md) - Logging, metrics, health checks
 13. [Testing](testing.md) - Unit, integration, performance testing
 14. [Backup & Disaster Recovery](backup.md) - High availability và recovery procedures
+15. [Runbook vận hành sự cố](runbook.md) - API down, worker stuck, DB lock
+16. [Production checklist](production-checklist.md) - Checklist trước khi phát hành
 
 ### Integration & Extensibility
-15. [Tích hợp & Mở rộng](integration.md) - Webhooks, plugins, third-party integrations
-16. [Mobile & Responsive](mobile.md) - PWA, responsive design, offline mode
+17. [Tích hợp & Mở rộng](integration.md) - Webhooks, plugins, third-party integrations
+18. [Mobile & Responsive](mobile.md) - PWA, responsive design, offline mode
 
 ### UI/UX Design
-17. [Screens & Mockups](screens.md) - Mô tả chi tiết 15 màn hình chính
+19. [Screens & Mockups](screens.md) - Mô tả chi tiết 15 màn hình chính
 
 ### Support & Planning
-18. [Roadmap](roadmap.md) - Version releases và tính năng tương lai
-19. [Troubleshooting & FAQ](troubleshooting.md) - Common issues và giải pháp
+20. [Roadmap](roadmap.md) - Version releases và tính năng tương lai
+21. [Troubleshooting & FAQ](troubleshooting.md) - Common issues và giải pháp
 
 ## 🚀 Quick Links
 

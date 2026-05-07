@@ -23,6 +23,11 @@
 - [x] Activity Monitoring (auto-disable + InactivityAlert)
 
 ## Version 1.5 - Q3 2026
+- [x] CI/CD baseline trên GitHub Actions (build, test, coverage gate)
+- [x] CodeQL security scan + dependency vulnerability check
+- [x] Release artifact workflow (API/Worker/Web)
+- [x] Integration smoke tests cho health/auth/form schema
+- [x] Runbook sự cố + production checklist
 - [ ] Advanced charting (more chart types)
 - [ ] Widget templates marketplace
 - [ ] Excel formula support
@@ -80,6 +85,23 @@
 - [ ] GraphQL API
 - [ ] Kubernetes deployment
 - [ ] Multi-language support (i18n)
+
+## Milestone ngắn hạn (30-60-90)
+
+### 30 ngày
+- Ổn định CI signal: giảm flaky test, coverage report nhất quán.
+- Rà soát tenant isolation cho các endpoint quản trị.
+- Chuẩn hóa dashboard theo dõi API latency + scheduler failures.
+
+### 60 ngày
+- Hoàn thiện versioning + rollback cho widget/page config.
+- Mở rộng integration tests cho flow execute widget và schedule trigger.
+- Cải thiện cache invalidation theo event.
+
+### 90 ngày
+- Hoàn thiện release checklist tự động hóa cao hơn (policy checks).
+- Nâng chất lượng audit trail cho auth/permission/config changes.
+- Đóng các điểm nghẽn truy vấn lớn qua index + payload optimization.
 
 ## Community Requests
 📋 [Vote for features](https://github.com/your-org/widget-data/discussions)

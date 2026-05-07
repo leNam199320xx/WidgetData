@@ -117,6 +117,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .WithMany(w => w.Executions)
             .HasForeignKey(e => e.WidgetId)
             .OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<WidgetExecution>()
+            .HasIndex(e => new { e.WidgetId, e.StartedAt });
 
         builder.Entity<WidgetGroupMember>()
             .HasKey(m => new { m.WidgetGroupId, m.WidgetId });
@@ -180,6 +182,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .WithMany(w => w.ApiActivities)
             .HasForeignKey(a => a.WidgetId)
             .OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<WidgetApiActivity>()
+            .HasIndex(a => new { a.WidgetId, a.CalledAt });
 
         builder.Entity<IdeaPost>()
             .HasOne(p => p.Widget)
@@ -216,6 +220,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .WithMany()
             .HasForeignKey(fs => fs.WidgetId)
             .OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<FormSubmission>()
+            .HasIndex(fs => new { fs.WidgetId, fs.SubmittedAt });
+        builder.Entity<AuditLog>()
+            .HasIndex(a => new { a.Timestamp, a.Action });
 
         // ── Global query filters (tenant isolation) ───────────────────────────
         // Applied only when ITenantContext is available AND not SuperAdmin AND TenantId is set.
