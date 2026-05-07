@@ -157,21 +157,39 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        if (user.Identity?.IsAuthenticated == true)
+        // Try to load profile from API first (more accurate than JWT claims)
+        try
         {
-            _currentEmail = user.FindFirst("email")?.Value
-                ?? user.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
-                ?? user.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
-                ?? "";
-            _currentDisplayName = user.FindFirst("displayName")?.Value ?? _currentEmail;
-            _currentUserId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                ?? user.FindFirst("sub")?.Value;
-            _currentRoles = user.Claims
-                .Where(c => c.Type == System.Security.Claims.ClaimTypes.Role || c.Type == "role")
-                .Select(c => c.Value).ToList();
+            var profile = await ApiService.GetProfileAsync();
+            if (profile != null)
+            {
+                _currentEmail = profile.Email ?? "";
+                _currentDisplayName = profile.DisplayName ?? _currentEmail;
+                _currentUserId = profile.Id;
+                _currentRoles = profile.Roles;
+            }
         }
+        catch { /* fallback to JWT claims below */ }
+
+        if (string.IsNullOrEmpty(_currentEmail))
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            if (user.Identity?.IsAuthenticated == true)
+            {
+                _currentEmail = user.FindFirst("email")?.Value
+                    ?? user.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                    ?? user.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                    ?? "";
+                _currentDisplayName = user.FindFirst("displayName")?.Value ?? _currentEmail;
+                _currentUserId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                    ?? user.FindFirst("sub")?.Value;
+                _currentRoles = user.Claims
+                    .Where(c => c.Type == System.Security.Claims.ClaimTypes.Role || c.Type == "role")
+                    .Select(c => c.Value).ToList();
+            }
+        }
+
         await LoadTenantAsync();
     }
 

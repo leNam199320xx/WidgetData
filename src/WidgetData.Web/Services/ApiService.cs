@@ -133,6 +133,7 @@ public class ApiService
     }
 
     // Users
+    public Task<UserDto?> GetProfileAsync() => GetAsync<UserDto>("api/auth/me");
     public Task<IEnumerable<UserDto>?> GetUsersAsync() => GetAsync<IEnumerable<UserDto>>("api/users");
     public Task<object?> CreateUserAsync(RegisterDto dto) => PostAsync<object>("api/users", dto);
     public Task<UserDto?> UpdateUserAsync(string id, UpdateUserDto dto) => PutAsync<UserDto>($"api/users/{id}", dto);
