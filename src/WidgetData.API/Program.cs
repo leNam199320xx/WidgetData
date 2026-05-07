@@ -50,6 +50,7 @@ try
     })
     .AddJwtBearer(options =>
     {
+        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
@@ -58,7 +59,8 @@ try
             ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
             ValidateAudience = true,
             ValidAudience = builder.Configuration["JwtSettings:Audience"],
-            ValidateLifetime = true
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(1)
         };
     });
 
@@ -79,7 +81,13 @@ try
         // Policy mở cho embed widget từ bất kỳ origin nào
         options.AddPolicy("WidgetEmbed", policy =>
         {
-            policy.AllowAnyOrigin().AllowAnyHeader().WithMethods("GET", "POST");
+            var widgetEmbedOrigins = builder.Configuration.GetSection("CorsSettings:WidgetEmbedAllowedOrigins").Get<string[]>();
+            if (widgetEmbedOrigins != null && widgetEmbedOrigins.Length > 0)
+                policy.WithOrigins(widgetEmbedOrigins).AllowAnyHeader().WithMethods("GET", "POST");
+            else if (builder.Environment.IsDevelopment())
+                policy.AllowAnyOrigin().AllowAnyHeader().WithMethods("GET", "POST");
+            else
+                throw new InvalidOperationException("CorsSettings:WidgetEmbedAllowedOrigins must be configured in non-development environments.");
         });
     });
 
@@ -140,8 +148,6 @@ try
     app.UseMiddleware<TenantContextMiddleware>();
     app.UseMiddleware<WidgetActivityMiddleware>();
     app.MapControllers();
-    app.MapHealthChecks("/health");
-
     app.Run();
 }
 catch (Exception ex)
@@ -152,4 +158,6 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+public partial class Program { }
 

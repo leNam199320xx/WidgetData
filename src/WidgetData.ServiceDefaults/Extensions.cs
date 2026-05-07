@@ -73,14 +73,12 @@ public static class Extensions
 
     public static WebApplication MapDefaultEndpoints(this WebApplication app)
     {
-        if (app.Environment.IsDevelopment())
+        // Map health endpoints in all environments so load balancers and monitors can reach them.
+        app.MapHealthChecks("/health");
+        app.MapHealthChecks("/alive", new HealthCheckOptions
         {
-            app.MapHealthChecks("/health");
-            app.MapHealthChecks("/alive", new HealthCheckOptions
-            {
-                Predicate = r => r.Tags.Contains("live")
-            });
-        }
+            Predicate = r => r.Tags.Contains("live")
+        });
 
         return app;
     }

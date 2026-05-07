@@ -2,17 +2,20 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Interfaces;
+using WidgetData.Infrastructure.Services;
 
 namespace WidgetData.Infrastructure.Data;
 
 public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 {
-    private readonly ITenantContext? _tenantContext;
+    private readonly ITenantContext _tenantContext;
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ITenantContext? tenantContext = null)
         : base(options)
     {
-        _tenantContext = tenantContext;
+        // When no tenant context is provided (e.g. tests, migrations), use a super-admin context
+        // so EF Core can safely extract query filter parameters without NullReferenceException.
+        _tenantContext = tenantContext ?? new TenantContext { IsSuperAdmin = true };
     }
 
     public DbSet<Tenant> Tenants => Set<Tenant>();
@@ -117,6 +120,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .WithMany(w => w.Executions)
             .HasForeignKey(e => e.WidgetId)
             .OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<WidgetExecution>()
+            .HasIndex(e => new { e.WidgetId, e.StartedAt });
 
         builder.Entity<WidgetGroupMember>()
             .HasKey(m => new { m.WidgetGroupId, m.WidgetId });
@@ -180,6 +185,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .WithMany(w => w.ApiActivities)
             .HasForeignKey(a => a.WidgetId)
             .OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<WidgetApiActivity>()
+            .HasIndex(a => new { a.WidgetId, a.CalledAt });
 
         builder.Entity<IdeaPost>()
             .HasOne(p => p.Widget)
@@ -216,35 +223,39 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .WithMany()
             .HasForeignKey(fs => fs.WidgetId)
             .OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<FormSubmission>()
+            .HasIndex(fs => new { fs.WidgetId, fs.SubmittedAt });
+        builder.Entity<AuditLog>()
+            .HasIndex(a => new { a.Timestamp, a.Action });
 
         // ── Global query filters (tenant isolation) ───────────────────────────
-        // Applied only when ITenantContext is available AND not SuperAdmin AND TenantId is set.
+        // _tenantContext is always non-null (defaults to super-admin when not injected).
         builder.Entity<Widget>()
-            .HasQueryFilter(w => _tenantContext == null || _tenantContext.IsSuperAdmin
+            .HasQueryFilter(w => _tenantContext.IsSuperAdmin
                 || _tenantContext.CurrentTenantId == null
                 || w.TenantId == null
                 || w.TenantId == _tenantContext.CurrentTenantId);
 
         builder.Entity<DataSource>()
-            .HasQueryFilter(d => _tenantContext == null || _tenantContext.IsSuperAdmin
+            .HasQueryFilter(d => _tenantContext.IsSuperAdmin
                 || _tenantContext.CurrentTenantId == null
                 || d.TenantId == null
                 || d.TenantId == _tenantContext.CurrentTenantId);
 
         builder.Entity<WidgetGroup>()
-            .HasQueryFilter(g => _tenantContext == null || _tenantContext.IsSuperAdmin
+            .HasQueryFilter(g => _tenantContext.IsSuperAdmin
                 || _tenantContext.CurrentTenantId == null
                 || g.TenantId == null
                 || g.TenantId == _tenantContext.CurrentTenantId);
 
         builder.Entity<FormSubmission>()
-            .HasQueryFilter(fs => _tenantContext == null || _tenantContext.IsSuperAdmin
+            .HasQueryFilter(fs => _tenantContext.IsSuperAdmin
                 || _tenantContext.CurrentTenantId == null
                 || fs.TenantId == null
                 || fs.TenantId == _tenantContext.CurrentTenantId);
 
         builder.Entity<Page>()
-            .HasQueryFilter(p => _tenantContext == null || _tenantContext.IsSuperAdmin
+            .HasQueryFilter(p => _tenantContext.IsSuperAdmin
                 || _tenantContext.CurrentTenantId == null
                 || p.TenantId == _tenantContext.CurrentTenantId);
     }

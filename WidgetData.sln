@@ -37,6 +37,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "course", "course", "{F3A4B5
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WidgetData.Worker", "src\WidgetData.Worker\WidgetData.Worker.csproj", "{F1F36E64-E1BB-47E6-8C10-546325D7C4A5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WidgetData.IntegrationTests", "tests\WidgetData.IntegrationTests\WidgetData.IntegrationTests.csproj", "{221C21F4-FCB5-468C-942F-6D59769555F5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -179,6 +181,18 @@ Global
 		{F1F36E64-E1BB-47E6-8C10-546325D7C4A5}.Release|x64.Build.0 = Release|Any CPU
 		{F1F36E64-E1BB-47E6-8C10-546325D7C4A5}.Release|x86.ActiveCfg = Release|Any CPU
 		{F1F36E64-E1BB-47E6-8C10-546325D7C4A5}.Release|x86.Build.0 = Release|Any CPU
+		{221C21F4-FCB5-468C-942F-6D59769555F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{221C21F4-FCB5-468C-942F-6D59769555F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{221C21F4-FCB5-468C-942F-6D59769555F5}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{221C21F4-FCB5-468C-942F-6D59769555F5}.Debug|x64.Build.0 = Debug|Any CPU
+		{221C21F4-FCB5-468C-942F-6D59769555F5}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{221C21F4-FCB5-468C-942F-6D59769555F5}.Debug|x86.Build.0 = Debug|Any CPU
+		{221C21F4-FCB5-468C-942F-6D59769555F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{221C21F4-FCB5-468C-942F-6D59769555F5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{221C21F4-FCB5-468C-942F-6D59769555F5}.Release|x64.ActiveCfg = Release|Any CPU
+		{221C21F4-FCB5-468C-942F-6D59769555F5}.Release|x64.Build.0 = Release|Any CPU
+		{221C21F4-FCB5-468C-942F-6D59769555F5}.Release|x86.ActiveCfg = Release|Any CPU
+		{221C21F4-FCB5-468C-942F-6D59769555F5}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -198,5 +212,6 @@ Global
 		{D1E2F3A4-B5C6-7890-DEFA-123456789ABC} = {A39C23D2-F2C0-258D-165A-CF1E7FEE6E7B}
 		{F3A4B5C6-D7E8-9012-FABC-345678901CDE} = {A39C23D2-F2C0-258D-165A-CF1E7FEE6E7B}
 		{F1F36E64-E1BB-47E6-8C10-546325D7C4A5} = {331EEAE0-67CD-4904-9A86-C1554C14BA5B}
+		{221C21F4-FCB5-468C-942F-6D59769555F5} = {52B0FFC6-B013-4CED-9280-DBD42818F1BB}
 	EndGlobalSection
 EndGlobal
