@@ -34,11 +34,12 @@ Widget Data là platform cho phép bạn:
 - **Dashboard Page Builder**: Kéo-thả widget thành trang dashboard, xem trước trực tiếp
 - **Reports & Preview**: Trang báo cáo doanh thu/bán hàng từ dữ liệu thực tế
 - **Widget Activity Monitoring**: Tự động ghi lại mọi lần gọi API widget (endpoint, user, thời gian phản hồi, status code); background service phát hiện widget không hoạt động → tự vô hiệu hoá + ghi alert log
+- **Admin UX Improvements**: Widgets/DataSources/Schedules có search & filter; trang Widgets có phân trang
 - **Scheduling**: Cron job tự động qua **WidgetData.Worker** (BackgroundService + Cronos), hỗ trợ retry, NextRunAt, timezone
 - **Caching**: In-memory, Redis, file-based cache với TTL và invalidation
 - **Live Data**: Real-time dashboard qua SignalR, auto-refresh
 - **Security**: ASP.NET Identity, JWT, MFA, RBAC, encryption → [📖 Chi tiết](doc/security.md)
-- **Blazor UI**: Modern dashboard với MudBlazor, charts, code editor
+- **Blazor UI**: Modern dashboard với MudBlazor, charts, code editor, quick links, execution health chip
 - **Store Module**: Quản lý sản phẩm, đơn hàng, thanh toán — giao diện tách biệt với `StoreLayout`
 - **Demo Storefront** (`demo/shop-front/`): trang bán hàng public HTML/CSS/JS thuần, render từ config xuất bởi **WidgetData.Web** (Blazor admin shop)
 
@@ -177,6 +178,7 @@ Truy cập:
 |---|---|---|---|
 | **Widget** | `POST /api/widgets/{id}/execute` | Auth | Thực thi widget, ghi `WidgetExecution` |
 | **Widget** | `GET /api/widgets/{id}/data` | Auth | Lấy dữ liệu theo nguồn (DB/CSV/JSON/Excel/API) |
+| **Auth** | `GET /api/auth/me` | Auth | Lấy profile user hiện tại (roles, tenant, thông tin hiển thị) |
 | **Form** | `GET /api/form/{id}/schema` | Public | Lấy schema field của Form widget |
 | **Form** | `POST /api/form/{id}` | Public | Gửi submission; validate required fields |
 | **Form** | `GET /api/form/{id}/submissions` | Admin/Manager | Xem danh sách submission |
@@ -350,4 +352,3 @@ MIT License - see [LICENSE](LICENSE)
 ---
 
 **Made with ❤️ using .NET, Blazor & Vanilla JS**
-
