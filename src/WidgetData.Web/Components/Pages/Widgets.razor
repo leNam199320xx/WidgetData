@@ -98,9 +98,40 @@
 
 @if (_widgets != null)
 {
-    <MudTable Items="_widgets" Dense="true" Hover="true" Striped="true">
+    @* Search / Filter bar *@
+    <MudPaper Elevation="1" Class="pa-2 mb-3">
+        <MudGrid>
+            <MudItem xs="12" sm="5">
+                <MudTextField Value="_searchText" T="string" Label="@L["Search"]" Variant="Variant.Outlined" Dense="true"
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              Immediate="true" ValueChanged="@((string v) => { _searchText = v; _currentPage = 1; })" />
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <MudSelect @bind-Value="_filterType" T="WidgetType?" Label="@L["Type"]" Variant="Variant.Outlined" Dense="true"
+                           Clearable="true">
+                    @foreach (var t in Enum.GetValues<WidgetType>())
+                    {
+                        <MudSelectItem T="WidgetType?" Value="@((WidgetType?)t)">@t</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="6" sm="2">
+                <MudSelect @bind-Value="_filterStatus" T="bool?" Label="@L["Status"]" Variant="Variant.Outlined" Dense="true"
+                           Clearable="true">
+                    <MudSelectItem T="bool?" Value="@((bool?)true)">@L["Active"]</MudSelectItem>
+                    <MudSelectItem T="bool?" Value="@((bool?)false)">@L["Inactive"]</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="2" Class="d-flex align-center">
+                <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Clear" Size="Size.Small"
+                           OnClick="ClearFilters">Xóa lọc</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudTable Items="PagedWidgets" Dense="true" Hover="true" Striped="true">
         <ToolBarContent>
-            <MudText Typo="Typo.h6">@L["Widgets_List"]</MudText>
+            <MudText Typo="Typo.h6">@L["Widgets_List"] (@FilteredWidgets.Count())</MudText>
             <MudSpacer />
             @if (!_showForm)
             {
@@ -134,20 +165,31 @@
             <MudTd>@(context.LastRowCount.HasValue ? context.LastRowCount.ToString() : "-")</MudTd>
             <MudTd>
                 <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Success" Size="Size.Small"
-                               OnClick="() => ExecuteWidget(context)" Title="Chạy ngay" />
+                               OnClick="@(() => ExecuteWidget(context))" Title="Chạy ngay" />
                 <MudIconButton Icon="@Icons.Material.Filled.History" Color="Color.Info" Size="Size.Small"
-                               OnClick="() => ViewHistory(context)" Title="Lịch sử" />
+                               OnClick="@(() => ViewHistory(context))" Title="Lịch sử" />
                 <MudIconButton Icon="@Icons.Material.Filled.Code" Color="Color.Info" Size="Size.Small"
                                OnClick="@(() => Nav.NavigateTo($"/widgets/html-designer/{context.Id}"))" Title="HTML Designer" />
                 <MudIconButton Icon="@Icons.Material.Filled.Tune" Color="Color.Secondary" Size="Size.Small"
                                OnClick="@(() => Nav.NavigateTo($"/widgets/configure/{context.Id}"))" Title="Cấu hình chi tiết" />
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" Size="Size.Small"
-                               OnClick="() => OpenEditForm(context)" Title="Sửa nhanh" />
+                               OnClick="@(() => OpenEditForm(context))" Title="Sửa nhanh" />
                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
-                               OnClick="() => _deletingItem = context" />
+                               OnClick="@(() => _deletingItem = context)" />
             </MudTd>
         </RowTemplate>
+        <NoRecordsContent>
+            <MudText Color="Color.Secondary" Class="pa-4">Không tìm thấy widget nào phù hợp.</MudText>
+        </NoRecordsContent>
     </MudTable>
+
+    @* Pagination *@
+    @if (TotalPages > 1)
+    {
+        <div class="d-flex justify-center mt-3">
+            <MudPagination Count="TotalPages" Selected="_currentPage" SelectedChanged="OnPageChanged" Color="Color.Primary" />
+        </div>
+    }
 }
 else if (_error != null)
 {
@@ -204,6 +246,37 @@ else
     int? _editingId;
     bool _formIsActive = true;
     CreateWidgetDto _form = new();
+
+    // Search / filter / pagination
+    string _searchText = string.Empty;
+    WidgetType? _filterType;
+    bool? _filterStatus;
+    int _currentPage = 1;
+    const int PageSizeConst = 15;
+
+    IEnumerable<WidgetDto> FilteredWidgets => (_widgets ?? Array.Empty<WidgetDto>())
+        .Where(w =>
+            (string.IsNullOrWhiteSpace(_searchText)
+                || (w.FriendlyLabel ?? w.Name).Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+                || w.Name.Contains(_searchText, StringComparison.OrdinalIgnoreCase))
+            && (_filterType == null || w.WidgetType == _filterType)
+            && (_filterStatus == null || w.IsActive == _filterStatus));
+
+    int TotalPages => (int)Math.Ceiling((double)FilteredWidgets.Count() / PageSizeConst);
+
+    IEnumerable<WidgetDto> PagedWidgets => FilteredWidgets
+        .Skip((_currentPage - 1) * PageSizeConst)
+        .Take(PageSizeConst);
+
+    void OnPageChanged(int page) { _currentPage = page; }
+
+    void ClearFilters()
+    {
+        _searchText = string.Empty;
+        _filterType = null;
+        _filterStatus = null;
+        _currentPage = 1;
+    }
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 

@@ -14,6 +14,27 @@ public class UserDto
     public int? TenantId { get; set; }
 }
 
+public class UpdateUserDto
+{
+    [StringLength(100)]
+    public string? DisplayName { get; set; }
+
+    public bool IsActive { get; set; } = true;
+}
+
+public class ChangeUserPasswordDto
+{
+    [Required]
+    [StringLength(128, MinimumLength = 8)]
+    public string NewPassword { get; set; } = string.Empty;
+}
+
+public class SetUserRolesDto
+{
+    /// <summary>Danh sách các role sẽ được gán cho user (thay thế hoàn toàn các role hiện tại).</summary>
+    public IList<string> Roles { get; set; } = new List<string>();
+}
+
 public class AssignUserToTenantDto
 {
     /// <summary>ID của user cần gán vào tenant.</summary>

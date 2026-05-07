@@ -15,6 +15,9 @@
   <data name="Save" xml:space="preserve">
     <value>Lưu</value>
   </data>
+  <data name="Search" xml:space="preserve">
+    <value>Tìm kiếm</value>
+  </data>
   <data name="Cancel" xml:space="preserve">
     <value>Hủy</value>
   </data>

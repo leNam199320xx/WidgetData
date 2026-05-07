@@ -1,0 +1,291 @@
+@page "/widget-activity"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using MudBlazor
+@using WidgetData.Application.DTOs
+@inject WidgetData.Web.Services.ApiService ApiService
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>Widget Activity - WidgetData</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-1">
+    <MudIcon Icon="@Icons.Material.Filled.Analytics" Class="mr-2" />
+    Widget Activity
+</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+    Theo dõi lịch sử gọi API của các widget và cảnh báo widget không hoạt động
+</MudText>
+
+<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mb-4">
+
+    @* Tab 1: Activity log của widget được chọn *@
+    <MudTabPanel Text="API Activity" Icon="@Icons.Material.Filled.Timeline">
+        <MudGrid Class="mb-3 mt-2">
+            <MudItem xs="12" sm="5">
+                <MudSelect Value="_selectedWidgetId" T="int" Label="Chọn Widget" Variant="Variant.Outlined" Dense="true"
+                           ValueChanged="@((int id) => OnWidgetSelected(id))">
+                    @if (_widgets != null)
+                    {
+                        @foreach (var w in _widgets)
+                        {
+                            <MudSelectItem Value="@w.Id">@(w.FriendlyLabel ?? w.Name)</MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+
+        @if (_selectedWidgetId > 0)
+        {
+            @* Summary card *@
+            @if (_summary != null)
+            {
+                <MudGrid Class="mb-4">
+                    <MudItem xs="12" sm="3">
+                        <MudCard>
+                            <MudCardContent>
+                                <MudText Typo="Typo.h5">@_summary.TotalCalls</MudText>
+                                <MudText Color="Color.Secondary" Typo="Typo.body2">Tổng lần gọi</MudText>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12" sm="3">
+                        <MudCard>
+                            <MudCardContent>
+                                <MudText Typo="Typo.h5">@_summary.UniqueUsers</MudText>
+                                <MudText Color="Color.Secondary" Typo="Typo.body2">User khác nhau</MudText>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudCard>
+                            <MudCardContent>
+                                <MudText Typo="Typo.h6">Top Endpoints</MudText>
+                                @foreach (var ep in _summary.TopEndpoints)
+                                {
+                                    <div class="d-flex justify-space-between">
+                                        <MudText Typo="Typo.body2"><code>@ep.ApiEndpoint</code></MudText>
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Info">@ep.CallCount</MudChip>
+                                    </div>
+                                }
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
+            }
+
+            @* Activity table *@
+            @if (_activityLoading)
+            {
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+            }
+            else if (_activityResult != null)
+            {
+                <MudTable Items="_activityResult.Items" Dense="true" Hover="true" Striped="true"
+                          FixedHeader="true" Height="400px">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">Tổng: @_activityResult.Total lần gọi</MudText>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>Thời gian</MudTh>
+                        <MudTh>Endpoint</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh>Thời gian phản hồi</MudTh>
+                        <MudTh>User</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@context.CalledAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</MudTd>
+                        <MudTd><code style="font-size:12px">@context.ApiEndpoint</code></MudTd>
+                        <MudTd>
+                            <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(context.StatusCode)">
+                                @context.StatusCode
+                            </MudChip>
+                        </MudTd>
+                        <MudTd>@(context.ResponseTimeMs.HasValue ? $"{context.ResponseTimeMs}ms" : "-")</MudTd>
+                        <MudTd>@(context.UserId != null ? context.UserId[..Math.Min(8, context.UserId.Length)] + "…" : "anonymous")</MudTd>
+                    </RowTemplate>
+                    <NoRecordsContent>
+                        <MudText Color="Color.Secondary" Class="pa-4">Chưa có hoạt động nào.</MudText>
+                    </NoRecordsContent>
+                </MudTable>
+
+                @if (_activityResult.TotalPages > 1)
+                {
+                    <div class="d-flex justify-center mt-3">
+                        <MudPagination Count="_activityResult.TotalPages" Selected="_activityPage"
+                                       SelectedChanged="OnActivityPageChanged" Color="Color.Primary" />
+                    </div>
+                }
+            }
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">Chọn một widget để xem lịch sử gọi API.</MudAlert>
+        }
+    </MudTabPanel>
+
+    @* Tab 2: Widget không hoạt động *@
+    <MudTabPanel Text="Widget Không Hoạt Động" Icon="@Icons.Material.Filled.NotificationsOff">
+        <MudGrid Class="mb-3 mt-2 align-center">
+            <MudItem xs="12" sm="4">
+                <MudNumericField @bind-Value="_thresholdDays" Label="Ngưỡng (ngày không hoạt động)"
+                                 Variant="Variant.Outlined" Dense="true" Min="1" Max="365" />
+            </MudItem>
+            <MudItem xs="12" sm="2">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadInactiveWidgets"
+                           Disabled="_inactiveLoading" Size="Size.Small">
+                    @if (_inactiveLoading) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" /> }
+                    Kiểm tra
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+
+        @if (_inactiveWidgets != null)
+        {
+            <MudTable Items="_inactiveWidgets" Dense="true" Hover="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>Widget</MudTh>
+                    <MudTh>Số ngày không hoạt động</MudTh>
+                    <MudTh>Đã tự động tắt</MudTh>
+                    <MudTh>Phát hiện lúc</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.WidgetName</MudTd>
+                    <MudTd>
+                        <MudChip T="string" Size="Size.Small" Color="Color.Warning">
+                            @context.DaysSinceLastActivity ngày
+                        </MudChip>
+                    </MudTd>
+                    <MudTd>
+                        @if (context.WasAutoDisabled)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Error" Icon="@Icons.Material.Filled.Block">Đã tắt</MudChip>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">—</MudText>
+                        }
+                    </MudTd>
+                    <MudTd>@context.DetectedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudText Color="Color.Success" Class="pa-4">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="mr-1" />
+                        Tất cả widgets đều đang hoạt động trong ngưỡng quy định.
+                    </MudText>
+                </NoRecordsContent>
+            </MudTable>
+        }
+    </MudTabPanel>
+
+    @* Tab 3: Cảnh báo inactivity đã ghi lại *@
+    <MudTabPanel Text="Lịch sử Cảnh báo" Icon="@Icons.Material.Filled.NotificationImportant">
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Refresh"
+                   OnClick="LoadAlerts" Disabled="_alertsLoading" Size="Size.Small" Class="mt-2 mb-3">
+            @if (_alertsLoading) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" /> }
+            Tải cảnh báo
+        </MudButton>
+
+        @if (_alerts != null)
+        {
+            <MudTable Items="_alerts" Dense="true" Hover="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>Widget</MudTh>
+                    <MudTh>Ngày không hoạt động</MudTh>
+                    <MudTh>Đã tự động tắt</MudTh>
+                    <MudTh>Phát hiện lúc</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.WidgetName</MudTd>
+                    <MudTd>@context.DaysSinceLastActivity ngày</MudTd>
+                    <MudTd>
+                        @if (context.WasAutoDisabled)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Error">Đã tắt</MudChip>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Chỉ cảnh báo</MudText>
+                        }
+                    </MudTd>
+                    <MudTd>@context.DetectedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudText Color="Color.Secondary" Class="pa-4">Chưa có cảnh báo nào được ghi lại.</MudText>
+                </NoRecordsContent>
+            </MudTable>
+        }
+    </MudTabPanel>
+</MudTabs>
+
+@code {
+    IEnumerable<WidgetDto>? _widgets;
+    int _selectedWidgetId;
+
+    WidgetActivityPagedResult? _activityResult;
+    WidgetActivitySummaryDto? _summary;
+    bool _activityLoading;
+    int _activityPage = 1;
+    const int ActivityPageSize = 20;
+
+    IEnumerable<InactivityAlertDto>? _inactiveWidgets;
+    bool _inactiveLoading;
+    int _thresholdDays = 30;
+
+    IEnumerable<InactivityAlertDto>? _alerts;
+    bool _alertsLoading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { _widgets = await ApiService.GetWidgetsAsync() ?? Array.Empty<WidgetDto>(); }
+        catch { _widgets = Array.Empty<WidgetDto>(); }
+    }
+
+    async Task OnWidgetSelected(int id)
+    {
+        _selectedWidgetId = id;
+        _activityPage = 1;
+        if (id > 0) await LoadWidgetActivity();
+    }
+
+    async Task LoadWidgetActivity()
+    {
+        _activityLoading = true;
+        try
+        {
+            var actTask = ApiService.GetWidgetActivityAsync(_selectedWidgetId, _activityPage, ActivityPageSize);
+            var sumTask = ApiService.GetWidgetActivitySummaryAsync(_selectedWidgetId);
+            await Task.WhenAll(actTask, sumTask);
+            _activityResult = await actTask;
+            _summary = await sumTask;
+        }
+        finally { _activityLoading = false; }
+    }
+
+    async Task OnActivityPageChanged(int page)
+    {
+        _activityPage = page;
+        await LoadWidgetActivity();
+    }
+
+    async Task LoadInactiveWidgets()
+    {
+        _inactiveLoading = true;
+        try { _inactiveWidgets = await ApiService.GetInactiveWidgetsAsync(_thresholdDays) ?? Array.Empty<InactivityAlertDto>(); }
+        finally { _inactiveLoading = false; }
+    }
+
+    async Task LoadAlerts()
+    {
+        _alertsLoading = true;
+        try { _alerts = await ApiService.GetInactivityAlertsAsync() ?? Array.Empty<InactivityAlertDto>(); }
+        finally { _alertsLoading = false; }
+    }
+
+    static Color GetStatusColor(int status) => status switch
+    {
+        >= 200 and < 300 => Color.Success,
+        >= 400 and < 500 => Color.Warning,
+        >= 500 => Color.Error,
+        _ => Color.Default
+    };
+}

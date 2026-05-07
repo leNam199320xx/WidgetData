@@ -102,9 +102,39 @@
 
 @if (_sources != null)
 {
-    <MudTable Items="_sources" Dense="true" Hover="true" Striped="true">
+    @* Search / Filter bar *@
+    <MudPaper Elevation="1" Class="pa-2 mb-3">
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_searchText" Label="@L["Search"]" Variant="Variant.Outlined" Dense="true"
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              Immediate="true" />
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <MudSelect @bind-Value="_filterType" T="DataSourceType?" Label="@L["Type"]" Variant="Variant.Outlined" Dense="true"
+                           Clearable="true">
+                    @foreach (var t in Enum.GetValues<DataSourceType>())
+                    {
+                        <MudSelectItem T="DataSourceType?" Value="@((DataSourceType?)t)">@t</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="6" sm="2">
+                <MudSelect @bind-Value="_filterStatus" T="bool?" Label="@L["Status"]" Variant="Variant.Outlined" Dense="true"
+                           Clearable="true">
+                    <MudSelectItem T="bool?" Value="@((bool?)true)">@L["Active"]</MudSelectItem>
+                    <MudSelectItem T="bool?" Value="@((bool?)false)">@L["Inactive"]</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="1" Class="d-flex align-center">
+                <MudIconButton Icon="@Icons.Material.Filled.Clear" OnClick="ClearFilters" Title="Xóa lọc" />
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudTable Items="FilteredSources" Dense="true" Hover="true" Striped="true">
         <ToolBarContent>
-            <MudText Typo="Typo.h6">@L["DS_List"]</MudText>
+            <MudText Typo="Typo.h6">@L["DS_List"] (@FilteredSources.Count())</MudText>
             <MudSpacer />
             @if (!_showForm)
             {
@@ -129,18 +159,27 @@
                 @(context.LastTestedAt.HasValue ? context.LastTestedAt.Value.ToString("g") : L["DS_NeverTested"].Value)
                 @if (!string.IsNullOrEmpty(context.LastTestResult))
                 {
-                    <MudChip T="string" Color="Color.Success" Size="Size.Small" Class="ml-1">@context.LastTestResult</MudChip>
+                    var isSuccess = context.LastTestResult.StartsWith("Connection successful", StringComparison.OrdinalIgnoreCase);
+                    <MudChip T="string" Color="@(isSuccess ? Color.Success : Color.Error)" Size="Size.Small" Class="ml-1">
+                        @(isSuccess ? "OK" : "Fail")
+                    </MudChip>
+                    <MudTooltip Text="@context.LastTestResult">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
+                    </MudTooltip>
                 }
             </MudTd>
             <MudTd>
                 <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Info" Size="Size.Small"
-                               OnClick="() => TestConnection(context)" />
+                               OnClick="@(() => TestConnection(context))" Title="@L["DS_Test"]" />
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" Size="Size.Small"
-                               OnClick="() => OpenEditForm(context)" />
+                               OnClick="@(() => OpenEditForm(context))" />
                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
-                               OnClick="() => _deletingItem = context" />
+                               OnClick="@(() => _deletingItem = context)" />
             </MudTd>
         </RowTemplate>
+        <NoRecordsContent>
+            <MudText Color="Color.Secondary" Class="pa-4">Không tìm thấy data source nào phù hợp.</MudText>
+        </NoRecordsContent>
     </MudTable>
 }
 else if (_error != null)
@@ -161,6 +200,24 @@ else
     bool _formIsActive = true;
     DataSourceDto? _deletingItem;
     CreateDataSourceDto _form = new();
+
+    // Search / filter
+    string _searchText = string.Empty;
+    DataSourceType? _filterType;
+    bool? _filterStatus;
+
+    IEnumerable<DataSourceDto> FilteredSources => (_sources ?? Array.Empty<DataSourceDto>())
+        .Where(ds =>
+            (string.IsNullOrWhiteSpace(_searchText) || ds.Name.Contains(_searchText, StringComparison.OrdinalIgnoreCase))
+            && (_filterType == null || ds.SourceType == _filterType)
+            && (_filterStatus == null || ds.IsActive == _filterStatus));
+
+    void ClearFilters()
+    {
+        _searchText = string.Empty;
+        _filterType = null;
+        _filterStatus = null;
+    }
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 

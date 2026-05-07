@@ -74,9 +74,30 @@
 
 @if (_schedules != null)
 {
-    <MudTable Items="_schedules" Dense="true" Hover="true" Striped="true">
+    @* Search / Filter bar *@
+    <MudPaper Elevation="1" Class="pa-2 mb-3">
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_searchText" Label="@L["Search"]" Variant="Variant.Outlined" Dense="true"
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              Immediate="true" Placeholder="Tên widget..." />
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <MudSelect @bind-Value="_filterEnabled" T="bool?" Label="@L["Status"]" Variant="Variant.Outlined" Dense="true"
+                           Clearable="true">
+                    <MudSelectItem T="bool?" Value="@((bool?)true)">@L["Enabled"]</MudSelectItem>
+                    <MudSelectItem T="bool?" Value="@((bool?)false)">@L["Disabled"]</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="6" sm="2" Class="d-flex align-center">
+                <MudIconButton Icon="@Icons.Material.Filled.Clear" OnClick="ClearFilters" Title="Xóa lọc" />
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudTable Items="FilteredSchedules" Dense="true" Hover="true" Striped="true">
         <ToolBarContent>
-            <MudText Typo="Typo.h6">@L["Sched_List"]</MudText>
+            <MudText Typo="Typo.h6">@L["Sched_List"] (@FilteredSchedules.Count())</MudText>
             <MudSpacer />
             @if (!_showForm)
             {
@@ -134,21 +155,24 @@
                 @if (context.IsEnabled)
                 {
                     <MudIconButton Icon="@Icons.Material.Filled.PauseCircle" Color="Color.Warning" Size="Size.Small"
-                                   OnClick="() => ToggleSchedule(context, false)" Title="@L["Disabled"]" />
+                                   OnClick="@(() => ToggleSchedule(context, false))" Title="@L["Disabled"]" />
                 }
                 else
                 {
                     <MudIconButton Icon="@Icons.Material.Filled.PlayCircle" Color="Color.Success" Size="Size.Small"
-                                   OnClick="() => ToggleSchedule(context, true)" Title="@L["Enabled"]" />
+                                   OnClick="@(() => ToggleSchedule(context, true))" Title="@L["Enabled"]" />
                 }
                 <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Info" Size="Size.Small"
-                               OnClick="() => TriggerSchedule(context)" Title="Trigger" />
+                               OnClick="@(() => TriggerSchedule(context))" Title="Trigger" />
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" Size="Size.Small"
-                               OnClick="() => OpenEditForm(context)" />
+                               OnClick="@(() => OpenEditForm(context))" />
                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
-                               OnClick="() => _deletingItem = context" />
+                               OnClick="@(() => _deletingItem = context)" />
             </MudTd>
         </RowTemplate>
+        <NoRecordsContent>
+            <MudText Color="Color.Secondary" Class="pa-4">Không tìm thấy schedule nào phù hợp.</MudText>
+        </NoRecordsContent>
     </MudTable>
 }
 else if (_error != null)
@@ -169,6 +193,21 @@ else
     bool _saving;
     int? _editingId;
     CreateScheduleDto _form = new();
+
+    // Search / filter
+    string _searchText = string.Empty;
+    bool? _filterEnabled;
+
+    IEnumerable<WidgetScheduleDto> FilteredSchedules => (_schedules ?? Array.Empty<WidgetScheduleDto>())
+        .Where(s =>
+            (string.IsNullOrWhiteSpace(_searchText) || (s.WidgetName ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase))
+            && (_filterEnabled == null || s.IsEnabled == _filterEnabled));
+
+    void ClearFilters()
+    {
+        _searchText = string.Empty;
+        _filterEnabled = null;
+    }
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 

@@ -8,3 +8,9 @@ public class PagedResult<T>
     public int PageSize { get; set; }
     public int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)Total / PageSize) : 0;
 }
+
+/// <summary>Paged result for AuditLog used by Web/ApiService.</summary>
+public class AuditLogPagedResult : PagedResult<AuditLogDto> { }
+
+/// <summary>Paged result for WidgetActivity used by Web/ApiService.</summary>
+public class WidgetActivityPagedResult : PagedResult<WidgetActivityDto> { }

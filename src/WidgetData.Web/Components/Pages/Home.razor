@@ -2,64 +2,140 @@
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using MudBlazor
 @using WidgetData.Application.DTOs
+@using WidgetData.Domain.Enums
 @inject WidgetData.Web.Services.ApiService ApiService
+@inject NavigationManager Nav
 @inject IStringLocalizer<SharedResource> L
 
 <PageTitle>@L["Home_Title"] - WidgetData</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-4">@L["Home_Title"]</MudText>
+<MudText Typo="Typo.h4" Class="mb-1">@L["Home_Title"]</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+    Tổng quan hệ thống @DateTime.Now.ToString("dd/MM/yyyy")
+</MudText>
 
 @if (_stats != null)
 {
-    <MudGrid>
-        <MudItem xs="12" sm="6" md="3">
-            <MudCard>
-                <MudCardContent>
-                    <MudText Typo="Typo.h5">@_stats.TotalWidgets</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Home_TotalWidgets"]</MudText>
+    @* Stat cards row 1 *@
+    <MudGrid Class="mb-2">
+        <MudItem xs="6" sm="3">
+            <MudCard Elevation="2" Style="cursor:pointer" @onclick="@(() => Nav.NavigateTo("/widgets"))">
+                <MudCardContent Class="pa-3">
+                    <div class="d-flex align-center justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.h5">@_stats.TotalWidgets</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Home_TotalWidgets"]</MudText>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.Widgets" Color="Color.Primary" Size="Size.Large" />
+                    </div>
+                    <MudLinearProgress Value="@((_stats.TotalWidgets > 0 ? (double)_stats.ActiveWidgets / _stats.TotalWidgets * 100 : 0))"
+                                       Color="Color.Success" Class="mt-2" Style="height:4px;border-radius:2px" />
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
+                        @_stats.ActiveWidgets active / @(_stats.TotalWidgets - _stats.ActiveWidgets) inactive
+                    </MudText>
                 </MudCardContent>
             </MudCard>
         </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <MudCard>
-                <MudCardContent>
-                    <MudText Typo="Typo.h5">@_stats.TotalDataSources</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Home_DataSources"]</MudText>
+
+        <MudItem xs="6" sm="3">
+            <MudCard Elevation="2" Style="cursor:pointer" @onclick="@(() => Nav.NavigateTo("/datasources"))">
+                <MudCardContent Class="pa-3">
+                    <div class="d-flex align-center justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.h5">@_stats.TotalDataSources</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Home_DataSources"]</MudText>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.Storage" Color="Color.Secondary" Size="Size.Large" />
+                    </div>
+                    <MudLinearProgress Value="@((_stats.TotalDataSources > 0 ? (double)_stats.ActiveDataSources / _stats.TotalDataSources * 100 : 0))"
+                                       Color="Color.Secondary" Class="mt-2" Style="height:4px;border-radius:2px" />
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
+                        @_stats.ActiveDataSources active / @(_stats.TotalDataSources - _stats.ActiveDataSources) inactive
+                    </MudText>
                 </MudCardContent>
             </MudCard>
         </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <MudCard>
-                <MudCardContent>
-                    <MudText Typo="Typo.h5">@_stats.ActiveSchedules</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Home_ActiveSchedules"]</MudText>
+
+        <MudItem xs="6" sm="3">
+            <MudCard Elevation="2" Style="cursor:pointer" @onclick="@(() => Nav.NavigateTo("/schedules"))">
+                <MudCardContent Class="pa-3">
+                    <div class="d-flex align-center justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.h5">@_stats.ActiveSchedules</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Home_ActiveSchedules"]</MudText>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.Schedule" Color="Color.Warning" Size="Size.Large" />
+                    </div>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-3">
+                        Tổng schedules: @_stats.TotalSchedules
+                    </MudText>
                 </MudCardContent>
             </MudCard>
         </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <MudCard>
-                <MudCardContent>
-                    <MudText Typo="Typo.h5">@_stats.SuccessfulExecutions</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Home_SuccessfulExecutions"]</MudText>
+
+        <MudItem xs="6" sm="3">
+            <MudCard Elevation="2" Style="cursor:pointer" @onclick="@(() => Nav.NavigateTo("/widget-activity"))">
+                <MudCardContent Class="pa-3">
+                    <div class="d-flex align-center justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.h5">@_stats.TotalExecutions</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Tổng lần thực thi</MudText>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.BarChart" Color="Color.Info" Size="Size.Large" />
+                    </div>
+                    <div class="d-flex gap-2 mt-2">
+                        <MudChip T="string" Color="Color.Success" Size="Size.Small">✓ @_stats.SuccessfulExecutions</MudChip>
+                        @if (_stats.FailedExecutions > 0)
+                        {
+                            <MudChip T="string" Color="Color.Error" Size="Size.Small">✗ @_stats.FailedExecutions</MudChip>
+                        }
+                    </div>
                 </MudCardContent>
             </MudCard>
         </MudItem>
     </MudGrid>
 
-    <MudText Typo="Typo.h5" Class="mt-6 mb-3">@L["Home_RecentExecutions"]</MudText>
-    <MudTable Items="_stats.RecentExecutions" Dense="true" Hover="true">
+    @* Quick links *@
+    <MudPaper Class="pa-3 mb-4" Elevation="1">
+        <MudText Typo="Typo.subtitle1" Class="mb-2">Truy cập nhanh</MudText>
+        <MudStack Row="true" Wrap="Wrap.Wrap">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small"
+                       OnClick="@(() => Nav.NavigateTo("/widgets"))">Thêm Widget</MudButton>
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Storage" Size="Size.Small"
+                       OnClick="@(() => Nav.NavigateTo("/datasources"))">Data Sources</MudButton>
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.HistoryEdu" Size="Size.Small"
+                       OnClick="@(() => Nav.NavigateTo("/audit-logs"))">Audit Log</MudButton>
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Analytics" Size="Size.Small"
+                       OnClick="@(() => Nav.NavigateTo("/widget-activity"))">Widget Activity</MudButton>
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.People" Size="Size.Small"
+                       OnClick="@(() => Nav.NavigateTo("/users"))">Quản lý Users</MudButton>
+        </MudStack>
+    </MudPaper>
+
+    @* Recent executions *@
+    <MudText Typo="Typo.h5" Class="mb-3">@L["Home_RecentExecutions"]</MudText>
+    <MudTable Items="_stats.RecentExecutions" Dense="true" Hover="true" Striped="true" FixedHeader="true" Height="300px">
         <HeaderContent>
             <MudTh>@L["Home_ColWidget"]</MudTh>
             <MudTh>@L["Home_ColStatus"]</MudTh>
             <MudTh>@L["Home_ColStarted"]</MudTh>
             <MudTh>@L["Home_ColDuration"]</MudTh>
+            <MudTh>Rows</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd>@context.WidgetName</MudTd>
-            <MudTd>@context.Status</MudTd>
-            <MudTd>@context.StartedAt.ToString("g")</MudTd>
+            <MudTd>
+                <MudChip T="string" Color="@StatusColor(context.Status)" Size="Size.Small">
+                    @context.Status
+                </MudChip>
+            </MudTd>
+            <MudTd>@context.StartedAt.ToLocalTime().ToString("dd/MM HH:mm:ss")</MudTd>
             <MudTd>@(context.ExecutionTimeMs.HasValue ? $"{context.ExecutionTimeMs}ms" : "-")</MudTd>
+            <MudTd>@(context.RowCount.HasValue ? context.RowCount.ToString() : "-")</MudTd>
         </RowTemplate>
+        <NoRecordsContent>
+            <MudText Color="Color.Secondary" Class="pa-4">Chưa có lần thực thi nào.</MudText>
+        </NoRecordsContent>
     </MudTable>
 }
 else if (_error != null)
@@ -80,4 +156,12 @@ else
         try { _stats = await ApiService.GetDashboardStatsAsync(); }
         catch (Exception ex) { _error = L["Home_FailedToLoad", ex.Message].Value; }
     }
+
+    static Color StatusColor(ExecutionStatus s) => s switch
+    {
+        ExecutionStatus.Success => Color.Success,
+        ExecutionStatus.Running => Color.Info,
+        ExecutionStatus.Failed => Color.Error,
+        _ => Color.Default
+    };
 }

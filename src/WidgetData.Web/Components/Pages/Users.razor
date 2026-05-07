@@ -12,6 +12,8 @@
 
 <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mb-4">
     <MudTabPanel Text="@L["Users_TabList"]" Icon="@Icons.Material.Filled.People">
+
+        @* Add User Form *@
         @if (_showForm)
         {
             <MudPaper Class="pa-4 mb-4" Elevation="3">
@@ -32,7 +34,87 @@
                             @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
                             @L["Users_Create"]
                         </MudButton>
-                        <MudButton Variant="Variant.Outlined" OnClick="() => _showForm = false">@L["Cancel"]</MudButton>
+                        <MudButton Variant="Variant.Outlined" OnClick="@(() => _showForm = false)">@L["Cancel"]</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        }
+
+        @* Edit User Form *@
+        @if (_editingUser != null)
+        {
+            <MudPaper Class="pa-4 mb-4" Elevation="3">
+                <MudText Typo="Typo.h6" Class="mb-3">Sửa thông tin: @_editingUser.Email</MudText>
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_editForm.DisplayName" Label="@L["Users_DisplayName"]" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" sm="3">
+                        <MudSwitch @bind-Value="_editForm.IsActive" Label="Kích hoạt" Color="Color.Success" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveEditUser" Disabled="_saving" Class="mr-2">
+                            @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                            @L["Save"]
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" OnClick="@(() => _editingUser = null)">@L["Cancel"]</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        }
+
+        @* Delete confirmation *@
+        @if (_deletingUser != null)
+        {
+            <MudPaper Class="pa-4 mb-4" Elevation="3" Style="border-left: 4px solid #f44336">
+                <MudText Typo="Typo.h6" Color="Color.Error">@L["ConfirmDelete"]</MudText>
+                <MudText Class="mb-3">Bạn có chắc muốn xóa user <b>@_deletingUser.Email</b>?</MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DoDeleteUser" Class="mr-2">@L["Delete"]</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick="@(() => _deletingUser = null)">@L["Cancel"]</MudButton>
+            </MudPaper>
+        }
+
+        @* Change Password Form *@
+        @if (_changePwUser != null)
+        {
+            <MudPaper Class="pa-4 mb-4" Elevation="3">
+                <MudText Typo="Typo.h6" Class="mb-3">Đặt lại mật khẩu: @_changePwUser.Email</MudText>
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_newPassword" Label="Mật khẩu mới" Variant="Variant.Outlined"
+                                      InputType="InputType.Password" HelperText="@L["Users_PasswordHelper"]" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="DoChangePassword" Disabled="_saving" Class="mr-2">
+                            @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                            Đặt lại mật khẩu
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" OnClick="@(() => { _changePwUser = null; _newPassword = string.Empty; })">@L["Cancel"]</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        }
+
+        @* Set Roles Form *@
+        @if (_roleUser != null)
+        {
+            <MudPaper Class="pa-4 mb-4" Elevation="3">
+                <MudText Typo="Typo.h6" Class="mb-3">Gán role: @_roleUser.Email</MudText>
+                <MudGrid>
+                    <MudItem xs="12">
+                        @foreach (var roleName in _availableRoles)
+                        {
+                            var rn = roleName;
+                            <MudCheckBox Value="@_selectedRoles.Contains(rn)" Label="@rn" Color="Color.Primary" Class="mr-3"
+                                         ValueChanged="@((bool v) => ToggleRole(rn, v))" />
+                        }
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="DoSetRoles" Disabled="_saving" Class="mr-2">
+                            @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                            Lưu Role
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" OnClick="@(() => _roleUser = null)">@L["Cancel"]</MudButton>
                     </MudItem>
                 </MudGrid>
             </MudPaper>
@@ -44,10 +126,10 @@
                 <ToolBarContent>
                     <MudText Typo="Typo.h6">@L["Users_UserList"]</MudText>
                     <MudSpacer />
-                    @if (!_showForm)
+                    @if (!_showForm && _editingUser == null && _deletingUser == null && _changePwUser == null && _roleUser == null)
                     {
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd"
-                                   OnClick="() => { _form = new(); _showForm = true; }">@L["Users_AddUser"]</MudButton>
+                                   OnClick="@(() => { _form = new(); _showForm = true; })">@L["Users_AddUser"]</MudButton>
                     }
                 </ToolBarContent>
                 <HeaderContent>
@@ -56,7 +138,7 @@
                     <MudTh>@L["Users_Roles"]</MudTh>
                     <MudTh>@L["Status"]</MudTh>
                     <MudTh>@L["Users_LastLogin"]</MudTh>
-                    <MudTh>@L["Users_Permissions"]</MudTh>
+                    <MudTh>@L["Actions"]</MudTh>
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd>@context.Email</MudTd>
@@ -67,11 +149,23 @@
                             <MudChip T="string" Color="Color.Primary" Size="Size.Small" Class="mr-1">@role</MudChip>
                         }
                     </MudTd>
-                    <MudTd><MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Error)" Size="Size.Small">@(context.IsActive ? L["Active"] : L["Inactive"])</MudChip></MudTd>
+                    <MudTd>
+                        <MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Error)" Size="Size.Small">
+                            @(context.IsActive ? L["Active"] : L["Inactive"])
+                        </MudChip>
+                    </MudTd>
                     <MudTd>@(context.LastLoginAt.HasValue ? context.LastLoginAt.Value.ToString("g") : L["Users_NeverLoggedIn"].Value)</MudTd>
                     <MudTd>
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" Size="Size.Small"
+                                       OnClick="@(() => OpenEditUser(context))" Title="Sửa thông tin" />
                         <MudIconButton Icon="@Icons.Material.Filled.Security" Color="Color.Info" Size="Size.Small"
-                                       OnClick="() => ShowPermissions(context)" Title="@L["Users_Permissions"]" />
+                                       OnClick="@(() => ShowPermissions(context))" Title="@L["Users_Permissions"]" />
+                        <MudIconButton Icon="@Icons.Material.Filled.ManageAccounts" Color="Color.Secondary" Size="Size.Small"
+                                       OnClick="@(() => OpenRoleManager(context))" Title="Gán Role" />
+                        <MudIconButton Icon="@Icons.Material.Filled.LockReset" Color="Color.Warning" Size="Size.Small"
+                                       OnClick="@(() => OpenChangePassword(context))" Title="Đặt lại mật khẩu" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                       OnClick="@(() => _deletingUser = context)" Title="@L["Delete"]" />
                     </MudTd>
                 </RowTemplate>
             </MudTable>
@@ -97,7 +191,7 @@
                 <MudText Typo="Typo.h6" Class="mb-2">
                     @L["Users_PermOf", _selectedUserForPerm.Email]
                     <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small"
-                                   OnClick="() => { _selectedUserForPerm = null; _userPermissions = null; }" />
+                                   OnClick="@(() => { _selectedUserForPerm = null; _userPermissions = null; })" />
                 </MudText>
 
                 @if (_assignForm)
@@ -136,7 +230,7 @@
                 }
 
                 <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small"
-                           OnClick="() => _assignForm = !_assignForm" Class="mb-3">
+                           OnClick="@(() => _assignForm = !_assignForm)" Class="mb-3">
                     @L["Users_AddWidgetPerm"]
                 </MudButton>
 
@@ -163,7 +257,7 @@
                             <MudTd><MudIcon Icon="@(context.CanEdit ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)" Color="@(context.CanEdit ? Color.Success : Color.Error)" Size="Size.Small" /></MudTd>
                             <MudTd>
                                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
-                                               OnClick="() => RemovePerm(context)" />
+                                               OnClick="@(() => RemovePerm(context))" />
                             </MudTd>
                         </RowTemplate>
                     </MudTable>
@@ -193,6 +287,23 @@
     bool _saving;
     RegisterDto _form = new();
 
+    // Edit
+    UserDto? _editingUser;
+    UpdateUserDto _editForm = new();
+
+    // Delete
+    UserDto? _deletingUser;
+
+    // Change Password
+    UserDto? _changePwUser;
+    string _newPassword = string.Empty;
+
+    // Role management
+    UserDto? _roleUser;
+    readonly List<string> _availableRoles = new() { "Admin", "Manager", "Viewer", "SuperAdmin" };
+    HashSet<string> _selectedRoles = new();
+
+    // Permissions
     UserDto? _selectedUserForPerm;
     IEnumerable<UserPermissionDto>? _userPermissions;
     bool _assignForm;
@@ -227,6 +338,83 @@
             var result = await ApiService.CreateUserAsync(_form);
             Snackbar.Add(result != null ? L["Users_Created"].Value : L["Users_FailedCreate"].Value, result != null ? Severity.Success : Severity.Error);
             if (result != null) { _showForm = false; _form = new(); await LoadAsync(); }
+        }
+        finally { _saving = false; }
+    }
+
+    void OpenEditUser(UserDto user)
+    {
+        _editingUser = user;
+        _editForm = new UpdateUserDto { DisplayName = user.DisplayName, IsActive = user.IsActive };
+        _showForm = false; _deletingUser = null; _changePwUser = null; _roleUser = null;
+    }
+
+    async Task SaveEditUser()
+    {
+        if (_editingUser == null) return;
+        _saving = true;
+        try
+        {
+            var result = await ApiService.UpdateUserAsync(_editingUser.Id, _editForm);
+            Snackbar.Add(result != null ? "Đã cập nhật user." : "Cập nhật thất bại.", result != null ? Severity.Success : Severity.Error);
+            if (result != null) { _editingUser = null; await LoadAsync(); }
+        }
+        finally { _saving = false; }
+    }
+
+    async Task DoDeleteUser()
+    {
+        if (_deletingUser == null) return;
+        var ok = await ApiService.DeleteUserAsync(_deletingUser.Id);
+        Snackbar.Add(ok ? L["Deleted"].Value : L["DeleteFailed"].Value, ok ? Severity.Success : Severity.Error);
+        _deletingUser = null;
+        await LoadAsync();
+    }
+
+    void OpenChangePassword(UserDto user)
+    {
+        _changePwUser = user;
+        _newPassword = string.Empty;
+        _editingUser = null; _roleUser = null;
+    }
+
+    async Task DoChangePassword()
+    {
+        if (_changePwUser == null || string.IsNullOrWhiteSpace(_newPassword)) return;
+        _saving = true;
+        try
+        {
+            var dto = new ChangeUserPasswordDto { NewPassword = _newPassword };
+            var result = await ApiService.ChangeUserPasswordAsync(_changePwUser.Id, dto);
+            Snackbar.Add(result != null ? "Đã đặt lại mật khẩu." : "Đặt lại mật khẩu thất bại.", result != null ? Severity.Success : Severity.Error);
+            if (result != null) { _changePwUser = null; _newPassword = string.Empty; }
+        }
+        finally { _saving = false; }
+    }
+
+    void OpenRoleManager(UserDto user)
+    {
+        _roleUser = user;
+        _selectedRoles = user.Roles.ToHashSet();
+        _editingUser = null; _changePwUser = null;
+    }
+
+    void ToggleRole(string role, bool add)
+    {
+        if (add) _selectedRoles.Add(role);
+        else _selectedRoles.Remove(role);
+    }
+
+    async Task DoSetRoles()
+    {
+        if (_roleUser == null) return;
+        _saving = true;
+        try
+        {
+            var dto = new SetUserRolesDto { Roles = _selectedRoles.ToList() };
+            var result = await ApiService.SetUserRolesAsync(_roleUser.Id, dto);
+            Snackbar.Add(result != null ? "Đã cập nhật role." : "Cập nhật role thất bại.", result != null ? Severity.Success : Severity.Error);
+            if (result != null) { _roleUser = null; await LoadAsync(); }
         }
         finally { _saving = false; }
     }
