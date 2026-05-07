@@ -20,6 +20,7 @@ public class DataSeeder
 
     public async Task SeedAsync()
     {
+        await ReconcileMigrationHistoryAsync();
         await _context.Database.MigrateAsync();
 
         string[] roles = { "Admin", "Manager", "Developer", "Viewer", "SuperAdmin", "TenantAdmin", "TenantUser" };
@@ -1073,5 +1074,68 @@ public class DataSeeder
                 Width = i < 4 ? 3 : 6
             });
         await _context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Detects databases that were created outside of EF Core migrations (e.g., via EnsureCreated
+    /// or from a previous migration set that was later squashed) and marks the corresponding
+    /// migrations as applied in __EFMigrationsHistory so that MigrateAsync does not attempt
+    /// to re-create tables that already exist.
+    /// </summary>
+    private async Task ReconcileMigrationHistoryAsync()
+    {
+        var connection = _context.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Open)
+            await connection.OpenAsync();
+
+        using var cmd = connection.CreateCommand();
+
+        // Ensure the EF migrations history table exists
+        cmd.CommandText = """
+            CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
+                "MigrationId" TEXT NOT NULL CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY,
+                "ProductVersion" TEXT NOT NULL
+            )
+            """;
+        await cmd.ExecuteNonQueryAsync();
+
+        // For each migration, if its characteristic schema object exists but the migration
+        // is not yet recorded, mark it as applied so MigrateAsync will skip it.
+        await TryMarkMigrationAppliedAsync(connection,
+            "20260421161413_AddWidgetApiActivityAndInactivityFields",
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='AspNetRoles'");
+
+        await TryMarkMigrationAppliedAsync(connection,
+            "20260425170354_AddFormSubmissions",
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='FormSubmissions'");
+
+        await TryMarkMigrationAppliedAsync(connection,
+            "20260505164318_AddTenantAndPageSupport",
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Tenants'");
+
+        await TryMarkMigrationAppliedAsync(connection,
+            "20260507152721_AddOperationalIndexes",
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='IX_WidgetExecutions_WidgetId_StartedAt'");
+    }
+
+    private static async Task TryMarkMigrationAppliedAsync(
+        System.Data.Common.DbConnection connection,
+        string migrationId,
+        string schemaExistsQuery)
+    {
+        using var cmd = connection.CreateCommand();
+
+        // Skip if already recorded in history
+        cmd.CommandText = $"SELECT COUNT(*) FROM \"__EFMigrationsHistory\" WHERE \"MigrationId\" = '{migrationId}'";
+        var alreadyRecorded = (long)(await cmd.ExecuteScalarAsync())! > 0;
+        if (alreadyRecorded) return;
+
+        // Only mark as applied if the schema already exists in the database
+        cmd.CommandText = schemaExistsQuery;
+        var schemaExists = (long)(await cmd.ExecuteScalarAsync())! > 0;
+        if (!schemaExists) return;
+
+        cmd.CommandText = $"INSERT INTO \"__EFMigrationsHistory\" (\"MigrationId\", \"ProductVersion\") VALUES ('{migrationId}', '10.0.7')";
+        await cmd.ExecuteNonQueryAsync();
     }
 }
