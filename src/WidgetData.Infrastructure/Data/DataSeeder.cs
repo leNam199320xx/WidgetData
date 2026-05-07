@@ -20,7 +20,7 @@ public class DataSeeder
 
     public async Task SeedAsync()
     {
-        await _context.Database.EnsureCreatedAsync();
+        await _context.Database.MigrateAsync();
 
         string[] roles = { "Admin", "Manager", "Developer", "Viewer", "SuperAdmin", "TenantAdmin", "TenantUser" };
         foreach (var role in roles)
