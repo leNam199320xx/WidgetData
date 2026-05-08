@@ -1120,16 +1120,25 @@ public class DataSeeder
             }
         };
 
+        var targetSlugs = testTenants
+            .Select(t => t.Slug)
+            .ToList();
+
         var existingSlugs = await _context.Tenants
+            .Where(t => targetSlugs.Contains(t.Slug))
             .Select(t => t.Slug)
             .ToListAsync();
 
+        var existingSlugSet = existingSlugs.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         var missingTenants = testTenants
-            .Where(t => !existingSlugs.Contains(t.Slug, StringComparer.OrdinalIgnoreCase))
+            .Where(t => !existingSlugSet.Contains(t.Slug))
             .ToList();
 
         if (missingTenants.Count == 0)
+        {
             return;
+        }
 
         _context.Tenants.AddRange(missingTenants);
         await _context.SaveChangesAsync();
