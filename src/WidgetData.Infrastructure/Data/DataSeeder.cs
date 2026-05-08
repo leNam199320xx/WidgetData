@@ -1099,11 +1099,13 @@ public class DataSeeder
             """;
         await cmd.ExecuteNonQueryAsync();
 
+        await EnsureWidgetApiActivitiesTableAsync(connection);
+
         // For each migration, if its characteristic schema object exists but the migration
         // is not yet recorded, mark it as applied so MigrateAsync will skip it.
         await TryMarkMigrationAppliedAsync(connection,
             "20260421161413_AddWidgetApiActivityAndInactivityFields",
-            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='AspNetRoles'");
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='WidgetApiActivities'");
 
         await TryMarkMigrationAppliedAsync(connection,
             "20260425170354_AddFormSubmissions",
@@ -1116,6 +1118,30 @@ public class DataSeeder
         await TryMarkMigrationAppliedAsync(connection,
             "20260507152721_AddOperationalIndexes",
             "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='IX_WidgetExecutions_WidgetId_StartedAt'");
+    }
+
+    private static async Task EnsureWidgetApiActivitiesTableAsync(System.Data.Common.DbConnection connection)
+    {
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = """
+            CREATE TABLE IF NOT EXISTS "WidgetApiActivities" (
+                "Id" INTEGER NOT NULL CONSTRAINT "PK_WidgetApiActivities" PRIMARY KEY AUTOINCREMENT,
+                "WidgetId" INTEGER NOT NULL,
+                "ApiEndpoint" TEXT NOT NULL,
+                "UserId" TEXT NULL,
+                "CalledAt" TEXT NOT NULL,
+                "ResponseTimeMs" INTEGER NULL,
+                "StatusCode" INTEGER NOT NULL,
+                CONSTRAINT "FK_WidgetApiActivities_Widgets_WidgetId" FOREIGN KEY ("WidgetId") REFERENCES "Widgets" ("Id") ON DELETE CASCADE
+            );
+            """;
+        await cmd.ExecuteNonQueryAsync();
+
+        cmd.CommandText = """
+            CREATE INDEX IF NOT EXISTS "IX_WidgetApiActivities_WidgetId_CalledAt"
+            ON "WidgetApiActivities" ("WidgetId", "CalledAt");
+            """;
+        await cmd.ExecuteNonQueryAsync();
     }
 
     private static async Task TryMarkMigrationAppliedAsync(
