@@ -10,72 +10,57 @@ namespace WidgetData.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "IX_WidgetExecutions_WidgetId",
-                table: "WidgetExecutions");
+            migrationBuilder.Sql("""
+                DROP INDEX IF EXISTS "IX_WidgetExecutions_WidgetId";
+                DROP INDEX IF EXISTS "IX_WidgetApiActivities_WidgetId";
+                DROP INDEX IF EXISTS "IX_FormSubmissions_WidgetId";
+                """);
 
-            migrationBuilder.DropIndex(
-                name: "IX_WidgetApiActivities_WidgetId",
-                table: "WidgetApiActivities");
+            migrationBuilder.Sql("""
+                CREATE INDEX IF NOT EXISTS "IX_WidgetExecutions_WidgetId_StartedAt"
+                ON "WidgetExecutions" ("WidgetId", "StartedAt");
+                """);
 
-            migrationBuilder.DropIndex(
-                name: "IX_FormSubmissions_WidgetId",
-                table: "FormSubmissions");
+            migrationBuilder.Sql("""
+                CREATE INDEX IF NOT EXISTS "IX_WidgetApiActivities_WidgetId_CalledAt"
+                ON "WidgetApiActivities" ("WidgetId", "CalledAt");
+                """);
 
-            migrationBuilder.CreateIndex(
-                name: "IX_WidgetExecutions_WidgetId_StartedAt",
-                table: "WidgetExecutions",
-                columns: new[] { "WidgetId", "StartedAt" });
+            migrationBuilder.Sql("""
+                CREATE INDEX IF NOT EXISTS "IX_FormSubmissions_WidgetId_SubmittedAt"
+                ON "FormSubmissions" ("WidgetId", "SubmittedAt");
+                """);
 
-            migrationBuilder.CreateIndex(
-                name: "IX_WidgetApiActivities_WidgetId_CalledAt",
-                table: "WidgetApiActivities",
-                columns: new[] { "WidgetId", "CalledAt" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_FormSubmissions_WidgetId_SubmittedAt",
-                table: "FormSubmissions",
-                columns: new[] { "WidgetId", "SubmittedAt" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AuditLogs_Timestamp_Action",
-                table: "AuditLogs",
-                columns: new[] { "Timestamp", "Action" });
+            migrationBuilder.Sql("""
+                CREATE INDEX IF NOT EXISTS "IX_AuditLogs_Timestamp_Action"
+                ON "AuditLogs" ("Timestamp", "Action");
+                """);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "IX_WidgetExecutions_WidgetId_StartedAt",
-                table: "WidgetExecutions");
+            migrationBuilder.Sql("""
+                DROP INDEX IF EXISTS "IX_WidgetExecutions_WidgetId_StartedAt";
+                DROP INDEX IF EXISTS "IX_WidgetApiActivities_WidgetId_CalledAt";
+                DROP INDEX IF EXISTS "IX_FormSubmissions_WidgetId_SubmittedAt";
+                DROP INDEX IF EXISTS "IX_AuditLogs_Timestamp_Action";
+                """);
 
-            migrationBuilder.DropIndex(
-                name: "IX_WidgetApiActivities_WidgetId_CalledAt",
-                table: "WidgetApiActivities");
+            migrationBuilder.Sql("""
+                CREATE INDEX IF NOT EXISTS "IX_WidgetExecutions_WidgetId"
+                ON "WidgetExecutions" ("WidgetId");
+                """);
 
-            migrationBuilder.DropIndex(
-                name: "IX_FormSubmissions_WidgetId_SubmittedAt",
-                table: "FormSubmissions");
+            migrationBuilder.Sql("""
+                CREATE INDEX IF NOT EXISTS "IX_WidgetApiActivities_WidgetId"
+                ON "WidgetApiActivities" ("WidgetId");
+                """);
 
-            migrationBuilder.DropIndex(
-                name: "IX_AuditLogs_Timestamp_Action",
-                table: "AuditLogs");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WidgetExecutions_WidgetId",
-                table: "WidgetExecutions",
-                column: "WidgetId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WidgetApiActivities_WidgetId",
-                table: "WidgetApiActivities",
-                column: "WidgetId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_FormSubmissions_WidgetId",
-                table: "FormSubmissions",
-                column: "WidgetId");
+            migrationBuilder.Sql("""
+                CREATE INDEX IF NOT EXISTS "IX_FormSubmissions_WidgetId"
+                ON "FormSubmissions" ("WidgetId");
+                """);
         }
     }
 }
