@@ -52,6 +52,8 @@ public class DataSeeder
             demoTenant = existingDemo;
         }
 
+        await EnsureTestTenantsAsync();
+
         if (!await _userManager.Users.AnyAsync())
         {
             var superAdmin = new ApplicationUser
@@ -1073,6 +1075,72 @@ public class DataSeeder
                 Position = i,
                 Width = i < 4 ? 3 : 6
             });
+        await _context.SaveChangesAsync();
+    }
+
+    private async Task EnsureTestTenantsAsync()
+    {
+        var testTenants = new List<Tenant>
+        {
+            new()
+            {
+                Name = "Shop Tenant",
+                Slug = "shop",
+                IsActive = true,
+                Plan = "starter",
+                ContactEmail = "shop@widgetdata.com",
+                CreatedAt = DateTime.UtcNow
+            },
+            new()
+            {
+                Name = "News Tenant",
+                Slug = "news",
+                IsActive = true,
+                Plan = "pro",
+                ContactEmail = "news@widgetdata.com",
+                CreatedAt = DateTime.UtcNow
+            },
+            new()
+            {
+                Name = "Course Tenant",
+                Slug = "course",
+                IsActive = true,
+                Plan = "pro",
+                ContactEmail = "course@widgetdata.com",
+                CreatedAt = DateTime.UtcNow
+            },
+            new()
+            {
+                Name = "Retail Tenant",
+                Slug = "retail",
+                IsActive = true,
+                Plan = "enterprise",
+                ContactEmail = "retail@widgetdata.com",
+                CreatedAt = DateTime.UtcNow
+            }
+        };
+
+        var targetSlugs = testTenants
+            .Select(t => t.Slug)
+            .ToList();
+
+        var existingSlugs = await _context.Tenants
+            .Where(t => targetSlugs.Contains(t.Slug))
+            .Select(t => t.Slug)
+            .ToListAsync();
+
+        var existingSlugSet = existingSlugs.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var missingTenants = testTenants
+            .Where(t => !existingSlugSet.Contains(t.Slug))
+            .ToList();
+
+        if (missingTenants.Count == 0)
+        {
+            return;
+        }
+
+        _context.Tenants.AddRange(missingTenants);
         await _context.SaveChangesAsync();
     }
 
