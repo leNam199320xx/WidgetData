@@ -122,6 +122,17 @@ Truy cập:
 - **API Swagger**: `https://localhost:7001/swagger`
 - **.NET Aspire Dashboard**: `https://localhost:15888`
 
+### SQL test datasets (demo + tenant test)
+
+```bash
+sqlite3 sales.db  < scripts/sql/sales-test.sql
+sqlite3 course.db < scripts/sql/course-test.sql
+sqlite3 news.db   < scripts/sql/news-test.sql
+sqlite3 retail.db < scripts/sql/retail-test.sql
+```
+
+`retail-test.sql` bổ sung bộ dữ liệu mới cho tenant `retail` (inventory/sales/procurement) để test widget ETL, dashboard tồn kho, và báo cáo bán hàng.
+
 👉 [Hướng dẫn cài đặt chi tiết](doc/deployment.md)
 
 ## 📐 Architecture

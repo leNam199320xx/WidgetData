@@ -9,6 +9,7 @@ Thư mục này chứa các file SQL với lệnh `INSERT` sẵn có để nhanh
 | `sales-test.sql`  | `sales.db`  | widget admin / shop-front |
 | `course-test.sql` | `course.db` | course-front (EduViet) |
 | `news-test.sql`   | `news.db`   | news-front (VietNews) |
+| `retail-test.sql` | `retail.db` | retail tenant (inventory/sales test) |
 
 ## Cách chạy
 
@@ -19,12 +20,14 @@ Thư mục này chứa các file SQL với lệnh `INSERT` sẵn có để nhanh
 sqlite3 sales.db  < scripts/sql/sales-test.sql
 sqlite3 course.db < scripts/sql/course-test.sql
 sqlite3 news.db   < scripts/sql/news-test.sql
+sqlite3 retail.db < scripts/sql/retail-test.sql
 
 # Hoặc chạy trong thư mục output của API
 cd src/WidgetData.API/bin/Debug/net10.0
 sqlite3 sales.db  < ../../../../../scripts/sql/sales-test.sql
 sqlite3 course.db < ../../../../../scripts/sql/course-test.sql
 sqlite3 news.db   < ../../../../../scripts/sql/news-test.sql
+sqlite3 retail.db < ../../../../../scripts/sql/retail-test.sql
 ```
 
 ### Bằng DB Browser for SQLite
@@ -41,6 +44,7 @@ sqlite3 news.db   < ../../../../../scripts/sql/news-test.sql
 sqlite3 sales.db  (Get-Content scripts\sql\sales-test.sql -Raw)
 sqlite3 course.db (Get-Content scripts\sql\course-test.sql -Raw)
 sqlite3 news.db   (Get-Content scripts\sql\news-test.sql -Raw)
+sqlite3 retail.db (Get-Content scripts\sql\retail-test.sql -Raw)
 ```
 
 ---
@@ -116,6 +120,29 @@ sqlite3 news.db   (Get-Content scripts\sql\news-test.sql -Raw)
 - Nguồn truy cập (pie chart: google/social/direct/email/referral)
 - Hoạt động độc giả gần đây
 - Xu hướng lượt xem theo tháng (4 tháng)
+
+---
+
+### retail-test.sql — Retail Inventory & Sales
+
+| Bảng | Số dòng | Ghi chú |
+|---|---|---|
+| categories | 4 | Beverage, Household, Personal Care, Snack |
+| stores | 3 | Hà Nội, TP.HCM, Đà Nẵng |
+| suppliers | 4 | Đủ data test procurement |
+| products | 8 | Có ngưỡng reorder và tồn kho hiện tại |
+| purchase_orders | 4 | Có trạng thái `received`, `partial` |
+| purchase_order_items | 8 | Liên kết trực tiếp PO và sản phẩm |
+| sales_receipts | 8 | Phân bổ theo nhiều phương thức thanh toán |
+| sales_items | 23 | Có đủ dữ liệu cho phân tích top SKU |
+| stock_movements | 12 | Bao gồm `in`, `out`, `adjustment` |
+
+**Widget queries có thể test:**
+- Doanh thu thuần theo ngày/tuần
+- Top sản phẩm bán chạy theo số lượng hoặc doanh thu
+- Giá trị nhập hàng theo nhà cung cấp
+- Tồn kho thấp so với `reorder_level`
+- Biến động kho (`in`/`out`/`adjustment`) theo thời gian
 
 ---
 
