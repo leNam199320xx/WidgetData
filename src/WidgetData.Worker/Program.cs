@@ -1,5 +1,7 @@
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 using WidgetData.Infrastructure;
+using WidgetData.Infrastructure.Data;
 using WidgetData.Worker.Workers;
 
 Log.Logger = new LoggerConfiguration()
@@ -21,6 +23,13 @@ try
     builder.Services.AddHostedService<SchedulerWorkerService>();
 
     var host = builder.Build();
+
+    using (var scope = host.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await dbContext.Database.MigrateAsync();
+    }
+
     await host.RunAsync();
 }
 catch (Exception ex)
