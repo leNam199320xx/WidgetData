@@ -1,5 +1,6 @@
 using System.Net.Http;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Hosting;
 using WidgetData.Application.DTOs;
 using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Entities;
@@ -12,10 +13,12 @@ public class DataSourceService : IDataSourceService
 {
     private readonly IDataSourceRepository _repo;
     private readonly ITenantContext? _tenantContext;
+    private readonly IHostEnvironment _hostEnvironment;
 
-    public DataSourceService(IDataSourceRepository repo, ITenantContext? tenantContext = null)
+    public DataSourceService(IDataSourceRepository repo, IHostEnvironment hostEnvironment, ITenantContext? tenantContext = null)
     {
         _repo = repo;
+        _hostEnvironment = hostEnvironment;
         _tenantContext = tenantContext;
     }
 
@@ -74,6 +77,71 @@ public class DataSourceService : IDataSourceService
         entity.UpdatedAt = DateTime.UtcNow;
         var updated = await _repo.UpdateAsync(entity);
         return MapToDto(updated);
+    }
+
+    public async Task<DataSourceFileUploadDto?> UploadFileAsync(
+        int id,
+        Stream fileStream,
+        string fileName,
+        string contentType,
+        long fileSizeBytes,
+        string uploadedBy)
+    {
+        var ds = await _repo.GetByIdAsync(id);
+        if (ds == null) return null;
+
+        if (!CanManage(ds))
+            throw new UnauthorizedAccessException("Forbidden to upload file for this data source.");
+
+        if (!IsFileSourceType(ds.SourceType))
+            throw new InvalidOperationException("Only CSV/Excel/Json data sources support file upload.");
+
+        if (fileSizeBytes <= 0 || fileSizeBytes > 20 * 1024 * 1024)
+            throw new InvalidOperationException("Invalid file size. Maximum allowed size is 20MB.");
+
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+        var allowed = ds.SourceType switch
+        {
+            DataSourceType.Csv => new[] { ".csv" },
+            DataSourceType.Excel => new[] { ".xlsx", ".xls" },
+            DataSourceType.Json => new[] { ".json" },
+            _ => Array.Empty<string>()
+        };
+
+        if (!allowed.Contains(ext))
+            throw new InvalidOperationException($"Invalid file type for {ds.SourceType}. Allowed: {string.Join(", ", allowed)}");
+
+        var tenantFolder = ds.TenantId?.ToString() ?? "shared";
+        var root = Path.Combine(_hostEnvironment.ContentRootPath, "uploads", "datasources", tenantFolder, ds.Id.ToString());
+        Directory.CreateDirectory(root);
+
+        var storedFileName = $"{Guid.NewGuid():N}{ext}";
+        var fullPath = Path.Combine(root, storedFileName);
+
+        await using (var target = File.Create(fullPath))
+        {
+            await fileStream.CopyToAsync(target);
+        }
+
+        ds.OriginalFileName = Path.GetFileName(fileName);
+        ds.StoredFileName = storedFileName;
+        ds.FileContentType = contentType;
+        ds.FileSizeBytes = fileSizeBytes;
+        ds.FileStoragePath = fullPath;
+        ds.FileUploadedAt = DateTime.UtcNow;
+        ds.FileUploadedBy = uploadedBy;
+        ds.ConnectionString = fullPath;
+        ds.UpdatedAt = DateTime.UtcNow;
+        await _repo.UpdateAsync(ds);
+
+        return new DataSourceFileUploadDto
+        {
+            OriginalFileName = ds.OriginalFileName,
+            StoredFileName = ds.StoredFileName,
+            ContentType = ds.FileContentType ?? "application/octet-stream",
+            FileSizeBytes = ds.FileSizeBytes ?? 0,
+            UploadedAt = ds.FileUploadedAt ?? DateTime.UtcNow
+        };
     }
 
     public async Task<bool> DeleteAsync(int id)
@@ -148,6 +216,22 @@ public class DataSourceService : IDataSourceService
         CreatedBy = ds.CreatedBy,
         CreatedAt = ds.CreatedAt,
         LastTestedAt = ds.LastTestedAt,
-        LastTestResult = ds.LastTestResult
+        LastTestResult = ds.LastTestResult,
+        OriginalFileName = ds.OriginalFileName,
+        StoredFileName = ds.StoredFileName,
+        FileContentType = ds.FileContentType,
+        FileSizeBytes = ds.FileSizeBytes,
+        FileUploadedAt = ds.FileUploadedAt,
+        FileUploadedBy = ds.FileUploadedBy
     };
+
+    private static bool IsFileSourceType(DataSourceType sourceType)
+        => sourceType is DataSourceType.Csv or DataSourceType.Excel or DataSourceType.Json;
+
+    private bool CanManage(DataSource ds)
+    {
+        if (_tenantContext?.IsSuperAdmin == true) return true;
+        if (_tenantContext?.CurrentTenantId == null) return true;
+        return ds.TenantId == null || ds.TenantId == _tenantContext.CurrentTenantId;
+    }
 }

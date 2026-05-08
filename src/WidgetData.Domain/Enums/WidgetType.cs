@@ -6,5 +6,6 @@ public enum WidgetType
     Table,
     Metric,
     Map,
-    Form
+    Form,
+    EtlJob
 }

@@ -20,6 +20,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<Page> Pages => Set<Page>();
+    public DbSet<PageVersion> PageVersions => Set<PageVersion>();
     public DbSet<PageWidget> PageWidgets => Set<PageWidget>();
     public DbSet<DataSource> DataSources => Set<DataSource>();
     public DbSet<Widget> Widgets => Set<Widget>();
@@ -57,6 +58,17 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
         builder.Entity<Page>()
             .HasIndex(p => new { p.TenantId, p.Slug }).IsUnique();
+
+        // ── PageVersion ───────────────────────────────────────────────────────
+        builder.Entity<PageVersion>()
+            .HasOne(v => v.Page)
+            .WithMany(p => p.Versions)
+            .HasForeignKey(v => v.PageId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<PageVersion>()
+            .HasIndex(v => new { v.PageId, v.VersionNumber })
+            .IsUnique();
 
         // ── PageWidget ────────────────────────────────────────────────────────
         builder.Entity<PageWidget>()
@@ -258,5 +270,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasQueryFilter(p => _tenantContext.IsSuperAdmin
                 || _tenantContext.CurrentTenantId == null
                 || p.TenantId == _tenantContext.CurrentTenantId);
+
+        builder.Entity<PageVersion>()
+            .HasQueryFilter(v => _tenantContext.IsSuperAdmin
+                || _tenantContext.CurrentTenantId == null
+                || v.TenantId == _tenantContext.CurrentTenantId);
     }
 }

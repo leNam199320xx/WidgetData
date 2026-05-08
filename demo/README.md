@@ -33,38 +33,12 @@ Tất cả demo đều được đăng ký trong **WidgetData.AppHost** (Aspire)
 ┌──────────────────▼──────────────────────────────┐
 │  TẦNG 2 — BUSINESS APP  (demo/)                 │
 │                                                 │
-│  shop/shop-admin/  ─  Backend quản lý shop      │
-│    Quản lý sản phẩm, đơn hàng, khách hàng       │
-│    Báo cáo bán hàng, kho hàng, khuyến mãi       │
-│                                                 │
 │  shop/shop-front/  ─  Trang bán hàng public     │
 │    HTML/CSS/JS thuần, zero dependency           │
 │    Render UI từ WidgetEngine + dữ liệu live API  │
 │    Deploy: CDN / nginx / GitHub Pages           │
 └─────────────────────────────────────────────────┘
 ```
-
----
-
-## `shop/shop-admin/` — Backend quản lý shop
-
-Ứng dụng Blazor Server độc lập, kết nối với `WidgetData.API` để quản lý nghiệp vụ bán hàng.
-
-```bash
-# Cần chạy WidgetData.API trước
-dotnet run --project src/WidgetData.API
-# → http://localhost:5114/api
-
-# Chạy shop-admin
-dotnet run --project demo/shop/shop-admin
-# → http://localhost:5001
-```
-
-Tài khoản mặc định:
-
-| Email | Password |
-|-------|---------|
-| admin@widgetdata.com | Admin@123 |
 
 ---
 
@@ -113,9 +87,9 @@ shop/shop-front/
    → Tạo widget: doanh thu, sản phẩm, đơn hàng...
    → Cấu hình page layout
 
-2. Shop admin (demo/shop/shop-admin)
+2. WidgetData.Web admin (src/WidgetData.Web)
    → Vận hành nghiệp vụ hàng ngày
-   → Quản lý sản phẩm, đơn hàng, khách hàng, báo cáo
+   → Quản lý dữ liệu, widget, màn hình và publish
 
 3. Storefront (demo/shop/shop-front)
    → WidgetEngine render giao diện từ pages/*.json
@@ -216,10 +190,6 @@ course/course-front/
 Tất cả 3 demo đều được đăng ký trong `WidgetData.AppHost`:
 
 ```csharp
-// shop-admin: Blazor Server admin app
-builder.AddProject<Projects.shop_admin>("shop-admin")
-    .WithReference(api).WaitFor(api).WithExternalHttpEndpoints();
-
 // news-front: VietNews static portal
 builder.AddProject<Projects.news_front>("news-front")
     .WithReference(api).WaitFor(api).WithExternalHttpEndpoints();

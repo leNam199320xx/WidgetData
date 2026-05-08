@@ -1,6 +1,7 @@
 @page "/datasources"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using MudBlazor
+@using Microsoft.AspNetCore.Components.Forms
 @using WidgetData.Application.DTOs
 @using WidgetData.Domain.Enums
 @inject WidgetData.Web.Services.ApiService ApiService
@@ -171,6 +172,8 @@
             <MudTd>
                 <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Info" Size="Size.Small"
                                OnClick="@(() => TestConnection(context))" Title="@L["DS_Test"]" />
+                <MudIconButton Icon="@Icons.Material.Filled.UploadFile" Color="Color.Primary" Size="Size.Small"
+                               OnClick="@(() => OpenUploadForm(context))" Title="Upload file dữ liệu" />
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" Size="Size.Small"
                                OnClick="@(() => OpenEditForm(context))" />
                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
@@ -181,6 +184,30 @@
             <MudText Color="Color.Secondary" Class="pa-4">Không tìm thấy data source nào phù hợp.</MudText>
         </NoRecordsContent>
     </MudTable>
+
+    @if (_uploadTarget != null)
+    {
+        <MudPaper Class="pa-4 mt-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-2">Upload file cho data source: @_uploadTarget.Name</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">
+                Chỉ hỗ trợ CSV/Excel/JSON, tối đa 20MB.
+            </MudText>
+            <InputFile OnChange="OnUploadFileChanged" />
+            @if (_selectedUploadFile != null)
+            {
+                <MudText Typo="Typo.caption" Class="mt-2 d-block">
+                    @_selectedUploadFile.Name (@((_selectedUploadFile.Size / 1024.0).ToString("0.##")) KB)
+                </MudText>
+            }
+            <MudStack Row="true" Class="mt-3">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="UploadSelectedFile" Disabled="_uploading || _selectedUploadFile == null">
+                    @if (_uploading) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                    Upload
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick="CloseUploadForm">Đóng</MudButton>
+            </MudStack>
+        </MudPaper>
+    }
 }
 else if (_error != null)
 {
@@ -196,9 +223,12 @@ else
     string? _error;
     bool _showForm;
     bool _saving;
+    bool _uploading;
     int? _editingId;
     bool _formIsActive = true;
     DataSourceDto? _deletingItem;
+    DataSourceDto? _uploadTarget;
+    IBrowserFile? _selectedUploadFile;
     CreateDataSourceDto _form = new();
 
     // Search / filter
@@ -284,6 +314,40 @@ else
         var result = await ApiService.TestDataSourceAsync(ds.Id);
         Snackbar.Add(result != null ? $"✓ {result}" : L["DS_TestFailed"].Value, result != null ? Severity.Success : Severity.Error);
         await LoadAsync();
+    }
+
+    void OpenUploadForm(DataSourceDto ds)
+    {
+        _uploadTarget = ds;
+        _selectedUploadFile = null;
+    }
+
+    void CloseUploadForm()
+    {
+        _uploadTarget = null;
+        _selectedUploadFile = null;
+    }
+
+    void OnUploadFileChanged(InputFileChangeEventArgs e)
+    {
+        _selectedUploadFile = e.File;
+    }
+
+    async Task UploadSelectedFile()
+    {
+        if (_uploadTarget == null || _selectedUploadFile == null) return;
+        _uploading = true;
+        try
+        {
+            var result = await ApiService.UploadDataSourceFileAsync(_uploadTarget.Id, _selectedUploadFile);
+            Snackbar.Add(result != null ? "Upload file thành công." : "Upload thất bại.", result != null ? Severity.Success : Severity.Error);
+            if (result != null) CloseUploadForm();
+            await LoadAsync();
+        }
+        finally
+        {
+            _uploading = false;
+        }
     }
 
     async Task DoDelete()

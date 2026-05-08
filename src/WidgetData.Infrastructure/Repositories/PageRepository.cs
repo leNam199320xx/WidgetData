@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WidgetData.Domain.Entities;
+using WidgetData.Domain.Enums;
 using WidgetData.Domain.Interfaces;
 using WidgetData.Infrastructure.Data;
 
@@ -14,13 +15,23 @@ public class PageRepository : IPageRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<Page>> GetAllByTenantAsync(int tenantId)
-        => await _context.Pages
+    public async Task<IEnumerable<Page>> GetAllByTenantAsync(int tenantId, ScreenType? screenType = null)
+    {
+        IQueryable<Page> query = _context.Pages
             .IgnoreQueryFilters()
-            .Where(p => p.TenantId == tenantId)
-            .Include(p => p.PageWidgets).ThenInclude(pw => pw.Widget)
+            .Where(p => p.TenantId == tenantId);
+
+        query = query
+            .Include(p => p.PageWidgets)
+            .ThenInclude(pw => pw.Widget);
+
+        if (screenType.HasValue)
+            query = query.Where(p => p.ScreenType == screenType.Value);
+
+        return await query
             .OrderBy(p => p.Title)
             .ToListAsync();
+    }
 
     public async Task<Page?> GetByIdAsync(int id)
         => await _context.Pages
@@ -54,6 +65,25 @@ public class PageRepository : IPageRepository
         await _context.SaveChangesAsync();
         return page;
     }
+
+    public async Task<PageVersion> CreateVersionAsync(PageVersion pageVersion)
+    {
+        _context.PageVersions.Add(pageVersion);
+        await _context.SaveChangesAsync();
+        return pageVersion;
+    }
+
+    public async Task<PageVersion?> GetVersionAsync(int pageId, int versionNumber)
+        => await _context.PageVersions
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(v => v.PageId == pageId && v.VersionNumber == versionNumber);
+
+    public async Task<IEnumerable<PageVersion>> GetVersionsAsync(int pageId)
+        => await _context.PageVersions
+            .IgnoreQueryFilters()
+            .Where(v => v.PageId == pageId)
+            .OrderByDescending(v => v.VersionNumber)
+            .ToListAsync();
 
     public async Task DeleteAsync(int id)
     {

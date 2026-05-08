@@ -6,7 +6,7 @@ Thư mục này chứa các file SQL với lệnh `INSERT` sẵn có để nhanh
 
 | File | Database | Demo app |
 |---|---|---|
-| `sales-test.sql`  | `sales.db`  | shop-admin / shop-front |
+| `sales-test.sql`  | `sales.db`  | widget admin / shop-front |
 | `course-test.sql` | `course.db` | course-front (EduViet) |
 | `news-test.sql`   | `news.db`   | news-front (VietNews) |
 

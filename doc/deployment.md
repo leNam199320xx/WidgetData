@@ -46,7 +46,7 @@ widget-data/
 │   ├── WidgetData.ServiceDefaults/ # .NET Aspire shared defaults (OpenTelemetry)
 │   └── WidgetData.AppHost/         # .NET Aspire orchestration host
 ├── demo/
-│   ├── shop/shop-admin/            # Demo shop admin (Blazor)
+│   ├── shop/shop-front/            # Demo shop frontend
 │   ├── news/news-front/            # Demo news frontend
 │   └── course/course-front/        # Demo course frontend
 ├── tests/

@@ -148,11 +148,6 @@ Truy cập:
 ┌─────────────────────────▼───────────────────────────────┐
 │  TẦNG 2 — BUSINESS APP  (demo/)                         │
 │                                                         │
-│  shop-admin/    ← Backend quản lý shop                  │
-│    WidgetData.Web cấu hình cho nghiệp vụ bán hàng       │
-│    Quản lý sản phẩm, đơn hàng, KH, báo cáo              │
-│    Xuất page config JSON → storefront                   │
-│                                                         │
 │  shop-front/    ← Trang bán hàng public                 │
 │    HTML/CSS/JS thuần (zero .NET dependency)             │
 │    WidgetEngine đọc JSON config → render UI             │
