@@ -122,6 +122,17 @@ Truy cập:
 - **API Swagger**: `https://localhost:7001/swagger`
 - **.NET Aspire Dashboard**: `https://localhost:15888`
 
+### SQL test datasets (demo + tenant test)
+
+```bash
+sqlite3 sales.db  < scripts/sql/sales-test.sql
+sqlite3 course.db < scripts/sql/course-test.sql
+sqlite3 news.db   < scripts/sql/news-test.sql
+sqlite3 retail.db < scripts/sql/retail-test.sql
+```
+
+`retail-test.sql` bổ sung bộ dữ liệu mới cho tenant `retail` (inventory/sales/procurement) để test widget ETL, dashboard tồn kho, và báo cáo bán hàng.
+
 👉 [Hướng dẫn cài đặt chi tiết](doc/deployment.md)
 
 ## 📐 Architecture
@@ -147,11 +158,6 @@ Truy cập:
                           │ Platform deploy cho đơn vị nghiệp vụ
 ┌─────────────────────────▼───────────────────────────────┐
 │  TẦNG 2 — BUSINESS APP  (demo/)                         │
-│                                                         │
-│  shop-admin/    ← Backend quản lý shop                  │
-│    WidgetData.Web cấu hình cho nghiệp vụ bán hàng       │
-│    Quản lý sản phẩm, đơn hàng, KH, báo cáo              │
-│    Xuất page config JSON → storefront                   │
 │                                                         │
 │  shop-front/    ← Trang bán hàng public                 │
 │    HTML/CSS/JS thuần (zero .NET dependency)             │

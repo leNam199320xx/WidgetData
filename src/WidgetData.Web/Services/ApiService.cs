@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Components.Forms;
 using WidgetData.Application.DTOs;
 
 namespace WidgetData.Web.Services;
@@ -80,6 +81,20 @@ public class ApiService
     public Task<DataSourceDto?> CreateDataSourceAsync(CreateDataSourceDto dto) => PostAsync<DataSourceDto>("api/datasources", dto);
     public Task<DataSourceDto?> UpdateDataSourceAsync(int id, UpdateDataSourceDto dto) => PutAsync<DataSourceDto>($"api/datasources/{id}", dto);
     public Task<bool> DeleteDataSourceAsync(int id) => DeleteAsync($"api/datasources/{id}");
+    public async Task<DataSourceFileUploadDto?> UploadDataSourceFileAsync(int id, IBrowserFile file)
+    {
+        ApplyToken();
+        using var content = new MultipartFormDataContent();
+        await using var stream = file.OpenReadStream(20 * 1024 * 1024);
+        var fileContent = new StreamContent(stream);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+        content.Add(fileContent, "file", file.Name);
+
+        var response = await _http.PostAsync($"api/datasources/{id}/upload", content);
+        if (!response.IsSuccessStatusCode) return null;
+        var json = await response.Content.ReadAsStringAsync();
+        return JsonSerializer.Deserialize<DataSourceFileUploadDto>(json, _jsonOptions);
+    }
     public async Task<string?> TestDataSourceAsync(int id)
     {
         ApplyToken();
@@ -255,11 +270,20 @@ public class ApiService
     public Task<AdminStatsDto?> GetAdminStatsAsync() => GetAsync<AdminStatsDto>("api/tenants/admin-stats");
 
     // Pages (Site pages)
-    public Task<IEnumerable<PageDto>?> GetPagesAsync() => GetAsync<IEnumerable<PageDto>>("api/pages");
+    public Task<IEnumerable<PageDto>?> GetPagesAsync(string? screenType = null)
+        => GetAsync<IEnumerable<PageDto>>(string.IsNullOrWhiteSpace(screenType)
+            ? "api/pages"
+            : $"api/pages?screenType={Uri.EscapeDataString(screenType)}");
     public Task<PageDto?> GetPageByIdAsync(int id) => GetAsync<PageDto>($"api/pages/{id}");
     public Task<PageDto?> CreatePageAsync(CreatePageDto dto) => PostAsync<PageDto>("api/pages", dto);
     public Task<PageDto?> UpdatePageAsync(int id, UpdatePageDto dto) => PutAsync<PageDto>($"api/pages/{id}", dto);
     public Task<bool> DeletePageAsync(int id) => DeleteAsync($"api/pages/{id}");
+    public Task<PageDto?> PublishPageAsync(int id, PublishPageDto? dto = null)
+        => PostAsync<PageDto>($"api/pages/{id}/publish", dto ?? new PublishPageDto());
+    public Task<PageDto?> RollbackPageAsync(int id, int versionNumber, RollbackPageDto? dto = null)
+        => PostAsync<PageDto>($"api/pages/{id}/rollback/{versionNumber}", dto ?? new RollbackPageDto());
+    public Task<IEnumerable<PageVersionDto>?> GetPageVersionsAsync(int id)
+        => GetAsync<IEnumerable<PageVersionDto>>($"api/pages/{id}/versions");
     public Task AddWidgetToPageAsync(int pageId, int widgetId, int position, int width)
         => PostAsync<object>($"api/pages/{pageId}/widgets", new PageWidgetLayoutDto { WidgetId = widgetId, Position = position, Width = width });
     public Task RemoveWidgetFromPageAsync(int pageId, int widgetId) => DeleteAsync($"api/pages/{pageId}/widgets/{widgetId}");

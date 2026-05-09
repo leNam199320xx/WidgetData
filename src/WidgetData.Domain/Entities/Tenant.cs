@@ -21,4 +21,5 @@ public class Tenant
     public ICollection<DataSource> DataSources { get; set; } = new List<DataSource>();
     public ICollection<Widget> Widgets { get; set; } = new List<Widget>();
     public ICollection<Page> Pages { get; set; } = new List<Page>();
+    public ICollection<PageVersion> PageVersions { get; set; } = new List<PageVersion>();
 }

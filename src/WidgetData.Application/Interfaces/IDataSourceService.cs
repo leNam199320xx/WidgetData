@@ -8,6 +8,13 @@ public interface IDataSourceService
     Task<DataSourceDto?> GetByIdAsync(int id);
     Task<DataSourceDto> CreateAsync(CreateDataSourceDto dto, string userId);
     Task<DataSourceDto?> UpdateAsync(int id, UpdateDataSourceDto dto);
+    Task<DataSourceFileUploadDto?> UploadFileAsync(
+        int id,
+        Stream fileStream,
+        string fileName,
+        string contentType,
+        long fileSizeBytes,
+        string uploadedBy);
     Task<bool> DeleteAsync(int id);
     Task<string> TestConnectionAsync(int id);
 }

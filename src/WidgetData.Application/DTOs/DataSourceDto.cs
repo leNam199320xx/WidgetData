@@ -20,6 +20,12 @@ public class DataSourceDto
     public DateTime CreatedAt { get; set; }
     public DateTime? LastTestedAt { get; set; }
     public string? LastTestResult { get; set; }
+    public string? OriginalFileName { get; set; }
+    public string? StoredFileName { get; set; }
+    public string? FileContentType { get; set; }
+    public long? FileSizeBytes { get; set; }
+    public DateTime? FileUploadedAt { get; set; }
+    public string? FileUploadedBy { get; set; }
 }
 
 public class CreateDataSourceDto
@@ -65,4 +71,13 @@ public class CreateDataSourceDto
 public class UpdateDataSourceDto : CreateDataSourceDto
 {
     public bool IsActive { get; set; } = true;
+}
+
+public class DataSourceFileUploadDto
+{
+    public string OriginalFileName { get; set; } = string.Empty;
+    public string StoredFileName { get; set; } = string.Empty;
+    public string ContentType { get; set; } = string.Empty;
+    public long FileSizeBytes { get; set; }
+    public DateTime UploadedAt { get; set; }
 }

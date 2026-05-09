@@ -2,6 +2,7 @@
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using MudBlazor
 @using WidgetData.Application.DTOs
+@using WidgetData.Domain.Enums
 @inject WidgetData.Web.Services.ApiService ApiService
 @inject ISnackbar Snackbar
 @inject IStringLocalizer<SharedResource> L
@@ -25,6 +26,12 @@
             </MudItem>
             <MudItem xs="12">
                 <MudTextField @bind-Value="_form.Description" Label="@L["Description"]" Variant="Variant.Outlined" Lines="2" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudSelect @bind-Value="_form.ScreenType" Label="Loại màn hình" Variant="Variant.Outlined">
+                    <MudSelectItem Value="@ScreenType.Frontend">Frontend</MudSelectItem>
+                    <MudSelectItem Value="@ScreenType.Backend">Backend</MudSelectItem>
+                </MudSelect>
             </MudItem>
             @if (_editingId != null)
             {
@@ -70,6 +77,7 @@ else
             <MudTh>Tiêu đề</MudTh>
             <MudTh>Slug</MudTh>
             <MudTh>Trạng thái</MudTh>
+            <MudTh>Lifecycle</MudTh>
             <MudTh>Widget</MudTh>
             <MudTh>Ngày tạo</MudTh>
             <MudTh>Thao tác</MudTh>
@@ -86,6 +94,11 @@ else
                     @(context.IsActive ? "Active" : "Inactive")
                 </MudChip>
             </MudTd>
+            <MudTd>
+                <MudChip T="string" Size="Size.Small" Color="@(context.LifecycleState == ScreenLifecycleState.Published ? Color.Primary : Color.Warning)">
+                    @context.LifecycleState
+                </MudChip>
+            </MudTd>
             <MudTd>@context.Widgets.Count widgets</MudTd>
             <MudTd>@context.CreatedAt.ToString("dd/MM/yyyy")</MudTd>
             <MudTd>
@@ -96,11 +109,56 @@ else
                 <MudIconButton Icon="@Icons.Material.Filled.Preview" Size="Size.Small" Color="Color.Info"
                                Title="Xem trước trang tĩnh"
                                OnClick="() => PreviewPage(context.Id)" />
+                <MudIconButton Icon="@Icons.Material.Filled.Publish" Size="Size.Small" Color="Color.Success"
+                               Title="Publish"
+                               OnClick="() => PublishPage(context.Id)" />
+                <MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" Color="Color.Secondary"
+                               Title="Lịch sử version"
+                               OnClick="() => ShowVersions(context)" />
                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
                                OnClick="() => DeletePage(context.Id)" />
             </MudTd>
         </RowTemplate>
     </MudTable>
+}
+
+@if (_versioningPage != null)
+{
+    <MudPaper Class="pa-4 mt-4" Elevation="2">
+        <MudText Typo="Typo.h6" Class="mb-2">Version history: @_versioningPage.Title</MudText>
+        @if (_versions == null)
+        {
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (!_versions.Any())
+        {
+            <MudText Color="Color.Secondary">Chưa có version.</MudText>
+        }
+        else
+        {
+            <MudTable Items="_versions" Dense="true">
+                <HeaderContent>
+                    <MudTh>Version</MudTh>
+                    <MudTh>Action</MudTh>
+                    <MudTh>User</MudTh>
+                    <MudTh>Time</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>v@context.VersionNumber</MudTd>
+                    <MudTd>@context.Action</MudTd>
+                    <MudTd>@(context.CreatedBy ?? "system")</MudTd>
+                    <MudTd>@context.CreatedAt.ToString("g")</MudTd>
+                    <MudTd>
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="() => RollbackToVersion(context.VersionNumber)">
+                            Rollback
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        <MudButton Variant="Variant.Outlined" Class="mt-3" OnClick="CloseVersions">Đóng</MudButton>
+    </MudPaper>
 }
 
 @if (_managingPage != null)
@@ -171,6 +229,8 @@ else
     UpdatePageDto _formUpdate = new() { IsActive = true };
 
     PageDto? _managingPage;
+    PageDto? _versioningPage;
+    List<PageVersionDto>? _versions;
     List<WidgetDto>? _allWidgets;
     int _selectedWidgetId;
     int _newWidgetPosition;
@@ -190,15 +250,15 @@ else
     {
         _editingId = null;
         _form = new CreatePageDto();
-        _formUpdate = new UpdatePageDto { IsActive = true };
+        _formUpdate = new UpdatePageDto { IsActive = true, ScreenType = ScreenType.Frontend };
         _showForm = true;
     }
 
     void ShowEditForm(PageDto p)
     {
         _editingId = p.Id;
-        _form = new CreatePageDto { Title = p.Title, Slug = p.Slug, Description = p.Description };
-        _formUpdate = new UpdatePageDto { Title = p.Title, Slug = p.Slug, Description = p.Description, IsActive = p.IsActive };
+        _form = new CreatePageDto { Title = p.Title, Slug = p.Slug, Description = p.Description, ScreenType = p.ScreenType };
+        _formUpdate = new UpdatePageDto { Title = p.Title, Slug = p.Slug, Description = p.Description, IsActive = p.IsActive, ScreenType = p.ScreenType };
         _showForm = true;
     }
 
@@ -228,6 +288,35 @@ else
         await ApiService.DeletePageAsync(id);
         await LoadPages();
         Snackbar.Add("Đã xóa trang", Severity.Success);
+    }
+
+    async Task PublishPage(int id)
+    {
+        var result = await ApiService.PublishPageAsync(id, new PublishPageDto { Note = "Publish from admin UI" });
+        Snackbar.Add(result != null ? "Publish thành công." : "Publish thất bại.", result != null ? Severity.Success : Severity.Error);
+        await LoadPages();
+    }
+
+    async Task ShowVersions(PageDto page)
+    {
+        _versioningPage = page;
+        _versions = null;
+        _versions = (await ApiService.GetPageVersionsAsync(page.Id))?.ToList() ?? new List<PageVersionDto>();
+    }
+
+    async Task RollbackToVersion(int versionNumber)
+    {
+        if (_versioningPage == null) return;
+        var result = await ApiService.RollbackPageAsync(_versioningPage.Id, versionNumber, new RollbackPageDto { Note = "Rollback from admin UI" });
+        Snackbar.Add(result != null ? "Rollback thành công." : "Rollback thất bại.", result != null ? Severity.Success : Severity.Error);
+        await LoadPages();
+        _versions = (await ApiService.GetPageVersionsAsync(_versioningPage.Id))?.ToList() ?? new List<PageVersionDto>();
+    }
+
+    void CloseVersions()
+    {
+        _versioningPage = null;
+        _versions = null;
     }
 
     async Task ManageWidgets(PageDto page)

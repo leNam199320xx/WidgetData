@@ -68,4 +68,36 @@ public class DataSourcesController : ControllerBase
         var result = await _service.TestConnectionAsync(id);
         return Ok(new { message = result });
     }
+
+    [HttpPost("{id}/upload")]
+    [Authorize(Roles = "SuperAdmin,TenantAdmin,Admin,Manager")]
+    [RequestSizeLimit(20 * 1024 * 1024)]
+    public async Task<IActionResult> UploadFile(int id, [FromForm] IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { error = "File is required." });
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
+        try
+        {
+            await using var stream = file.OpenReadStream();
+            var result = await _service.UploadFileAsync(
+                id,
+                stream,
+                file.FileName,
+                file.ContentType,
+                file.Length,
+                userId);
+
+            return result == null ? NotFound() : Ok(result);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 }

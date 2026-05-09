@@ -2,7 +2,7 @@
 -- sales-test.sql  —  Dữ liệu test cho sales.db (Cửa hàng)
 -- =============================================================================
 -- Mục đích : Tạo dữ liệu tối thiểu đủ để test tất cả widget queries của
---            demo shop-admin / shop-front.
+--            widget admin / shop-front.
 -- Cách dùng:
 --   sqlite3 sales.db < sales-test.sql
 --   # hoặc trong DB Browser for SQLite: File → Import → Database from SQL file

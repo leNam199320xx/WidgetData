@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WidgetData.Application.DTOs;
 using WidgetData.Application.Interfaces;
+using WidgetData.Domain.Enums;
 using WidgetData.Domain.Interfaces;
 
 // ReSharper disable RouteTemplates.MethodMissingRouteParameters
@@ -49,12 +50,12 @@ public class PagesController : ControllerBase
 
     [HttpGet]
     [Authorize]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] ScreenType? screenType = null)
     {
         var tenantId = GetCurrentTenantId();
         if (tenantId == null) return Forbid();
 
-        var pages = await _pageService.GetAllAsync(tenantId.Value);
+        var pages = await _pageService.GetAllAsync(tenantId.Value, screenType);
         return Ok(pages);
     }
 
@@ -94,6 +95,43 @@ public class PagesController : ControllerBase
         if (!CanManagePage(page)) return Forbid();
 
         var result = await _pageService.UpdateAsync(id, dto);
+        return result == null ? NotFound() : Ok(result);
+    }
+
+    [HttpGet("{id:int}/versions")]
+    [Authorize]
+    public async Task<IActionResult> GetVersions(int id)
+    {
+        var page = await _pageService.GetByIdAsync(id);
+        if (page == null) return NotFound();
+        if (!CanManagePage(page)) return Forbid();
+
+        return Ok(await _pageService.GetVersionsAsync(id));
+    }
+
+    [HttpPost("{id:int}/publish")]
+    [Authorize(Roles = "SuperAdmin,TenantAdmin,Admin,Manager")]
+    public async Task<IActionResult> Publish(int id, [FromBody] PublishPageDto? dto = null)
+    {
+        var page = await _pageService.GetByIdAsync(id);
+        if (page == null) return NotFound();
+        if (!CanManagePage(page)) return Forbid();
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
+        var result = await _pageService.PublishAsync(id, userId, dto);
+        return result == null ? NotFound() : Ok(result);
+    }
+
+    [HttpPost("{id:int}/rollback/{versionNumber:int}")]
+    [Authorize(Roles = "SuperAdmin,TenantAdmin,Admin,Manager")]
+    public async Task<IActionResult> Rollback(int id, int versionNumber, [FromBody] RollbackPageDto? dto = null)
+    {
+        var page = await _pageService.GetByIdAsync(id);
+        if (page == null) return NotFound();
+        if (!CanManagePage(page)) return Forbid();
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
+        var result = await _pageService.RollbackAsync(id, versionNumber, userId, dto);
         return result == null ? NotFound() : Ok(result);
     }
 
