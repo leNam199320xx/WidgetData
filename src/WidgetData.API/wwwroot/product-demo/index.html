@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo giới thiệu sản phẩm - WidgetData Insight</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="container">
+      <p class="badge">DEMO HOÀN CHỈNH</p>
+      <h1 id="product-name">Đang tải...</h1>
+      <p id="product-tagline"></p>
+      <p id="product-description"></p>
+      <a href="#lead-form" class="btn" id="product-cta">Đăng ký</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section>
+      <h2>Hiệu quả thực tế</h2>
+      <div id="metrics" class="grid metrics"></div>
+    </section>
+
+    <section>
+      <h2>Tính năng nổi bật</h2>
+      <div id="features" class="grid"></div>
+    </section>
+
+    <section>
+      <h2>Gói dịch vụ</h2>
+      <div id="plans" class="grid"></div>
+    </section>
+
+    <section>
+      <h2>Khách hàng nói gì?</h2>
+      <div id="testimonials" class="grid"></div>
+    </section>
+
+    <section>
+      <h2>Đăng ký tư vấn demo</h2>
+      <form id="lead-form" class="lead-form">
+        <input name="name" type="text" placeholder="Họ và tên" required minlength="2" maxlength="100">
+        <input name="email" type="email" placeholder="Email" required maxlength="256">
+        <input name="company" type="text" placeholder="Công ty" maxlength="150">
+        <textarea name="message" placeholder="Nhu cầu của bạn" maxlength="1000"></textarea>
+        <button type="submit" class="btn">Gửi đăng ký</button>
+      </form>
+      <p id="lead-result" class="result"></p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
