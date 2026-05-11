@@ -106,7 +106,7 @@ cd widget-data
 # Restore packages
 dotnet restore
 
-# Chạy toàn bộ hệ thống qua .NET Aspire (API + Worker + Web + Gateway + Demos)
+# Chạy toàn bộ hệ thống qua .NET Aspire (API + Worker + Web + Gateway)
 dotnet run --project src/WidgetData.AppHost
 
 # Hoặc chạy riêng từng service
@@ -117,7 +117,7 @@ dotnet run --project src/WidgetData.Worker
 
 Truy cập:
 - **Admin Dashboard** (Blazor): `https://localhost:5001`
-- **Demo Storefront** (trang bán hàng public): `npx serve demo/storefront` hoặc mở `demo/shop-front/index.html`
+- **Demo Storefront** (trang bán hàng public): `cd demo/shop/shop-front && python -m http.server 3000`
 - **API Gateway** (YARP): `https://localhost:7000`
 - **API Swagger**: `https://localhost:7001/swagger`
 - **.NET Aspire Dashboard**: `https://localhost:15888`
@@ -249,6 +249,7 @@ Background service chạy theo `CheckIntervalMinutes`. Widget nào có `Inactivi
 - [Testing](doc/testing.md) - Unit, Integration tests
 - [Backup & DR](doc/backup.md) - High Availability
 - [Troubleshooting](doc/troubleshooting.md) - FAQ
+- [Hướng dẫn tạo demo end-to-end](doc/demo-guide.md) - Chạy hệ thống, tạo widget/page, nối front-end demo
 
 ### 🔌 Integration
 - [Tích hợp & Mở rộng](doc/integration.md) - Webhooks, Plugins

@@ -27,21 +27,23 @@
 14. [Backup & Disaster Recovery](backup.md) - High availability và recovery procedures
 15. [Runbook vận hành sự cố](runbook.md) - API down, worker stuck, DB lock
 16. [Production checklist](production-checklist.md) - Checklist trước khi phát hành
+17. [Hướng dẫn tạo demo end-to-end](demo-guide.md) - Luồng chạy AppHost/API/Web/Worker + front-end demo
 
 ### Integration & Extensibility
-17. [Tích hợp & Mở rộng](integration.md) - Webhooks, plugins, third-party integrations
-18. [Mobile & Responsive](mobile.md) - PWA, responsive design, offline mode
+18. [Tích hợp & Mở rộng](integration.md) - Webhooks, plugins, third-party integrations
+19. [Mobile & Responsive](mobile.md) - PWA, responsive design, offline mode
 
 ### UI/UX Design
-19. [Screens & Mockups](screens.md) - Mô tả chi tiết 15 màn hình chính
+20. [Screens & Mockups](screens.md) - Mô tả chi tiết 15 màn hình chính
 
 ### Support & Planning
-20. [Roadmap](roadmap.md) - Version releases và tính năng tương lai
-21. [Troubleshooting & FAQ](troubleshooting.md) - Common issues và giải pháp
+21. [Roadmap](roadmap.md) - Version releases và tính năng tương lai
+22. [Troubleshooting & FAQ](troubleshooting.md) - Common issues và giải pháp
 
 ## 🚀 Quick Links
 
 - [Bắt đầu nhanh](deployment.md#development-setup)
+- [Hướng dẫn tạo demo](demo-guide.md)
 - [Ví dụ Widget](multi-step-processing.md#ví-dụ-cấu-hình-multi-step-widget)
 - [API Reference](api.md)
 - [Database Schema](database-schema.md)
