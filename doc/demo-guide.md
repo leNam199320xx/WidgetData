@@ -12,7 +12,7 @@ Yêu cầu:
 Mở terminal tại:
 
 ```bash
-cd /home/runner/work/WidgetData/WidgetData
+cd <duong-dan-den-repo>/WidgetData
 ```
 
 Khôi phục package:
@@ -26,7 +26,7 @@ dotnet restore
 ### Cách nhanh nhất (khuyến nghị): chạy AppHost
 
 ```bash
-dotnet run --project /home/runner/work/WidgetData/WidgetData/src/WidgetData.AppHost
+dotnet run --project src/WidgetData.AppHost
 ```
 
 AppHost hiện orchestration các service:
@@ -40,9 +40,9 @@ AppHost hiện orchestration các service:
 Mở 3 terminal:
 
 ```bash
-dotnet run --project /home/runner/work/WidgetData/WidgetData/src/WidgetData.API
-dotnet run --project /home/runner/work/WidgetData/WidgetData/src/WidgetData.Web
-dotnet run --project /home/runner/work/WidgetData/WidgetData/src/WidgetData.Worker
+dotnet run --project src/WidgetData.API
+dotnet run --project src/WidgetData.Web
+dotnet run --project src/WidgetData.Worker
 ```
 
 ### Xác nhận service đã lên
@@ -73,14 +73,14 @@ Thực hiện theo thứ tự:
 ## 4) Tạo front-end demo
 
 Chọn 1 front-end có sẵn:
-- `/home/runner/work/WidgetData/WidgetData/demo/shop/shop-front`
-- `/home/runner/work/WidgetData/WidgetData/demo/news/news-front`
-- `/home/runner/work/WidgetData/WidgetData/demo/course/course-front`
+- `demo/shop/shop-front`
+- `demo/news/news-front`
+- `demo/course/course-front`
 
 Ví dụ chạy `shop-front`:
 
 ```bash
-cd /home/runner/work/WidgetData/WidgetData/demo/shop/shop-front
+cd demo/shop/shop-front
 python -m http.server 3000
 ```
 
