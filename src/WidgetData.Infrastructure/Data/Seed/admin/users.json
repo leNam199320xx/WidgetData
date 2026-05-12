@@ -1,0 +1,106 @@
+[
+  {
+    "email": "superadmin@widgetdata.com",
+    "displayName": "Super Admin",
+    "password": "SuperAdmin@123!",
+    "isActive": true,
+    "tenantSlug": null,
+    "roles": ["SuperAdmin"]
+  },
+  {
+    "email": "admin@widgetdata.com",
+    "displayName": "Admin User",
+    "password": "Admin@123!",
+    "isActive": true,
+    "tenantSlug": null,
+    "roles": ["Admin"]
+  },
+  {
+    "email": "manager@widgetdata.com",
+    "displayName": "Manager User",
+    "password": "Manager@123!",
+    "isActive": true,
+    "tenantSlug": null,
+    "roles": ["Manager"]
+  },
+  {
+    "email": "dev@widgetdata.com",
+    "displayName": "Developer User",
+    "password": "Developer@123!",
+    "isActive": true,
+    "tenantSlug": null,
+    "roles": ["Developer"]
+  },
+  {
+    "email": "admin@shop.demo",
+    "displayName": "Admin — Shop Tenant",
+    "password": "TenantAdmin@123!",
+    "isActive": true,
+    "tenantSlug": "shop",
+    "lastLoginDaysAgo": 1,
+    "roles": ["TenantAdmin"]
+  },
+  {
+    "email": "user@shop.demo",
+    "displayName": "User — Shop Tenant",
+    "password": "TenantUser@123!",
+    "isActive": true,
+    "tenantSlug": "shop",
+    "lastLoginDaysAgo": 2,
+    "roles": ["TenantUser"]
+  },
+  {
+    "email": "admin@news.demo",
+    "displayName": "Admin — News Tenant",
+    "password": "TenantAdmin@123!",
+    "isActive": true,
+    "tenantSlug": "news",
+    "lastLoginDaysAgo": 1,
+    "roles": ["TenantAdmin"]
+  },
+  {
+    "email": "user@news.demo",
+    "displayName": "User — News Tenant",
+    "password": "TenantUser@123!",
+    "isActive": true,
+    "tenantSlug": "news",
+    "lastLoginDaysAgo": 2,
+    "roles": ["TenantUser"]
+  },
+  {
+    "email": "admin@course.demo",
+    "displayName": "Admin — Course Tenant",
+    "password": "TenantAdmin@123!",
+    "isActive": true,
+    "tenantSlug": "course",
+    "lastLoginDaysAgo": 1,
+    "roles": ["TenantAdmin"]
+  },
+  {
+    "email": "user@course.demo",
+    "displayName": "User — Course Tenant",
+    "password": "TenantUser@123!",
+    "isActive": true,
+    "tenantSlug": "course",
+    "lastLoginDaysAgo": 2,
+    "roles": ["TenantUser"]
+  },
+  {
+    "email": "admin@retail.demo",
+    "displayName": "Admin — Retail Tenant",
+    "password": "TenantAdmin@123!",
+    "isActive": true,
+    "tenantSlug": "retail",
+    "lastLoginDaysAgo": 1,
+    "roles": ["TenantAdmin"]
+  },
+  {
+    "email": "user@retail.demo",
+    "displayName": "User — Retail Tenant",
+    "password": "TenantUser@123!",
+    "isActive": true,
+    "tenantSlug": "retail",
+    "lastLoginDaysAgo": 2,
+    "roles": ["TenantUser"]
+  }
+]

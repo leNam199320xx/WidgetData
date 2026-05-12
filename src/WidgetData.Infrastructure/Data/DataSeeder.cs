@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
 
@@ -23,89 +24,15 @@ public class DataSeeder
         await ReconcileMigrationHistoryAsync();
         await _context.Database.MigrateAsync();
 
-        string[] roles = { "Admin", "Manager", "Developer", "Viewer", "SuperAdmin", "TenantAdmin", "TenantUser" };
-        foreach (var role in roles)
-        {
-            if (!await _roleManager.RoleExistsAsync(role))
-                await _roleManager.CreateAsync(new IdentityRole(role));
-        }
+        var adminSeed = await LoadAdminSeedAsync();
 
-        // Ensure demo tenant exists
-        Tenant demoTenant;
-        var existingDemo = await _context.Tenants.FirstOrDefaultAsync(t => t.Slug == "demo");
-        if (existingDemo == null)
-        {
-            demoTenant = new Tenant
-            {
-                Name = "Demo Tenant",
-                Slug = "demo",
-                IsActive = true,
-                Plan = "free",
-                ContactEmail = "demo@widgetdata.com",
-                CreatedAt = DateTime.UtcNow
-            };
-            _context.Tenants.Add(demoTenant);
-            await _context.SaveChangesAsync();
-        }
-        else
-        {
-            demoTenant = existingDemo;
-        }
+        await EnsureRolesAsync(adminSeed.Roles);
 
-        await EnsureTestTenantsAsync();
-        await EnsureTenantUsersAsync();
+        var tenantBySlug = await EnsureTenantsAsync(adminSeed.Tenants);
+        await EnsureUsersAsync(adminSeed.Users, tenantBySlug);
 
-        if (!await _userManager.Users.AnyAsync())
-        {
-            var superAdmin = new ApplicationUser
-            {
-                UserName = "superadmin@widgetdata.com",
-                Email = "superadmin@widgetdata.com",
-                DisplayName = "Super Admin",
-                EmailConfirmed = true,
-                IsActive = true,
-                TenantId = null  // SuperAdmin không thuộc tenant nào
-            };
-            var saResult = await _userManager.CreateAsync(superAdmin, "SuperAdmin@123!");
-            if (saResult.Succeeded)
-                await _userManager.AddToRoleAsync(superAdmin, "SuperAdmin");
-
-            var admin = new ApplicationUser
-            {
-                UserName = "admin@widgetdata.com",
-                Email = "admin@widgetdata.com",
-                DisplayName = "Admin User",
-                EmailConfirmed = true,
-                IsActive = true
-            };
-            var adminResult = await _userManager.CreateAsync(admin, "Admin@123!");
-            if (adminResult.Succeeded)
-                await _userManager.AddToRoleAsync(admin, "Admin");
-
-            var manager = new ApplicationUser
-            {
-                UserName = "manager@widgetdata.com",
-                Email = "manager@widgetdata.com",
-                DisplayName = "Manager User",
-                EmailConfirmed = true,
-                IsActive = true
-            };
-            var mgResult = await _userManager.CreateAsync(manager, "Manager@123!");
-            if (mgResult.Succeeded)
-                await _userManager.AddToRoleAsync(manager, "Manager");
-
-            var dev = new ApplicationUser
-            {
-                UserName = "dev@widgetdata.com",
-                Email = "dev@widgetdata.com",
-                DisplayName = "Developer User",
-                EmailConfirmed = true,
-                IsActive = true
-            };
-            var devResult = await _userManager.CreateAsync(dev, "Developer@123!");
-            if (devResult.Succeeded)
-                await _userManager.AddToRoleAsync(dev, "Developer");
-        }
+        if (!tenantBySlug.TryGetValue("demo", out var demoTenant))
+            throw new InvalidOperationException("Missing required 'demo' tenant in admin seed data.");
 
         // Ensure SQLite demo databases exist
         var salesDbPath  = Path.Combine(AppContext.BaseDirectory, "sales.db");
@@ -1117,7 +1044,7 @@ public class DataSeeder
             await SeedDemoPagesAsync(demoTenant.Id);
         }
 
-        await SeedAuditLogsAsync();
+        await SeedAuditLogsAsync(adminSeed.AuditLogs);
     }
 
     private async Task SeedDemoPagesAsync(int demoTenantId)
@@ -1227,270 +1154,197 @@ public class DataSeeder
         await _context.SaveChangesAsync();
     }
 
-    private async Task EnsureTenantUsersAsync()
+    private static readonly JsonSerializerOptions SeedJsonOptions = new() { PropertyNameCaseInsensitive = true };
+    private static readonly string AdminSeedDirectory = Path.Combine(AppContext.BaseDirectory, "Data", "Seed", "admin");
+
+    private async Task<AdminSeedData> LoadAdminSeedAsync()
     {
-        var testTenantSlugs = new[] { "shop", "news", "course", "retail" };
+        var roles = await LoadSeedFileAsync<List<string>>("roles.json");
+        var tenants = await LoadSeedFileAsync<List<AdminTenantSeed>>("tenants.json");
+        var users = await LoadSeedFileAsync<List<AdminUserSeed>>("users.json");
+        var auditLogs = await LoadSeedFileAsync<List<AdminAuditLogSeed>>("audit-logs.json");
 
-        foreach (var slug in testTenantSlugs)
+        return new AdminSeedData(
+            roles,
+            tenants,
+            users,
+            auditLogs);
+    }
+
+    private static async Task<T> LoadSeedFileAsync<T>(string fileName) where T : class
+    {
+        var filePath = Path.Combine(AdminSeedDirectory, fileName);
+        if (!File.Exists(filePath))
+            throw new FileNotFoundException($"Seed file not found: {filePath}", filePath);
+
+        await using var stream = File.OpenRead(filePath);
+        var data = await JsonSerializer.DeserializeAsync<T>(stream, SeedJsonOptions);
+        return data ?? throw new InvalidOperationException($"Seed file '{fileName}' is empty or invalid JSON.");
+    }
+
+    private async Task EnsureRolesAsync(IReadOnlyCollection<string> roles)
+    {
+        foreach (var role in roles.Where(r => !string.IsNullOrWhiteSpace(r)))
         {
-            var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Slug == slug);
-            if (tenant == null) continue;
-
-            // Skip if tenant already has users
-            if (await _userManager.Users.AnyAsync(u => u.TenantId == tenant.Id)) continue;
-
-            var adminEmail = $"admin@{slug}.demo";
-            var userEmail  = $"user@{slug}.demo";
-
-            var tenantAdmin = new ApplicationUser
-            {
-                UserName = adminEmail,
-                Email = adminEmail,
-                DisplayName = $"Admin — {tenant.Name}",
-                EmailConfirmed = true,
-                IsActive = true,
-                TenantId = tenant.Id,
-                LastLoginAt = DateTime.UtcNow.AddDays(-1)
-            };
-            // Development-only credential — must not be used in production
-            var r1 = await _userManager.CreateAsync(tenantAdmin, "TenantAdmin@123!");
-            if (r1.Succeeded)
-                await _userManager.AddToRoleAsync(tenantAdmin, "TenantAdmin");
-
-            var tenantUser = new ApplicationUser
-            {
-                UserName = userEmail,
-                Email = userEmail,
-                DisplayName = $"User — {tenant.Name}",
-                EmailConfirmed = true,
-                IsActive = true,
-                TenantId = tenant.Id,
-                LastLoginAt = DateTime.UtcNow.AddDays(-2)
-            };
-            // Development-only credential — must not be used in production
-            var r2 = await _userManager.CreateAsync(tenantUser, "TenantUser@123!");
-            if (r2.Succeeded)
-                await _userManager.AddToRoleAsync(tenantUser, "TenantUser");
+            if (!await _roleManager.RoleExistsAsync(role))
+                await _roleManager.CreateAsync(new IdentityRole(role));
         }
     }
 
-    private async Task SeedAuditLogsAsync()
+    private async Task<Dictionary<string, Tenant>> EnsureTenantsAsync(IReadOnlyCollection<AdminTenantSeed> tenantSeeds)
+    {
+        var slugs = tenantSeeds
+            .Select(t => t.Slug)
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var existingTenants = await _context.Tenants
+            .Where(t => slugs.Contains(t.Slug))
+            .ToListAsync();
+
+        var tenantBySlug = existingTenants.ToDictionary(t => t.Slug, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var seed in tenantSeeds)
+        {
+            if (string.IsNullOrWhiteSpace(seed.Slug))
+                continue;
+
+            if (tenantBySlug.TryGetValue(seed.Slug, out var existing))
+            {
+                continue;
+            }
+
+            var tenant = new Tenant
+            {
+                Name = seed.Name,
+                Slug = seed.Slug,
+                IsActive = seed.IsActive,
+                Plan = seed.Plan,
+                ContactEmail = seed.ContactEmail,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Tenants.Add(tenant);
+            tenantBySlug[tenant.Slug] = tenant;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return await _context.Tenants
+            .Where(t => slugs.Contains(t.Slug))
+            .ToDictionaryAsync(t => t.Slug, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private async Task EnsureUsersAsync(IReadOnlyCollection<AdminUserSeed> userSeeds, IReadOnlyDictionary<string, Tenant> tenantBySlug)
+    {
+        foreach (var seed in userSeeds)
+        {
+            if (string.IsNullOrWhiteSpace(seed.Email) || string.IsNullOrWhiteSpace(seed.Password))
+                continue;
+
+            var existingUser = await _userManager.FindByEmailAsync(seed.Email);
+            if (existingUser == null)
+            {
+                int? tenantId = null;
+                if (!string.IsNullOrWhiteSpace(seed.TenantSlug) && tenantBySlug.TryGetValue(seed.TenantSlug, out var tenant))
+                    tenantId = tenant.Id;
+
+                var user = new ApplicationUser
+                {
+                    UserName = seed.Email,
+                    Email = seed.Email,
+                    DisplayName = seed.DisplayName,
+                    EmailConfirmed = true,
+                    IsActive = seed.IsActive,
+                    TenantId = tenantId,
+                    LastLoginAt = seed.LastLoginDaysAgo.HasValue ? DateTime.UtcNow.AddDays(-seed.LastLoginDaysAgo.Value) : null
+                };
+
+                var createResult = await _userManager.CreateAsync(user, seed.Password);
+                if (!createResult.Succeeded)
+                    continue;
+
+                existingUser = user;
+            }
+
+            foreach (var role in seed.Roles.Where(r => !string.IsNullOrWhiteSpace(r)).Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                if (!await _userManager.IsInRoleAsync(existingUser, role))
+                    await _userManager.AddToRoleAsync(existingUser, role);
+            }
+        }
+    }
+
+    private async Task SeedAuditLogsAsync(IReadOnlyCollection<AdminAuditLogSeed> auditLogSeeds)
     {
         if (await _context.AuditLogs.AnyAsync()) return;
 
         var now = DateTime.UtcNow;
         var rand = new Random(42);
 
-        string RandomIp() => $"{rand.Next(1, 255)}.{rand.Next(0, 255)}.{rand.Next(0, 255)}.{rand.Next(1, 255)}";
-
-        var logs = new List<AuditLog>
+        var logs = auditLogSeeds.Select(seed => new AuditLog
         {
-            // ── Month -3: Initial setup ───────────────────────────────────────
-            new() { Action = "Login",        EntityType = "User",   UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1",  Timestamp = now.AddDays(-90), Notes = "Đăng nhập thành công" },
-            new() { Action = "CreateTenant", EntityType = "Tenant", EntityId = "shop",   UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-89), NewValues = "{\"name\":\"Shop Tenant\",\"plan\":\"starter\"}", Notes = "Tạo tenant mới" },
-            new() { Action = "CreateTenant", EntityType = "Tenant", EntityId = "news",   UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-88), NewValues = "{\"name\":\"News Tenant\",\"plan\":\"pro\"}", Notes = "Tạo tenant mới" },
-            new() { Action = "CreateTenant", EntityType = "Tenant", EntityId = "course", UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-87), NewValues = "{\"name\":\"Course Tenant\",\"plan\":\"pro\"}", Notes = "Tạo tenant mới" },
-            new() { Action = "CreateTenant", EntityType = "Tenant", EntityId = "retail", UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-86), NewValues = "{\"name\":\"Retail Tenant\",\"plan\":\"enterprise\"}", Notes = "Tạo tenant mới" },
-            new() { Action = "CreateUser",   EntityType = "User",   EntityId = "admin@widgetdata.com",  UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-85), NewValues = "{\"role\":\"Admin\"}", Notes = "Tạo admin hệ thống" },
-            new() { Action = "CreateUser",   EntityType = "User",   EntityId = "manager@widgetdata.com",UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-85), NewValues = "{\"role\":\"Manager\"}", Notes = "Tạo manager" },
-            new() { Action = "CreateUser",   EntityType = "User",   EntityId = "dev@widgetdata.com",    UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-84), NewValues = "{\"role\":\"Developer\"}", Notes = "Tạo developer" },
-            new() { Action = "Login",        EntityType = "User",   UserEmail = "admin@widgetdata.com",  IpAddress = "192.168.1.2",  Timestamp = now.AddDays(-83), Notes = "Đăng nhập thành công" },
-            new() { Action = "CreateDataSource", EntityType = "DataSource", EntityId = "Cửa hàng - Sales DB", UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-82), NewValues = "{\"type\":\"SQLite\"}", Notes = "Kết nối CSDL bán hàng" },
-            new() { Action = "TestDataSource",   EntityType = "DataSource", EntityId = "Cửa hàng - Sales DB", UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-82), Notes = "Kiểm tra kết nối thành công" },
-            new() { Action = "CreateDataSource", EntityType = "DataSource", EntityId = "Analytics REST API",   UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-81), NewValues = "{\"type\":\"RestApi\"}", Notes = "Kết nối Analytics API" },
-            new() { Action = "CreateDataSource", EntityType = "DataSource", EntityId = "EduViet - Course DB",  UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-80), NewValues = "{\"type\":\"SQLite\"}", Notes = "Kết nối CSDL khóa học" },
-            new() { Action = "CreateDataSource", EntityType = "DataSource", EntityId = "VietNews - News DB",   UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-79), NewValues = "{\"type\":\"SQLite\"}", Notes = "Kết nối CSDL tin tức" },
-
-            // ── Month -3: Widget creation (sales) ─────────────────────────────
-            new() { Action = "CreateWidget", EntityType = "Widget", EntityId = "total_revenue_metric",    UserEmail = "admin@widgetdata.com",   IpAddress = RandomIp(), Timestamp = now.AddDays(-78), Notes = "Tạo KPI tổng doanh thu" },
-            new() { Action = "CreateWidget", EntityType = "Widget", EntityId = "total_orders_metric",     UserEmail = "admin@widgetdata.com",   IpAddress = RandomIp(), Timestamp = now.AddDays(-78), Notes = "Tạo KPI tổng đơn hàng" },
-            new() { Action = "CreateWidget", EntityType = "Widget", EntityId = "monthly_revenue_trend",   UserEmail = "admin@widgetdata.com",   IpAddress = RandomIp(), Timestamp = now.AddDays(-77), Notes = "Tạo biểu đồ xu hướng doanh thu" },
-            new() { Action = "CreateWidget", EntityType = "Widget", EntityId = "revenue_by_category_chart", UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-77), Notes = "Tạo biểu đồ doanh thu theo danh mục" },
-            new() { Action = "CreateWidget", EntityType = "Widget", EntityId = "top_products_by_revenue", UserEmail = "manager@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-76), Notes = "Tạo bảng top sản phẩm" },
-            new() { Action = "CreateWidget", EntityType = "Widget", EntityId = "recent_orders_table",     UserEmail = "manager@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-76), Notes = "Tạo bảng đơn hàng gần đây" },
-            new() { Action = "CreateWidget", EntityType = "Widget", EntityId = "contact_form",            UserEmail = "admin@widgetdata.com",   IpAddress = RandomIp(), Timestamp = now.AddDays(-75), Notes = "Tạo form liên hệ" },
-            new() { Action = "CreatePage",   EntityType = "Page",   EntityId = "sales",  UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-74), NewValues = "{\"slug\":\"sales\"}", Notes = "Tạo trang Sales Dashboard" },
-            new() { Action = "CreateSchedule", EntityType = "WidgetSchedule", EntityId = "monthly_revenue_trend", UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-73), NewValues = "{\"cron\":\"0 6 * * *\"}", Notes = "Lập lịch chạy hằng ngày" },
-            new() { Action = "CreateSchedule", EntityType = "WidgetSchedule", EntityId = "recent_orders_table",   UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-73), NewValues = "{\"cron\":\"*/5 * * * *\"}", Notes = "Lập lịch chạy mỗi 5 phút" },
-
-            // ── Month -3: Tenant users ────────────────────────────────────────
-            new() { Action = "CreateUser", EntityType = "User", EntityId = "admin@shop.demo",   UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-72), NewValues = "{\"role\":\"TenantAdmin\"}", Notes = "Tạo admin cho Shop Tenant" },
-            new() { Action = "CreateUser", EntityType = "User", EntityId = "user@shop.demo",    UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-72), NewValues = "{\"role\":\"TenantUser\"}", Notes = "Tạo user cho Shop Tenant" },
-            new() { Action = "CreateUser", EntityType = "User", EntityId = "admin@news.demo",   UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-71), NewValues = "{\"role\":\"TenantAdmin\"}", Notes = "Tạo admin cho News Tenant" },
-            new() { Action = "CreateUser", EntityType = "User", EntityId = "user@news.demo",    UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-71), NewValues = "{\"role\":\"TenantUser\"}", Notes = "Tạo user cho News Tenant" },
-            new() { Action = "CreateUser", EntityType = "User", EntityId = "admin@course.demo", UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-70), NewValues = "{\"role\":\"TenantAdmin\"}", Notes = "Tạo admin cho Course Tenant" },
-            new() { Action = "CreateUser", EntityType = "User", EntityId = "admin@retail.demo", UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-70), NewValues = "{\"role\":\"TenantAdmin\"}", Notes = "Tạo admin cho Retail Tenant" },
-
-            // ── Month -2: Logins & day-to-day ─────────────────────────────────
-            new() { Action = "Login", EntityType = "User", UserEmail = "admin@widgetdata.com",  IpAddress = RandomIp(), Timestamp = now.AddDays(-65), Notes = "Đăng nhập thành công" },
-            new() { Action = "Login", EntityType = "User", UserEmail = "manager@widgetdata.com",IpAddress = RandomIp(), Timestamp = now.AddDays(-65), Notes = "Đăng nhập thành công" },
-            new() { Action = "Login", EntityType = "User", UserEmail = "admin@shop.demo",       IpAddress = RandomIp(), Timestamp = now.AddDays(-64), Notes = "Đăng nhập thành công" },
-            new() { Action = "Login", EntityType = "User", UserEmail = "admin@news.demo",       IpAddress = RandomIp(), Timestamp = now.AddDays(-60), Notes = "Đăng nhập thành công" },
-            new() { Action = "Login", EntityType = "User", UserEmail = "admin@course.demo",     IpAddress = RandomIp(), Timestamp = now.AddDays(-58), Notes = "Đăng nhập thành công" },
-            new() { Action = "Login", EntityType = "User", UserEmail = "dev@widgetdata.com",    IpAddress = RandomIp(), Timestamp = now.AddDays(-57), Notes = "Đăng nhập thành công" },
-            new() { Action = "UpdateWidget", EntityType = "Widget", EntityId = "revenue_by_category_chart", UserEmail = "admin@widgetdata.com",   IpAddress = RandomIp(), Timestamp = now.AddDays(-62), OldValues = "{\"type\":\"Pie\"}",  NewValues = "{\"type\":\"Bar\"}", Notes = "Đổi chart type từ Pie sang Bar" },
-            new() { Action = "UpdateWidget", EntityType = "Widget", EntityId = "monthly_revenue_trend",     UserEmail = "manager@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-60), OldValues = "{\"cacheTtl\":30}", NewValues = "{\"cacheTtl\":60}", Notes = "Tăng thời gian cache" },
-            new() { Action = "CreateDelivery", EntityType = "DeliveryTarget", EntityId = "Báo cáo doanh thu hàng ngày (Email)",  UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-59), NewValues = "{\"type\":\"Email\"}", Notes = "Cấu hình delivery email" },
-            new() { Action = "CreateDelivery", EntityType = "DeliveryTarget", EntityId = "Thông báo đơn hàng mới (Telegram)",   UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-59), NewValues = "{\"type\":\"Telegram\"}", Notes = "Cấu hình delivery Telegram" },
-            new() { Action = "CreateDelivery", EntityType = "DeliveryTarget", EntityId = "Xuất top sản phẩm dạng CSV (FTP)",    UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-58), NewValues = "{\"type\":\"Csv\"}", Notes = "Cấu hình delivery CSV" },
-
-            // ── Month -2: Course & News widgets ──────────────────────────────
-            new() { Action = "CreateWidget", EntityType = "Widget", EntityId = "course_enrollments_today",  UserEmail = "admin@course.demo",  IpAddress = RandomIp(), Timestamp = now.AddDays(-55), Notes = "Tạo KPI đăng ký mới" },
-            new() { Action = "CreateWidget", EntityType = "Widget", EntityId = "course_popular_courses",    UserEmail = "admin@course.demo",  IpAddress = RandomIp(), Timestamp = now.AddDays(-55), Notes = "Tạo bảng khóa học phổ biến" },
-            new() { Action = "CreatePage",   EntityType = "Page",   EntityId = "course", UserEmail = "admin@course.demo",  IpAddress = RandomIp(), Timestamp = now.AddDays(-54), NewValues = "{\"slug\":\"course\"}", Notes = "Tạo trang Learning Dashboard" },
-            new() { Action = "CreateWidget", EntityType = "Widget", EntityId = "news_total_views_today",    UserEmail = "admin@news.demo",    IpAddress = RandomIp(), Timestamp = now.AddDays(-52), Notes = "Tạo KPI lượt xem hôm nay" },
-            new() { Action = "CreateWidget", EntityType = "Widget", EntityId = "news_popular_articles_week",UserEmail = "admin@news.demo",    IpAddress = RandomIp(), Timestamp = now.AddDays(-52), Notes = "Tạo bảng bài viết phổ biến" },
-            new() { Action = "CreatePage",   EntityType = "Page",   EntityId = "news",  UserEmail = "admin@news.demo",    IpAddress = RandomIp(), Timestamp = now.AddDays(-51), NewValues = "{\"slug\":\"news\"}", Notes = "Tạo trang News Analytics" },
-
-            // ── Month -2: Routine maintenance ────────────────────────────────
-            new() { Action = "UpdateSchedule",   EntityType = "WidgetSchedule", EntityId = "daily_payment_trend", UserEmail = "manager@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-50), OldValues = "{\"cron\":\"0 */6 * * *\"}", NewValues = "{\"cron\":\"0 */4 * * *\"}", Notes = "Tăng tần suất chạy" },
-            new() { Action = "UpdateDataSource", EntityType = "DataSource", EntityId = "Analytics REST API", UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-48), OldValues = "{\"apiKey\":\"old-key\"}", NewValues = "{\"apiKey\":\"demo-api-key-12345\"}", Notes = "Cập nhật API key" },
-            new() { Action = "TestDataSource",   EntityType = "DataSource", EntityId = "EduViet - Course DB", UserEmail = "admin@course.demo", IpAddress = RandomIp(), Timestamp = now.AddDays(-45), Notes = "Kiểm tra kết nối thành công" },
-            new() { Action = "TestDataSource",   EntityType = "DataSource", EntityId = "VietNews - News DB",  UserEmail = "admin@news.demo",   IpAddress = RandomIp(), Timestamp = now.AddDays(-44), Notes = "Kiểm tra kết nối thành công" },
-            new() { Action = "Login", EntityType = "User", UserEmail = "admin@retail.demo", IpAddress = RandomIp(), Timestamp = now.AddDays(-43), Notes = "Đăng nhập thành công" },
-            new() { Action = "Login", EntityType = "User", UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-42), Notes = "Đăng nhập thành công" },
-
-            // ── Month -1: Expanded data & edits ──────────────────────────────
-            new() { Action = "Login",        EntityType = "User", UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-40), Notes = "Đăng nhập thành công" },
-            new() { Action = "UpdateTenant", EntityType = "Tenant", EntityId = "shop",   UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-39), OldValues = "{\"plan\":\"free\"}", NewValues = "{\"plan\":\"starter\"}", Notes = "Nâng cấp gói dịch vụ" },
-            new() { Action = "UpdateTenant", EntityType = "Tenant", EntityId = "retail", UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-38), OldValues = "{\"plan\":\"pro\"}",  NewValues = "{\"plan\":\"enterprise\"}", Notes = "Nâng cấp lên Enterprise" },
-            new() { Action = "AssignRole",   EntityType = "User", EntityId = "dev@widgetdata.com", UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-36), OldValues = "{\"role\":\"Viewer\"}", NewValues = "{\"role\":\"Developer\"}", Notes = "Thay đổi role" },
-            new() { Action = "UpdateUser",   EntityType = "User", EntityId = "manager@widgetdata.com", UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-35), Notes = "Cập nhật thông tin cá nhân" },
-            new() { Action = "Login", EntityType = "User", UserEmail = "admin@widgetdata.com",  IpAddress = RandomIp(), Timestamp = now.AddDays(-33), Notes = "Đăng nhập thành công" },
-            new() { Action = "Login", EntityType = "User", UserEmail = "manager@widgetdata.com",IpAddress = RandomIp(), Timestamp = now.AddDays(-32), Notes = "Đăng nhập thành công" },
-            new() { Action = "UpdateWidget", EntityType = "Widget", EntityId = "top_products_by_revenue",  UserEmail = "manager@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-31), Notes = "Thêm cột danh mục vào bảng" },
-            new() { Action = "UpdateWidget", EntityType = "Widget", EntityId = "low_stock_products",       UserEmail = "admin@widgetdata.com",   IpAddress = RandomIp(), Timestamp = now.AddDays(-30), OldValues = "{\"threshold\":100}", NewValues = "{\"threshold\":50}", Notes = "Giảm ngưỡng tồn kho" },
-            new() { Action = "CreateWidget", EntityType = "Widget", EntityId = "avg_order_value_metric",   UserEmail = "admin@widgetdata.com",   IpAddress = RandomIp(), Timestamp = now.AddDays(-29), Notes = "Tạo KPI giá trị đơn TB" },
-            new() { Action = "CreateWidget", EntityType = "Widget", EntityId = "total_customers_metric",   UserEmail = "admin@widgetdata.com",   IpAddress = RandomIp(), Timestamp = now.AddDays(-29), Notes = "Tạo KPI tổng khách hàng" },
-            new() { Action = "UpdatePage",   EntityType = "Page",   EntityId = "sales",  UserEmail = "manager@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-28), Notes = "Thêm KPI widgets vào trang" },
-            new() { Action = "Login", EntityType = "User", UserEmail = "admin@shop.demo",       IpAddress = RandomIp(), Timestamp = now.AddDays(-27), Notes = "Đăng nhập thành công" },
-            new() { Action = "Login", EntityType = "User", UserEmail = "admin@course.demo",     IpAddress = RandomIp(), Timestamp = now.AddDays(-26), Notes = "Đăng nhập thành công" },
-            new() { Action = "DisableWidget", EntityType = "Widget", EntityId = "low_stock_products", UserEmail = "manager@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-25), Notes = "Tạm dừng widget kiểm kho" },
-            new() { Action = "EnableWidget",  EntityType = "Widget", EntityId = "low_stock_products", UserEmail = "manager@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-24), Notes = "Kích hoạt lại widget kiểm kho" },
-
-            // ── Last 3 weeks ──────────────────────────────────────────────────
-            new() { Action = "Login",          EntityType = "User",   UserEmail = "admin@widgetdata.com",   IpAddress = RandomIp(), Timestamp = now.AddDays(-22), Notes = "Đăng nhập thành công" },
-            new() { Action = "Login",          EntityType = "User",   UserEmail = "manager@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-21), Notes = "Đăng nhập thành công" },
-            new() { Action = "Login",          EntityType = "User",   UserEmail = "dev@widgetdata.com",     IpAddress = RandomIp(), Timestamp = now.AddDays(-20), Notes = "Đăng nhập thành công" },
-            new() { Action = "Login",          EntityType = "User",   UserEmail = "admin@retail.demo",      IpAddress = RandomIp(), Timestamp = now.AddDays(-19), Notes = "Đăng nhập thành công" },
-            new() { Action = "Login",          EntityType = "User",   UserEmail = "admin@news.demo",        IpAddress = RandomIp(), Timestamp = now.AddDays(-18), Notes = "Đăng nhập thành công" },
-            new() { Action = "TestDataSource", EntityType = "DataSource", EntityId = "Analytics REST API",  UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-17), Notes = "Kiểm tra kết nối API thành công" },
-            new() { Action = "UpdateWidget",   EntityType = "Widget", EntityId = "customers_by_city_chart", UserEmail = "admin@widgetdata.com",   IpAddress = RandomIp(), Timestamp = now.AddDays(-16), Notes = "Thêm tham số groupBy" },
-            new() { Action = "UpdateWidget",   EntityType = "Widget", EntityId = "payment_method_distribution", UserEmail = "manager@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-15), Notes = "Thêm filter status=success" },
-            new() { Action = "CreateWidget",   EntityType = "Widget", EntityId = "payment_summary_by_method", UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-15), Notes = "Tạo bảng tóm tắt thanh toán" },
-            new() { Action = "InactivityAlert", EntityType = "Widget", EntityId = "low_stock_products",    UserEmail = null, IpAddress = "127.0.0.1", Timestamp = now.AddDays(-14), Notes = "Widget không chạy quá 48h, đã gửi cảnh báo" },
-            new() { Action = "Login",          EntityType = "User", UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-13), Notes = "Đăng nhập thành công" },
-            new() { Action = "UpdateTenant",   EntityType = "Tenant", EntityId = "news", UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-12), OldValues = "{\"plan\":\"pro\"}", NewValues = "{\"plan\":\"pro\",\"maxWidgets\":50}", Notes = "Mở rộng giới hạn widget" },
-            new() { Action = "Login",          EntityType = "User", UserEmail = "admin@widgetdata.com",   IpAddress = RandomIp(), Timestamp = now.AddDays(-11), Notes = "Đăng nhập thành công" },
-            new() { Action = "Login",          EntityType = "User", UserEmail = "manager@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-11), Notes = "Đăng nhập thành công" },
-            new() { Action = "UpdateSchedule", EntityType = "WidgetSchedule", EntityId = "course_monthly_revenue_trend", UserEmail = "admin@course.demo", IpAddress = RandomIp(), Timestamp = now.AddDays(-10), OldValues = "{\"cron\":\"0 7 * * *\"}", NewValues = "{\"cron\":\"0 6 * * *\"}", Notes = "Điều chỉnh giờ chạy" },
-            new() { Action = "UpdateWidget",   EntityType = "Widget", EntityId = "course_recent_student_activity", UserEmail = "admin@course.demo", IpAddress = RandomIp(), Timestamp = now.AddDays(-9), Notes = "Cập nhật query hiển thị tiến độ" },
-            new() { Action = "CreateWidget",   EntityType = "Widget", EntityId = "failed_refunded_payments", UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-9), Notes = "Tạo bảng giao dịch thất bại" },
-
-            // ── Last week ────────────────────────────────────────────────────
-            new() { Action = "Login",          EntityType = "User", UserEmail = "admin@widgetdata.com",   IpAddress = RandomIp(), Timestamp = now.AddDays(-8), Notes = "Đăng nhập thành công" },
-            new() { Action = "Login",          EntityType = "User", UserEmail = "admin@shop.demo",        IpAddress = RandomIp(), Timestamp = now.AddDays(-7), Notes = "Đăng nhập thành công" },
-            new() { Action = "TestDataSource", EntityType = "DataSource", EntityId = "Cửa hàng - Sales DB", UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-7), Notes = "Kiểm tra kết nối thành công" },
-            new() { Action = "UpdateWidget",   EntityType = "Widget", EntityId = "monthly_revenue_trend",   UserEmail = "manager@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-7), Notes = "Mở rộng 9 tháng" },
-            new() { Action = "InactivityAlert", EntityType = "Widget", EntityId = "daily_payment_trend",  UserEmail = null, IpAddress = "127.0.0.1", Timestamp = now.AddDays(-6), Notes = "Widget không chạy quá 24h, đã gửi cảnh báo" },
-            new() { Action = "Login",          EntityType = "User", UserEmail = "dev@widgetdata.com",     IpAddress = RandomIp(), Timestamp = now.AddDays(-6), Notes = "Đăng nhập thành công" },
-            new() { Action = "Login",          EntityType = "User", UserEmail = "manager@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-5), Notes = "Đăng nhập thành công" },
-            new() { Action = "CreateWidget",   EntityType = "Widget", EntityId = "news_traffic_sources",  UserEmail = "admin@news.demo",    IpAddress = RandomIp(), Timestamp = now.AddDays(-5), Notes = "Tạo biểu đồ nguồn truy cập" },
-            new() { Action = "UpdateWidget",   EntityType = "Widget", EntityId = "news_top_authors",      UserEmail = "admin@news.demo",    IpAddress = RandomIp(), Timestamp = now.AddDays(-4), Notes = "Cập nhật query thêm sort" },
-            new() { Action = "UpdateDelivery", EntityType = "DeliveryTarget", EntityId = "Báo cáo doanh thu hàng ngày (Email)", UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-4), Notes = "Thêm người nhận CC" },
-            new() { Action = "Login",          EntityType = "User", UserEmail = "admin@widgetdata.com",   IpAddress = RandomIp(), Timestamp = now.AddDays(-3), Notes = "Đăng nhập thành công" },
-            new() { Action = "Login",          EntityType = "User", UserEmail = "admin@retail.demo",      IpAddress = RandomIp(), Timestamp = now.AddDays(-3), Notes = "Đăng nhập thành công" },
-            new() { Action = "CreateUser",     EntityType = "User", EntityId = "user@retail.demo",  UserEmail = "admin@retail.demo", IpAddress = RandomIp(), Timestamp = now.AddDays(-3), NewValues = "{\"role\":\"TenantUser\"}", Notes = "Tạo user mới trong tenant" },
-            new() { Action = "UpdateWidget",   EntityType = "Widget", EntityId = "top_products_by_revenue", UserEmail = "manager@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-2), Notes = "Cập nhật câu truy vấn widget" },
-            new() { Action = "TestDataSource", EntityType = "DataSource", EntityId = "VietNews - News DB", UserEmail = "admin@news.demo", IpAddress = RandomIp(), Timestamp = now.AddDays(-2), Notes = "Kiểm tra kết nối thành công" },
-
-            // ── Last 24 hours ────────────────────────────────────────────────
-            new() { Action = "Login",          EntityType = "User", UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddHours(-20), Notes = "Đăng nhập thành công" },
-            new() { Action = "Login",          EntityType = "User", UserEmail = "admin@widgetdata.com",      IpAddress = RandomIp(),    Timestamp = now.AddHours(-18), Notes = "Đăng nhập thành công" },
-            new() { Action = "Login",          EntityType = "User", UserEmail = "manager@widgetdata.com",    IpAddress = RandomIp(),    Timestamp = now.AddHours(-16), Notes = "Đăng nhập thành công" },
-            new() { Action = "UpdateWidget",   EntityType = "Widget", EntityId = "payment_summary_by_method", UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddHours(-14), Notes = "Thêm cột TB/GD" },
-            new() { Action = "Login",          EntityType = "User", UserEmail = "dev@widgetdata.com",         IpAddress = RandomIp(), Timestamp = now.AddHours(-12), Notes = "Đăng nhập thành công" },
-            new() { Action = "Login",          EntityType = "User", UserEmail = "admin@course.demo",          IpAddress = RandomIp(), Timestamp = now.AddHours(-10), Notes = "Đăng nhập thành công" },
-            new() { Action = "TestDataSource", EntityType = "DataSource", EntityId = "EduViet - Course DB",   UserEmail = "admin@course.demo", IpAddress = RandomIp(), Timestamp = now.AddHours(-9), Notes = "Kiểm tra kết nối thành công" },
-            new() { Action = "UpdateWidget",   EntityType = "Widget", EntityId = "top_products_by_revenue",   UserEmail = "manager@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddHours(-8), Notes = "Cập nhật câu truy vấn widget" },
-            new() { Action = "Login",          EntityType = "User", UserEmail = "admin@news.demo",            IpAddress = RandomIp(), Timestamp = now.AddHours(-7), Notes = "Đăng nhập thành công" },
-            new() { Action = "InactivityAlert", EntityType = "Widget", EntityId = "product_sales_by_category_chart", UserEmail = null, IpAddress = "127.0.0.1", Timestamp = now.AddHours(-6), Notes = "Widget không chạy quá 72h" },
-            new() { Action = "Login",          EntityType = "User", UserEmail = "admin@widgetdata.com",       IpAddress = RandomIp(), Timestamp = now.AddHours(-5), Notes = "Đăng nhập thành công" },
-            new() { Action = "UpdateDelivery", EntityType = "DeliveryTarget", EntityId = "Thông báo đơn hàng mới (Telegram)", UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddHours(-4), Notes = "Cập nhật template thông báo" },
-            new() { Action = "UpdateWidget",   EntityType = "Widget", EntityId = "monthly_revenue_trend",     UserEmail = "manager@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddHours(-3), Notes = "Chuyển sang so sánh 12 tháng" },
-            new() { Action = "Login",          EntityType = "User", UserEmail = "dev@widgetdata.com",         IpAddress = RandomIp(), Timestamp = now.AddHours(-2), Notes = "Đăng nhập thành công" },
-            new() { Action = "TestDataSource", EntityType = "DataSource", EntityId = "VietNews - News DB",    UserEmail = "admin@news.demo", IpAddress = RandomIp(), Timestamp = now.AddHours(-1), Notes = "Kiểm tra kết nối thành công" },
-            new() { Action = "UpdateWidget",   EntityType = "Widget", EntityId = "news_monthly_views_trend",  UserEmail = "admin@news.demo", IpAddress = RandomIp(), Timestamp = now.AddMinutes(-30), Notes = "Tăng lên 18 tháng" }
-        };
+            Action = seed.Action,
+            EntityType = seed.EntityType,
+            EntityId = seed.EntityId,
+            UserId = seed.UserId,
+            UserEmail = seed.UserEmail,
+            OldValues = seed.OldValues,
+            NewValues = seed.NewValues,
+            IpAddress = seed.RandomIp ? CreateRandomIp(rand) : seed.IpAddress,
+            UserAgent = seed.UserAgent,
+            Timestamp = now.AddDays(-seed.DaysAgo),
+            Notes = seed.Notes
+        }).ToList();
 
         _context.AuditLogs.AddRange(logs);
         await _context.SaveChangesAsync();
     }
 
-    private async Task EnsureTestTenantsAsync()
+    private static string CreateRandomIp(Random random)
+        => $"{random.Next(1, 255)}.{random.Next(0, 255)}.{random.Next(0, 255)}.{random.Next(1, 255)}";
+
+    private sealed record AdminSeedData(
+        List<string> Roles,
+        List<AdminTenantSeed> Tenants,
+        List<AdminUserSeed> Users,
+        List<AdminAuditLogSeed> AuditLogs);
+
+    private sealed record AdminTenantSeed
     {
-        var testTenants = new List<Tenant>
-        {
-            new()
-            {
-                Name = "Shop Tenant",
-                Slug = "shop",
-                IsActive = true,
-                Plan = "starter",
-                ContactEmail = "shop@widgetdata.com",
-                CreatedAt = DateTime.UtcNow
-            },
-            new()
-            {
-                Name = "News Tenant",
-                Slug = "news",
-                IsActive = true,
-                Plan = "pro",
-                ContactEmail = "news@widgetdata.com",
-                CreatedAt = DateTime.UtcNow
-            },
-            new()
-            {
-                Name = "Course Tenant",
-                Slug = "course",
-                IsActive = true,
-                Plan = "pro",
-                ContactEmail = "course@widgetdata.com",
-                CreatedAt = DateTime.UtcNow
-            },
-            new()
-            {
-                Name = "Retail Tenant",
-                Slug = "retail",
-                IsActive = true,
-                Plan = "enterprise",
-                ContactEmail = "retail@widgetdata.com",
-                CreatedAt = DateTime.UtcNow
-            }
-        };
+        public string Name { get; init; } = string.Empty;
+        public string Slug { get; init; } = string.Empty;
+        public bool IsActive { get; init; } = true;
+        public string Plan { get; init; } = "free";
+        public string? ContactEmail { get; init; }
+    }
 
-        var targetSlugs = testTenants
-            .Select(t => t.Slug)
-            .ToList();
+    private sealed record AdminUserSeed
+    {
+        public string Email { get; init; } = string.Empty;
+        public string DisplayName { get; init; } = string.Empty;
+        public string Password { get; init; } = string.Empty;
+        public bool IsActive { get; init; } = true;
+        public string? TenantSlug { get; init; }
+        public int? LastLoginDaysAgo { get; init; }
+        public List<string> Roles { get; init; } = [];
+    }
 
-        var existingSlugs = await _context.Tenants
-            .Where(t => targetSlugs.Contains(t.Slug))
-            .Select(t => t.Slug)
-            .ToListAsync();
-
-        var existingSlugSet = existingSlugs.ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        var missingTenants = testTenants
-            .Where(t => !existingSlugSet.Contains(t.Slug))
-            .ToList();
-
-        if (missingTenants.Count == 0)
-        {
-            return;
-        }
-
-        _context.Tenants.AddRange(missingTenants);
-        await _context.SaveChangesAsync();
+    private sealed record AdminAuditLogSeed
+    {
+        public string Action { get; init; } = string.Empty;
+        public string? EntityType { get; init; }
+        public string? EntityId { get; init; }
+        public string? UserId { get; init; }
+        public string? UserEmail { get; init; }
+        public string? OldValues { get; init; }
+        public string? NewValues { get; init; }
+        public string? IpAddress { get; init; }
+        public bool RandomIp { get; init; }
+        public string? UserAgent { get; init; }
+        public int DaysAgo { get; init; }
+        public string? Notes { get; init; }
     }
 
     /// <summary>
