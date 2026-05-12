@@ -1188,8 +1188,13 @@ public class DataSeeder
 
         var widgets = await _context.Widgets.IgnoreQueryFilters()
             .Where(w => widgetNames.Contains(w.Name))
-            .OrderBy(w => Array.IndexOf(widgetNames, w.Name))
             .ToListAsync();
+        var nameIndex = widgetNames
+            .Select((name, idx) => (name, idx))
+            .ToDictionary(x => x.name, x => x.idx);
+        widgets = widgets
+            .OrderBy(w => nameIndex.GetValueOrDefault(w.Name, int.MaxValue))
+            .ToList();
         for (int i = 0; i < widgets.Count; i++)
             _context.PageWidgets.Add(new PageWidget
             {
