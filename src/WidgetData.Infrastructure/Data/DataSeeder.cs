@@ -1106,6 +1106,7 @@ public class DataSeeder
                 TenantId = tenant.Id,
                 LastLoginAt = DateTime.UtcNow.AddDays(-1)
             };
+            // Development-only credential — must not be used in production
             var r1 = await _userManager.CreateAsync(tenantAdmin, "TenantAdmin@123!");
             if (r1.Succeeded)
                 await _userManager.AddToRoleAsync(tenantAdmin, "TenantAdmin");
@@ -1120,6 +1121,7 @@ public class DataSeeder
                 TenantId = tenant.Id,
                 LastLoginAt = DateTime.UtcNow.AddDays(-2)
             };
+            // Development-only credential — must not be used in production
             var r2 = await _userManager.CreateAsync(tenantUser, "TenantUser@123!");
             if (r2.Succeeded)
                 await _userManager.AddToRoleAsync(tenantUser, "TenantUser");
