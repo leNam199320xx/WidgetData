@@ -1,0 +1,244 @@
+[
+  {
+    "action": "Login",
+    "entityType": "User",
+    "userEmail": "superadmin@widgetdata.com",
+    "ipAddress": "192.168.1.1",
+    "daysAgo": 90,
+    "notes": "Đăng nhập thành công"
+  },
+  {
+    "action": "CreateTenant",
+    "entityType": "Tenant",
+    "entityId": "shop",
+    "userEmail": "superadmin@widgetdata.com",
+    "ipAddress": "192.168.1.1",
+    "daysAgo": 89,
+    "newValues": "{\"name\":\"Shop Tenant\",\"plan\":\"starter\"}",
+    "notes": "Tạo tenant mới"
+  },
+  {
+    "action": "CreateTenant",
+    "entityType": "Tenant",
+    "entityId": "news",
+    "userEmail": "superadmin@widgetdata.com",
+    "ipAddress": "192.168.1.1",
+    "daysAgo": 88,
+    "newValues": "{\"name\":\"News Tenant\",\"plan\":\"pro\"}",
+    "notes": "Tạo tenant mới"
+  },
+  {
+    "action": "CreateTenant",
+    "entityType": "Tenant",
+    "entityId": "course",
+    "userEmail": "superadmin@widgetdata.com",
+    "ipAddress": "192.168.1.1",
+    "daysAgo": 87,
+    "newValues": "{\"name\":\"Course Tenant\",\"plan\":\"pro\"}",
+    "notes": "Tạo tenant mới"
+  },
+  {
+    "action": "CreateTenant",
+    "entityType": "Tenant",
+    "entityId": "retail",
+    "userEmail": "superadmin@widgetdata.com",
+    "ipAddress": "192.168.1.1",
+    "daysAgo": 86,
+    "newValues": "{\"name\":\"Retail Tenant\",\"plan\":\"enterprise\"}",
+    "notes": "Tạo tenant mới"
+  },
+  {
+    "action": "CreateUser",
+    "entityType": "User",
+    "entityId": "admin@widgetdata.com",
+    "userEmail": "superadmin@widgetdata.com",
+    "ipAddress": "192.168.1.1",
+    "daysAgo": 85,
+    "newValues": "{\"role\":\"Admin\"}",
+    "notes": "Tạo admin hệ thống"
+  },
+  {
+    "action": "CreateUser",
+    "entityType": "User",
+    "entityId": "manager@widgetdata.com",
+    "userEmail": "superadmin@widgetdata.com",
+    "ipAddress": "192.168.1.1",
+    "daysAgo": 85,
+    "newValues": "{\"role\":\"Manager\"}",
+    "notes": "Tạo manager"
+  },
+  {
+    "action": "CreateUser",
+    "entityType": "User",
+    "entityId": "dev@widgetdata.com",
+    "userEmail": "superadmin@widgetdata.com",
+    "ipAddress": "192.168.1.1",
+    "daysAgo": 84,
+    "newValues": "{\"role\":\"Developer\"}",
+    "notes": "Tạo developer"
+  },
+  {
+    "action": "CreateUser",
+    "entityType": "User",
+    "entityId": "admin@shop.demo",
+    "userEmail": "superadmin@widgetdata.com",
+    "ipAddress": "192.168.1.1",
+    "daysAgo": 72,
+    "newValues": "{\"role\":\"TenantAdmin\"}",
+    "notes": "Tạo admin cho Shop Tenant"
+  },
+  {
+    "action": "CreateUser",
+    "entityType": "User",
+    "entityId": "admin@news.demo",
+    "userEmail": "superadmin@widgetdata.com",
+    "ipAddress": "192.168.1.1",
+    "daysAgo": 71,
+    "newValues": "{\"role\":\"TenantAdmin\"}",
+    "notes": "Tạo admin cho News Tenant"
+  },
+  {
+    "action": "CreateUser",
+    "entityType": "User",
+    "entityId": "admin@course.demo",
+    "userEmail": "superadmin@widgetdata.com",
+    "ipAddress": "192.168.1.1",
+    "daysAgo": 70,
+    "newValues": "{\"role\":\"TenantAdmin\"}",
+    "notes": "Tạo admin cho Course Tenant"
+  },
+  {
+    "action": "CreateUser",
+    "entityType": "User",
+    "entityId": "admin@retail.demo",
+    "userEmail": "superadmin@widgetdata.com",
+    "ipAddress": "192.168.1.1",
+    "daysAgo": 70,
+    "newValues": "{\"role\":\"TenantAdmin\"}",
+    "notes": "Tạo admin cho Retail Tenant"
+  },
+  {
+    "action": "Login",
+    "entityType": "User",
+    "userEmail": "admin@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 65,
+    "notes": "Đăng nhập thành công"
+  },
+  {
+    "action": "CreateDataSource",
+    "entityType": "DataSource",
+    "entityId": "Cửa hàng - Sales DB",
+    "userEmail": "admin@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 62,
+    "newValues": "{\"type\":\"SQLite\"}",
+    "notes": "Kết nối CSDL bán hàng"
+  },
+  {
+    "action": "UpdateWidget",
+    "entityType": "Widget",
+    "entityId": "revenue_by_category_chart",
+    "userEmail": "admin@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 60,
+    "oldValues": "{\"type\":\"Pie\"}",
+    "newValues": "{\"type\":\"Bar\"}",
+    "notes": "Đổi chart type từ Pie sang Bar"
+  },
+  {
+    "action": "CreateDelivery",
+    "entityType": "DeliveryTarget",
+    "entityId": "Báo cáo doanh thu hàng ngày (Email)",
+    "userEmail": "admin@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 59,
+    "newValues": "{\"type\":\"Email\"}",
+    "notes": "Cấu hình delivery email"
+  },
+  {
+    "action": "UpdateSchedule",
+    "entityType": "WidgetSchedule",
+    "entityId": "daily_payment_trend",
+    "userEmail": "manager@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 50,
+    "oldValues": "{\"cron\":\"0 */6 * * *\"}",
+    "newValues": "{\"cron\":\"0 */4 * * *\"}",
+    "notes": "Tăng tần suất chạy"
+  },
+  {
+    "action": "UpdateTenant",
+    "entityType": "Tenant",
+    "entityId": "shop",
+    "userEmail": "superadmin@widgetdata.com",
+    "ipAddress": "192.168.1.1",
+    "daysAgo": 39,
+    "oldValues": "{\"plan\":\"free\"}",
+    "newValues": "{\"plan\":\"starter\"}",
+    "notes": "Nâng cấp gói dịch vụ"
+  },
+  {
+    "action": "UpdateWidget",
+    "entityType": "Widget",
+    "entityId": "top_products_by_revenue",
+    "userEmail": "manager@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 31,
+    "notes": "Thêm cột danh mục vào bảng"
+  },
+  {
+    "action": "UpdateWidget",
+    "entityType": "Widget",
+    "entityId": "low_stock_products",
+    "userEmail": "admin@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 30,
+    "oldValues": "{\"threshold\":100}",
+    "newValues": "{\"threshold\":50}",
+    "notes": "Giảm ngưỡng tồn kho"
+  },
+  {
+    "action": "CreateWidget",
+    "entityType": "Widget",
+    "entityId": "avg_order_value_metric",
+    "userEmail": "admin@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 29,
+    "notes": "Tạo KPI giá trị đơn TB"
+  },
+  {
+    "action": "Login",
+    "entityType": "User",
+    "userEmail": "admin@retail.demo",
+    "randomIp": true,
+    "daysAgo": 19,
+    "notes": "Đăng nhập thành công"
+  },
+  {
+    "action": "TestDataSource",
+    "entityType": "DataSource",
+    "entityId": "Analytics REST API",
+    "userEmail": "admin@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 17,
+    "notes": "Kiểm tra kết nối API thành công"
+  },
+  {
+    "action": "UpdateWidget",
+    "entityType": "Widget",
+    "entityId": "customers_by_city_chart",
+    "userEmail": "admin@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 16,
+    "notes": "Thêm tham số groupBy"
+  },
+  {
+    "action": "Login",
+    "entityType": "User",
+    "userEmail": "manager@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 1,
+    "notes": "Đăng nhập thành công"
+  }
+]

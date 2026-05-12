@@ -1,0 +1,9 @@
+[
+  "Admin",
+  "Manager",
+  "Developer",
+  "Viewer",
+  "SuperAdmin",
+  "TenantAdmin",
+  "TenantUser"
+]

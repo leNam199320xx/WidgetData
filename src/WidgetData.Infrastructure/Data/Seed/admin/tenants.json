@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Demo Tenant",
+    "slug": "demo",
+    "isActive": true,
+    "plan": "free",
+    "contactEmail": "demo@widgetdata.com"
+  },
+  {
+    "name": "Shop Tenant",
+    "slug": "shop",
+    "isActive": true,
+    "plan": "starter",
+    "contactEmail": "shop@widgetdata.com"
+  },
+  {
+    "name": "News Tenant",
+    "slug": "news",
+    "isActive": true,
+    "plan": "pro",
+    "contactEmail": "news@widgetdata.com"
+  },
+  {
+    "name": "Course Tenant",
+    "slug": "course",
+    "isActive": true,
+    "plan": "pro",
+    "contactEmail": "course@widgetdata.com"
+  },
+  {
+    "name": "Retail Tenant",
+    "slug": "retail",
+    "isActive": true,
+    "plan": "enterprise",
+    "contactEmail": "retail@widgetdata.com"
+  }
+]
