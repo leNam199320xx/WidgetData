@@ -1164,10 +1164,15 @@ public class DataSeeder
         var users = await LoadSeedFileAsync<List<AdminUserSeed>>("users.json");
         var auditLogs = await LoadSeedFileAsync<List<AdminAuditLogSeed>>("audit-logs.json");
 
+        var normalizedRoles = NormalizeRoles(roles);
+        var normalizedUsers = users
+            .Select(user => user with { Roles = NormalizeRoles(user.Roles) })
+            .ToList();
+
         return new AdminSeedData(
-            roles,
+            normalizedRoles,
             tenants,
-            users,
+            normalizedUsers,
             auditLogs);
     }
 
@@ -1181,6 +1186,12 @@ public class DataSeeder
         var data = await JsonSerializer.DeserializeAsync<T>(stream, SeedJsonOptions);
         return data ?? throw new InvalidOperationException($"Seed file '{fileName}' is empty or invalid JSON.");
     }
+
+    private static List<string> NormalizeRoles(IEnumerable<string> roles)
+        => roles
+            .Where(role => !string.IsNullOrWhiteSpace(role))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
     private async Task EnsureRolesAsync(IReadOnlyCollection<string> roles)
     {
@@ -1212,6 +1223,7 @@ public class DataSeeder
 
             if (tenantBySlug.TryGetValue(seed.Slug, out var existing))
             {
+                // Keep existing tenant metadata untouched; seed only creates missing tenants.
                 continue;
             }
 
@@ -1246,10 +1258,6 @@ public class DataSeeder
             var existingUser = await _userManager.FindByEmailAsync(seed.Email);
             if (existingUser == null)
             {
-                int? tenantId = null;
-                if (!string.IsNullOrWhiteSpace(seed.TenantSlug) && tenantBySlug.TryGetValue(seed.TenantSlug, out var tenant))
-                    tenantId = tenant.Id;
-
                 var user = new ApplicationUser
                 {
                     UserName = seed.Email,
@@ -1257,7 +1265,7 @@ public class DataSeeder
                     DisplayName = seed.DisplayName,
                     EmailConfirmed = true,
                     IsActive = seed.IsActive,
-                    TenantId = tenantId,
+                    TenantId = ResolveTenantId(seed.TenantSlug, tenantBySlug),
                     LastLoginAt = seed.LastLoginDaysAgo.HasValue ? DateTime.UtcNow.AddDays(-seed.LastLoginDaysAgo.Value) : null
                 };
 
@@ -1304,6 +1312,14 @@ public class DataSeeder
 
     private static string CreateRandomIp(Random random)
         => $"{random.Next(1, 255)}.{random.Next(0, 255)}.{random.Next(0, 255)}.{random.Next(1, 255)}";
+
+    private static int? ResolveTenantId(string? tenantSlug, IReadOnlyDictionary<string, Tenant> tenantBySlug)
+    {
+        if (string.IsNullOrWhiteSpace(tenantSlug))
+            return null;
+
+        return tenantBySlug.TryGetValue(tenantSlug, out var tenant) ? tenant.Id : null;
+    }
 
     private sealed record AdminSeedData(
         List<string> Roles,
