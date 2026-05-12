@@ -53,6 +53,7 @@ public class DataSeeder
         }
 
         await EnsureTestTenantsAsync();
+        await EnsureTenantUsersAsync();
 
         if (!await _userManager.Users.AnyAsync())
         {
@@ -969,6 +970,8 @@ public class DataSeeder
             // ── Demo Pages ────────────────────────────────────────────────────
             await SeedDemoPagesAsync(demoTenant.Id);
         }
+
+        await SeedAuditLogsAsync();
     }
 
     private async Task SeedDemoPagesAsync(int demoTenantId)
@@ -1075,6 +1078,134 @@ public class DataSeeder
                 Position = i,
                 Width = i < 4 ? 3 : 6
             });
+        await _context.SaveChangesAsync();
+    }
+
+    private async Task EnsureTenantUsersAsync()
+    {
+        var testTenantSlugs = new[] { "shop", "news", "course", "retail" };
+
+        foreach (var slug in testTenantSlugs)
+        {
+            var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Slug == slug);
+            if (tenant == null) continue;
+
+            // Skip if tenant already has users
+            if (await _userManager.Users.AnyAsync(u => u.TenantId == tenant.Id)) continue;
+
+            var adminEmail = $"admin@{slug}.demo";
+            var userEmail  = $"user@{slug}.demo";
+
+            var tenantAdmin = new ApplicationUser
+            {
+                UserName = adminEmail,
+                Email = adminEmail,
+                DisplayName = $"Admin — {tenant.Name}",
+                EmailConfirmed = true,
+                IsActive = true,
+                TenantId = tenant.Id,
+                LastLoginAt = DateTime.UtcNow.AddDays(-1)
+            };
+            var r1 = await _userManager.CreateAsync(tenantAdmin, "TenantAdmin@123!");
+            if (r1.Succeeded)
+                await _userManager.AddToRoleAsync(tenantAdmin, "TenantAdmin");
+
+            var tenantUser = new ApplicationUser
+            {
+                UserName = userEmail,
+                Email = userEmail,
+                DisplayName = $"User — {tenant.Name}",
+                EmailConfirmed = true,
+                IsActive = true,
+                TenantId = tenant.Id,
+                LastLoginAt = DateTime.UtcNow.AddDays(-2)
+            };
+            var r2 = await _userManager.CreateAsync(tenantUser, "TenantUser@123!");
+            if (r2.Succeeded)
+                await _userManager.AddToRoleAsync(tenantUser, "TenantUser");
+        }
+    }
+
+    private async Task SeedAuditLogsAsync()
+    {
+        if (await _context.AuditLogs.AnyAsync()) return;
+
+        var now = DateTime.UtcNow;
+        var rand = new Random(42);
+
+        string RandomIp() => $"{rand.Next(1, 255)}.{rand.Next(0, 255)}.{rand.Next(0, 255)}.{rand.Next(1, 255)}";
+
+        var logs = new List<AuditLog>
+        {
+            // Login events
+            new() { Action = "Login", EntityType = "User", UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-30), Notes = "Đăng nhập thành công" },
+            new() { Action = "Login", EntityType = "User", UserEmail = "admin@widgetdata.com",      IpAddress = "192.168.1.2", Timestamp = now.AddDays(-25), Notes = "Đăng nhập thành công" },
+            new() { Action = "Login", EntityType = "User", UserEmail = "manager@widgetdata.com",    IpAddress = "192.168.1.3", Timestamp = now.AddDays(-20), Notes = "Đăng nhập thành công" },
+            new() { Action = "Login", EntityType = "User", UserEmail = "dev@widgetdata.com",        IpAddress = "10.0.0.1",    Timestamp = now.AddDays(-18), Notes = "Đăng nhập thành công" },
+            new() { Action = "Login", EntityType = "User", UserEmail = "admin@shop.demo",           IpAddress = "14.232.10.5", Timestamp = now.AddDays(-15), Notes = "Đăng nhập thành công" },
+            new() { Action = "Login", EntityType = "User", UserEmail = "admin@news.demo",           IpAddress = "14.232.20.6", Timestamp = now.AddDays(-10), Notes = "Đăng nhập thành công" },
+            new() { Action = "Login", EntityType = "User", UserEmail = "admin@course.demo",         IpAddress = "118.70.1.9",  Timestamp = now.AddDays(-8),  Notes = "Đăng nhập thành công" },
+            new() { Action = "Login", EntityType = "User", UserEmail = "admin@retail.demo",         IpAddress = "203.113.5.3", Timestamp = now.AddDays(-5),  Notes = "Đăng nhập thành công" },
+
+            // Tenant management
+            new() { Action = "CreateTenant", EntityType = "Tenant", EntityId = "shop",   UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-29), NewValues = "{\"name\":\"Shop Tenant\",\"plan\":\"starter\"}", Notes = "Tạo tenant mới" },
+            new() { Action = "CreateTenant", EntityType = "Tenant", EntityId = "news",   UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-28), NewValues = "{\"name\":\"News Tenant\",\"plan\":\"pro\"}", Notes = "Tạo tenant mới" },
+            new() { Action = "CreateTenant", EntityType = "Tenant", EntityId = "course", UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-27), NewValues = "{\"name\":\"Course Tenant\",\"plan\":\"pro\"}", Notes = "Tạo tenant mới" },
+            new() { Action = "CreateTenant", EntityType = "Tenant", EntityId = "retail", UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-26), NewValues = "{\"name\":\"Retail Tenant\",\"plan\":\"enterprise\"}", Notes = "Tạo tenant mới" },
+            new() { Action = "UpdateTenant", EntityType = "Tenant", EntityId = "shop",   UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-12), OldValues = "{\"plan\":\"free\"}",     NewValues = "{\"plan\":\"starter\"}", Notes = "Nâng cấp gói dịch vụ" },
+            new() { Action = "UpdateTenant", EntityType = "Tenant", EntityId = "retail", UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-6),  OldValues = "{\"plan\":\"pro\"}",      NewValues = "{\"plan\":\"enterprise\"}", Notes = "Nâng cấp lên Enterprise" },
+
+            // User management
+            new() { Action = "CreateUser", EntityType = "User", EntityId = "admin@shop.demo",   UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-24), NewValues = "{\"email\":\"admin@shop.demo\",\"role\":\"TenantAdmin\"}", Notes = "Tạo admin cho Shop Tenant" },
+            new() { Action = "CreateUser", EntityType = "User", EntityId = "user@shop.demo",    UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-24), NewValues = "{\"email\":\"user@shop.demo\",\"role\":\"TenantUser\"}", Notes = "Tạo user cho Shop Tenant" },
+            new() { Action = "CreateUser", EntityType = "User", EntityId = "admin@news.demo",   UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-23), NewValues = "{\"email\":\"admin@news.demo\",\"role\":\"TenantAdmin\"}", Notes = "Tạo admin cho News Tenant" },
+            new() { Action = "CreateUser", EntityType = "User", EntityId = "admin@course.demo", UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-22), NewValues = "{\"email\":\"admin@course.demo\",\"role\":\"TenantAdmin\"}", Notes = "Tạo admin cho Course Tenant" },
+            new() { Action = "CreateUser", EntityType = "User", EntityId = "admin@retail.demo", UserEmail = "superadmin@widgetdata.com", IpAddress = "192.168.1.1", Timestamp = now.AddDays(-21), NewValues = "{\"email\":\"admin@retail.demo\",\"role\":\"TenantAdmin\"}", Notes = "Tạo admin cho Retail Tenant" },
+            new() { Action = "AssignRole",  EntityType = "User", EntityId = "dev@widgetdata.com", UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-16), OldValues = "{\"role\":\"Viewer\"}", NewValues = "{\"role\":\"Developer\"}", Notes = "Thay đổi role người dùng" },
+            new() { Action = "UpdateUser",  EntityType = "User", EntityId = "manager@widgetdata.com", UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-9), Notes = "Cập nhật thông tin cá nhân" },
+
+            // DataSource operations
+            new() { Action = "CreateDataSource", EntityType = "DataSource", EntityId = "Cửa hàng - Sales DB",    UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-25), NewValues = "{\"type\":\"SQLite\"}", Notes = "Kết nối cơ sở dữ liệu bán hàng" },
+            new() { Action = "TestDataSource",   EntityType = "DataSource", EntityId = "Analytics REST API",     UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-14), Notes = "Kiểm tra kết nối API thành công" },
+            new() { Action = "TestDataSource",   EntityType = "DataSource", EntityId = "EduViet - Course DB",    UserEmail = "admin@course.demo",    IpAddress = RandomIp(), Timestamp = now.AddDays(-7),  Notes = "Kiểm tra kết nối thành công" },
+            new() { Action = "UpdateDataSource", EntityType = "DataSource", EntityId = "Analytics REST API",     UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-4),  OldValues = "{\"apiKey\":\"old-key\"}", NewValues = "{\"apiKey\":\"demo-api-key-12345\"}", Notes = "Cập nhật API key" },
+
+            // Widget operations
+            new() { Action = "CreateWidget", EntityType = "Widget", EntityId = "total_revenue_metric",        UserEmail = "admin@widgetdata.com",  IpAddress = RandomIp(), Timestamp = now.AddDays(-23), Notes = "Tạo widget KPI doanh thu" },
+            new() { Action = "CreateWidget", EntityType = "Widget", EntityId = "monthly_revenue_trend",       UserEmail = "admin@widgetdata.com",  IpAddress = RandomIp(), Timestamp = now.AddDays(-23), Notes = "Tạo biểu đồ xu hướng doanh thu" },
+            new() { Action = "UpdateWidget", EntityType = "Widget", EntityId = "monthly_revenue_trend",       UserEmail = "manager@widgetdata.com",IpAddress = RandomIp(), Timestamp = now.AddDays(-7),  OldValues = "{\"cacheTtl\":30}", NewValues = "{\"cacheTtl\":60}", Notes = "Tăng thời gian cache" },
+            new() { Action = "UpdateWidget", EntityType = "Widget", EntityId = "revenue_by_category_chart",   UserEmail = "admin@widgetdata.com",  IpAddress = RandomIp(), Timestamp = now.AddDays(-14), Notes = "Đổi từ Pie chart sang Bar chart" },
+            new() { Action = "CreateWidget", EntityType = "Widget", EntityId = "contact_form",                UserEmail = "admin@widgetdata.com",  IpAddress = RandomIp(), Timestamp = now.AddDays(-20), Notes = "Tạo form liên hệ khách hàng" },
+            new() { Action = "DisableWidget", EntityType = "Widget", EntityId = "low_stock_products",         UserEmail = "manager@widgetdata.com",IpAddress = RandomIp(), Timestamp = now.AddDays(-3),  Notes = "Tạm dừng widget kiểm kho" },
+            new() { Action = "EnableWidget",  EntityType = "Widget", EntityId = "low_stock_products",         UserEmail = "manager@widgetdata.com",IpAddress = RandomIp(), Timestamp = now.AddDays(-2),  Notes = "Kích hoạt lại widget kiểm kho" },
+
+            // Schedule operations
+            new() { Action = "CreateSchedule", EntityType = "WidgetSchedule", EntityId = "monthly_revenue_trend",  UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-22), NewValues = "{\"cron\":\"0 6 * * *\"}", Notes = "Lập lịch chạy hằng ngày lúc 6h sáng" },
+            new() { Action = "CreateSchedule", EntityType = "WidgetSchedule", EntityId = "recent_orders_table",    UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-22), NewValues = "{\"cron\":\"*/5 * * * *\"}", Notes = "Lập lịch chạy mỗi 5 phút" },
+            new() { Action = "UpdateSchedule", EntityType = "WidgetSchedule", EntityId = "daily_payment_trend",    UserEmail = "manager@widgetdata.com",IpAddress = RandomIp(), Timestamp = now.AddDays(-11), OldValues = "{\"cron\":\"0 */6 * * *\"}", NewValues = "{\"cron\":\"0 */4 * * *\"}", Notes = "Tăng tần suất chạy báo cáo thanh toán" },
+
+            // Page operations
+            new() { Action = "CreatePage", EntityType = "Page", EntityId = "sales",  UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-20), NewValues = "{\"slug\":\"sales\"}", Notes = "Tạo trang Sales Dashboard" },
+            new() { Action = "CreatePage", EntityType = "Page", EntityId = "course", UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-20), NewValues = "{\"slug\":\"course\"}", Notes = "Tạo trang Learning Dashboard" },
+            new() { Action = "CreatePage", EntityType = "Page", EntityId = "news",   UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-20), NewValues = "{\"slug\":\"news\"}", Notes = "Tạo trang News Analytics" },
+            new() { Action = "UpdatePage", EntityType = "Page", EntityId = "sales",  UserEmail = "manager@widgetdata.com",IpAddress = RandomIp(), Timestamp = now.AddDays(-8), Notes = "Cập nhật bố cục trang bán hàng" },
+
+            // Delivery operations
+            new() { Action = "CreateDelivery", EntityType = "DeliveryTarget", EntityId = "Báo cáo doanh thu hàng ngày (Email)", UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-19), NewValues = "{\"type\":\"Email\"}", Notes = "Cấu hình gửi báo cáo qua email" },
+            new() { Action = "CreateDelivery", EntityType = "DeliveryTarget", EntityId = "Thông báo đơn hàng mới (Telegram)",  UserEmail = "admin@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddDays(-19), NewValues = "{\"type\":\"Telegram\"}", Notes = "Cấu hình thông báo Telegram" },
+
+            // Inactivity alerts
+            new() { Action = "InactivityAlert", EntityType = "Widget", EntityId = "low_stock_products",   UserEmail = null, IpAddress = "127.0.0.1", Timestamp = now.AddDays(-5), Notes = "Widget không chạy quá 48h, đã gửi cảnh báo" },
+            new() { Action = "InactivityAlert", EntityType = "Widget", EntityId = "daily_payment_trend",  UserEmail = null, IpAddress = "127.0.0.1", Timestamp = now.AddDays(-2), Notes = "Widget không chạy quá 24h, đã gửi cảnh báo" },
+
+            // Recent activity (last few hours)
+            new() { Action = "Login",        EntityType = "User",   UserEmail = "admin@widgetdata.com",  IpAddress = RandomIp(), Timestamp = now.AddHours(-6),  Notes = "Đăng nhập thành công" },
+            new() { Action = "UpdateWidget", EntityType = "Widget", EntityId = "top_products_by_revenue", UserEmail = "manager@widgetdata.com", IpAddress = RandomIp(), Timestamp = now.AddHours(-4), Notes = "Cập nhật câu truy vấn widget" },
+            new() { Action = "Login",        EntityType = "User",   UserEmail = "dev@widgetdata.com",     IpAddress = RandomIp(), Timestamp = now.AddHours(-2),  Notes = "Đăng nhập thành công" },
+            new() { Action = "TestDataSource", EntityType = "DataSource", EntityId = "VietNews - News DB", UserEmail = "admin@news.demo", IpAddress = RandomIp(), Timestamp = now.AddHours(-1), Notes = "Kiểm tra kết nối thành công" }
+        };
+
+        _context.AuditLogs.AddRange(logs);
         await _context.SaveChangesAsync();
     }
 
