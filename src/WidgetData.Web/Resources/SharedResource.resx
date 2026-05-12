@@ -756,4 +756,25 @@
   <data name="Admin_Tenants" xml:space="preserve">
     <value>Tenant Management</value>
   </data>
+  <data name="Nav_GroupOverview" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="Nav_GroupContent" xml:space="preserve">
+    <value>Content</value>
+  </data>
+  <data name="Nav_GroupWidgetData" xml:space="preserve">
+    <value>Widgets &amp; Data</value>
+  </data>
+  <data name="Nav_GroupOperations" xml:space="preserve">
+    <value>Operations</value>
+  </data>
+  <data name="Nav_GroupSystem" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="Nav_WidgetActivity" xml:space="preserve">
+    <value>Widget Activity</value>
+  </data>
+  <data name="Nav_AuditLogs" xml:space="preserve">
+    <value>Audit Log</value>
+  </data>
 </root>

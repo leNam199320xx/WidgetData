@@ -756,4 +756,25 @@
   <data name="Admin_Tenants" xml:space="preserve">
     <value>Quản lý Tenant</value>
   </data>
+  <data name="Nav_GroupOverview" xml:space="preserve">
+    <value>Tổng quan</value>
+  </data>
+  <data name="Nav_GroupContent" xml:space="preserve">
+    <value>Nội dung</value>
+  </data>
+  <data name="Nav_GroupWidgetData" xml:space="preserve">
+    <value>Widget &amp; Dữ liệu</value>
+  </data>
+  <data name="Nav_GroupOperations" xml:space="preserve">
+    <value>Vận hành</value>
+  </data>
+  <data name="Nav_GroupSystem" xml:space="preserve">
+    <value>Hệ thống</value>
+  </data>
+  <data name="Nav_WidgetActivity" xml:space="preserve">
+    <value>Hoạt động Widget</value>
+  </data>
+  <data name="Nav_AuditLogs" xml:space="preserve">
+    <value>Nhật ký kiểm toán</value>
+  </data>
 </root>
