@@ -53,8 +53,7 @@ public class DataSeeder
                 IsActive = true,
                 CreatedBy = "system",
                 LastTestedAt = DateTime.UtcNow,
-                LastTestResult = "Connection successful",
-                TenantId = demoTenant.Id
+                LastTestResult = "Connection successful"
             };
             var dsApi = new DataSource
             {
@@ -66,8 +65,7 @@ public class DataSeeder
                 IsActive = true,
                 CreatedBy = "system",
                 LastTestedAt = DateTime.UtcNow.AddHours(-1),
-                LastTestResult = "Connection successful",
-                TenantId = demoTenant.Id
+                LastTestResult = "Connection successful"
             };
             var dsCourse = new DataSource
             {
@@ -78,8 +76,7 @@ public class DataSeeder
                 IsActive = true,
                 CreatedBy = "system",
                 LastTestedAt = DateTime.UtcNow,
-                LastTestResult = "Connection successful",
-                TenantId = demoTenant.Id
+                LastTestResult = "Connection successful"
             };
             var dsNews = new DataSource
             {
@@ -90,8 +87,7 @@ public class DataSeeder
                 IsActive = true,
                 CreatedBy = "system",
                 LastTestedAt = DateTime.UtcNow,
-                LastTestResult = "Connection successful",
-                TenantId = demoTenant.Id
+                LastTestResult = "Connection successful"
             };
             _context.DataSources.AddRange(dsSales, dsApi, dsCourse, dsNews);
             await _context.SaveChangesAsync();
@@ -102,32 +98,28 @@ public class DataSeeder
                 Name = "Tổng quan doanh thu",
                 Description = "Dashboard tổng quan về doanh thu, đơn hàng và hiệu suất kinh doanh",
                 IsActive = true,
-                CreatedBy = "system",
-                TenantId = demoTenant.Id
+                CreatedBy = "system"
             };
             var grpProducts = new WidgetGroup
             {
                 Name = "Báo cáo sản phẩm",
                 Description = "Phân tích doanh số theo sản phẩm và danh mục",
                 IsActive = true,
-                CreatedBy = "system",
-                TenantId = demoTenant.Id
+                CreatedBy = "system"
             };
             var grpCustomers = new WidgetGroup
             {
                 Name = "Báo cáo khách hàng",
                 Description = "Thống kê khách hàng, doanh thu theo khách hàng",
                 IsActive = true,
-                CreatedBy = "system",
-                TenantId = demoTenant.Id
+                CreatedBy = "system"
             };
             var grpPayments = new WidgetGroup
             {
                 Name = "Báo cáo thanh toán",
                 Description = "Phân tích phương thức thanh toán và trạng thái giao dịch",
                 IsActive = true,
-                CreatedBy = "system",
-                TenantId = demoTenant.Id
+                CreatedBy = "system"
             };
             _context.WidgetGroups.AddRange(grpOverview, grpProducts, grpCustomers, grpPayments);
             await _context.SaveChangesAsync();
@@ -1041,18 +1033,18 @@ public class DataSeeder
             await _context.SaveChangesAsync();
 
             // ── Demo Pages ────────────────────────────────────────────────────
-            await SeedDemoPagesAsync(demoTenant.Id);
+            await SeedDemoPagesAsync(demoTenant.Id, tenantBySlug);
         }
 
         await SeedAuditLogsAsync(adminSeed.AuditLogs);
     }
 
-    private async Task SeedDemoPagesAsync(int demoTenantId)
+    private async Task SeedDemoPagesAsync(int demoTenantId, Dictionary<string, Tenant> tenantBySlug)
     {
         if (await _context.Pages.IgnoreQueryFilters().AnyAsync(p => p.TenantId == demoTenantId))
             return;
 
-        // Sales demo page
+        // Sales demo page (demo tenant)
         var salesPage = new Page
         {
             TenantId = demoTenantId,
@@ -1085,7 +1077,7 @@ public class DataSeeder
             });
         await _context.SaveChangesAsync();
 
-        // Course demo page
+        // Course demo page (demo tenant)
         var coursePage = new Page
         {
             TenantId = demoTenantId,
@@ -1119,7 +1111,7 @@ public class DataSeeder
             });
         await _context.SaveChangesAsync();
 
-        // News demo page
+        // News demo page (demo tenant)
         var newsPage = new Page
         {
             TenantId = demoTenantId,
@@ -1148,6 +1140,61 @@ public class DataSeeder
             {
                 PageId = newsPage.Id,
                 WidgetId = newsWidgets[i].Id,
+                Position = i,
+                Width = i < 4 ? 3 : 6
+            });
+        await _context.SaveChangesAsync();
+
+        // ── Pages for shop / news / course / retail tenants ──────────────────
+        // Each tenant gets its own set of pages that reuse the shared demo widgets.
+
+        if (tenantBySlug.TryGetValue("shop", out var shopTenant))
+            await SeedTenantPageAsync(shopTenant.Id, "shop-sales-dashboard", "Shop - Sales Dashboard",
+                "Dashboard bán hàng cho Shop Tenant: doanh thu, đơn hàng và khách hàng",
+                salesWidgetNames);
+
+        if (tenantBySlug.TryGetValue("news", out var newsTenant))
+            await SeedTenantPageAsync(newsTenant.Id, "vietnews-analytics", "VietNews - News Analytics",
+                "Dashboard phân tích tin tức cho News Tenant: lượt xem, bài viết và độc giả",
+                newsWidgetNames);
+
+        if (tenantBySlug.TryGetValue("course", out var courseTenant))
+            await SeedTenantPageAsync(courseTenant.Id, "eduviet-learning", "EduViet - Learning Dashboard",
+                "Dashboard học trực tuyến cho Course Tenant: khóa học, học viên và tiến độ",
+                courseWidgetNames);
+
+        if (tenantBySlug.TryGetValue("retail", out var retailTenant))
+            await SeedTenantPageAsync(retailTenant.Id, "retail-overview", "Retail - Overview Dashboard",
+                "Dashboard tổng quan cho Retail Tenant: doanh thu, sản phẩm và thanh toán",
+                salesWidgetNames);
+    }
+
+    private async Task SeedTenantPageAsync(int tenantId, string slug, string title, string description, string[] widgetNames)
+    {
+        if (await _context.Pages.IgnoreQueryFilters().AnyAsync(p => p.TenantId == tenantId))
+            return;
+
+        var page = new Page
+        {
+            TenantId = tenantId,
+            Title = title,
+            Slug = slug,
+            Description = description,
+            IsActive = true,
+            CreatedBy = "system"
+        };
+        _context.Pages.Add(page);
+        await _context.SaveChangesAsync();
+
+        var widgets = await _context.Widgets.IgnoreQueryFilters()
+            .Where(w => widgetNames.Contains(w.Name))
+            .OrderBy(w => Array.IndexOf(widgetNames, w.Name))
+            .ToListAsync();
+        for (int i = 0; i < widgets.Count; i++)
+            _context.PageWidgets.Add(new PageWidget
+            {
+                PageId = page.Id,
+                WidgetId = widgets[i].Id,
                 Position = i,
                 Width = i < 4 ? 3 : 6
             });

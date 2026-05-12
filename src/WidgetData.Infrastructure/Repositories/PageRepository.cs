@@ -15,11 +15,25 @@ public class PageRepository : IPageRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<Page>> GetAllByTenantAsync(int tenantId, ScreenType? screenType = null)
+    public async Task<IEnumerable<Page>> GetAllAsync(int? tenantId = null, ScreenType? screenType = null)
     {
-        IQueryable<Page> query = _context.Pages
-            .IgnoreQueryFilters()
-            .Where(p => p.TenantId == tenantId);
+        IQueryable<Page> query;
+
+        if (tenantId.HasValue)
+        {
+            // Explicit tenant filter bypasses the global query filter so the
+            // caller gets exactly the pages for the given tenant.
+            query = _context.Pages
+                .IgnoreQueryFilters()
+                .Where(p => p.TenantId == tenantId.Value);
+        }
+        else
+        {
+            // No tenant specified – rely on the EF Core global query filter.
+            // For SuperAdmin / users with CurrentTenantId == null this returns
+            // all pages; for regular tenant users it returns their own pages.
+            query = _context.Pages;
+        }
 
         query = query
             .Include(p => p.PageWidgets)

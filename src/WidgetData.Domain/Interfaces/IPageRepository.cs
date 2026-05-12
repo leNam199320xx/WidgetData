@@ -5,7 +5,7 @@ namespace WidgetData.Domain.Interfaces;
 
 public interface IPageRepository
 {
-    Task<IEnumerable<Page>> GetAllByTenantAsync(int tenantId, ScreenType? screenType = null);
+    Task<IEnumerable<Page>> GetAllAsync(int? tenantId = null, ScreenType? screenType = null);
     Task<Page?> GetByIdAsync(int id);
     Task<Page?> GetBySlugAsync(string slug, int? tenantId = null);
     Task<Page> CreateAsync(Page page);

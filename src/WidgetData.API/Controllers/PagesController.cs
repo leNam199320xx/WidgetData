@@ -53,9 +53,9 @@ public class PagesController : ControllerBase
     public async Task<IActionResult> GetAll([FromQuery] ScreenType? screenType = null)
     {
         var tenantId = GetCurrentTenantId();
-        if (tenantId == null) return Forbid();
-
-        var pages = await _pageService.GetAllAsync(tenantId.Value, screenType);
+        // When tenantId is null (Admin/SuperAdmin without a tenant context), pass null
+        // to the service so the EF Core global query filter returns all accessible pages.
+        var pages = await _pageService.GetAllAsync(tenantId, screenType);
         return Ok(pages);
     }
 

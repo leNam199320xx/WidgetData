@@ -16,9 +16,9 @@ public class PageService : IPageService
         _repo = repo;
     }
 
-    public async Task<IEnumerable<PageDto>> GetAllAsync(int tenantId, ScreenType? screenType = null)
+    public async Task<IEnumerable<PageDto>> GetAllAsync(int? tenantId = null, ScreenType? screenType = null)
     {
-        var pages = await _repo.GetAllByTenantAsync(tenantId, screenType);
+        var pages = await _repo.GetAllAsync(tenantId, screenType);
         return pages.Select(MapToDto);
     }
 
