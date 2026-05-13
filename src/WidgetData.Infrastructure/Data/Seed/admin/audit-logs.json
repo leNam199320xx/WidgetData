@@ -48,12 +48,42 @@
     "notes": "Tạo tenant mới"
   },
   {
+    "action": "CreateTenant",
+    "entityType": "Tenant",
+    "entityId": "health",
+    "userEmail": "superadmin@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 84,
+    "newValues": "{\"name\":\"Healthcare Tenant\",\"plan\":\"enterprise\"}",
+    "notes": "Tạo tenant ngành y tế"
+  },
+  {
+    "action": "CreateTenant",
+    "entityType": "Tenant",
+    "entityId": "logistics",
+    "userEmail": "superadmin@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 83,
+    "newValues": "{\"name\":\"Logistics Tenant\",\"plan\":\"starter\"}",
+    "notes": "Tạo tenant logistics"
+  },
+  {
+    "action": "CreateTenant",
+    "entityType": "Tenant",
+    "entityId": "fintech",
+    "userEmail": "superadmin@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 82,
+    "newValues": "{\"name\":\"Fintech Tenant\",\"plan\":\"pro\",\"isActive\":false}",
+    "notes": "Tạo tenant fintech ở trạng thái tạm khóa"
+  },
+  {
     "action": "CreateUser",
     "entityType": "User",
     "entityId": "admin@widgetdata.com",
     "userEmail": "superadmin@widgetdata.com",
     "ipAddress": "192.168.1.1",
-    "daysAgo": 85,
+    "daysAgo": 81,
     "newValues": "{\"role\":\"Admin\"}",
     "notes": "Tạo admin hệ thống"
   },
@@ -63,7 +93,7 @@
     "entityId": "manager@widgetdata.com",
     "userEmail": "superadmin@widgetdata.com",
     "ipAddress": "192.168.1.1",
-    "daysAgo": 85,
+    "daysAgo": 80,
     "newValues": "{\"role\":\"Manager\"}",
     "notes": "Tạo manager"
   },
@@ -73,57 +103,39 @@
     "entityId": "dev@widgetdata.com",
     "userEmail": "superadmin@widgetdata.com",
     "ipAddress": "192.168.1.1",
-    "daysAgo": 84,
+    "daysAgo": 79,
     "newValues": "{\"role\":\"Developer\"}",
     "notes": "Tạo developer"
   },
   {
     "action": "CreateUser",
     "entityType": "User",
-    "entityId": "admin@shop.demo",
+    "entityId": "analyst@widgetdata.com",
     "userEmail": "superadmin@widgetdata.com",
-    "ipAddress": "192.168.1.1",
-    "daysAgo": 72,
-    "newValues": "{\"role\":\"TenantAdmin\"}",
-    "notes": "Tạo admin cho Shop Tenant"
-  },
-  {
-    "action": "CreateUser",
-    "entityType": "User",
-    "entityId": "admin@news.demo",
-    "userEmail": "superadmin@widgetdata.com",
-    "ipAddress": "192.168.1.1",
-    "daysAgo": 71,
-    "newValues": "{\"role\":\"TenantAdmin\"}",
-    "notes": "Tạo admin cho News Tenant"
-  },
-  {
-    "action": "CreateUser",
-    "entityType": "User",
-    "entityId": "admin@course.demo",
-    "userEmail": "superadmin@widgetdata.com",
-    "ipAddress": "192.168.1.1",
-    "daysAgo": 70,
-    "newValues": "{\"role\":\"TenantAdmin\"}",
-    "notes": "Tạo admin cho Course Tenant"
-  },
-  {
-    "action": "CreateUser",
-    "entityType": "User",
-    "entityId": "admin@retail.demo",
-    "userEmail": "superadmin@widgetdata.com",
-    "ipAddress": "192.168.1.1",
-    "daysAgo": 70,
-    "newValues": "{\"role\":\"TenantAdmin\"}",
-    "notes": "Tạo admin cho Retail Tenant"
-  },
-  {
-    "action": "Login",
-    "entityType": "User",
-    "userEmail": "admin@widgetdata.com",
     "randomIp": true,
-    "daysAgo": 65,
-    "notes": "Đăng nhập thành công"
+    "daysAgo": 78,
+    "newValues": "{\"roles\":[\"Analyst\",\"Viewer\"]}",
+    "notes": "Tạo analyst"
+  },
+  {
+    "action": "CreateUser",
+    "entityType": "User",
+    "entityId": "support@widgetdata.com",
+    "userEmail": "superadmin@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 77,
+    "newValues": "{\"roles\":[\"Support\",\"Viewer\"]}",
+    "notes": "Tạo support engineer"
+  },
+  {
+    "action": "CreateUser",
+    "entityType": "User",
+    "entityId": "ops@widgetdata.com",
+    "userEmail": "superadmin@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 76,
+    "newValues": "{\"roles\":[\"Ops\",\"Auditor\"]}",
+    "notes": "Tạo ops engineer"
   },
   {
     "action": "CreateDataSource",
@@ -131,89 +143,272 @@
     "entityId": "Cửa hàng - Sales DB",
     "userEmail": "admin@widgetdata.com",
     "randomIp": true,
-    "daysAgo": 62,
-    "newValues": "{\"type\":\"SQLite\"}",
-    "notes": "Kết nối CSDL bán hàng"
+    "daysAgo": 75,
+    "notes": "Khởi tạo data source Sales"
   },
   {
-    "action": "UpdateWidget",
-    "entityType": "Widget",
-    "entityId": "revenue_by_category_chart",
+    "action": "CreateDataSource",
+    "entityType": "DataSource",
+    "entityId": "EduViet - Course DB",
     "userEmail": "admin@widgetdata.com",
     "randomIp": true,
-    "daysAgo": 60,
-    "oldValues": "{\"type\":\"Pie\"}",
-    "newValues": "{\"type\":\"Bar\"}",
-    "notes": "Đổi chart type từ Pie sang Bar"
+    "daysAgo": 74,
+    "notes": "Khởi tạo data source Course"
   },
   {
-    "action": "CreateDelivery",
-    "entityType": "DeliveryTarget",
-    "entityId": "Báo cáo doanh thu hàng ngày (Email)",
+    "action": "CreateDataSource",
+    "entityType": "DataSource",
+    "entityId": "VietNews - News DB",
     "userEmail": "admin@widgetdata.com",
     "randomIp": true,
-    "daysAgo": 59,
-    "newValues": "{\"type\":\"Email\"}",
-    "notes": "Cấu hình delivery email"
+    "daysAgo": 74,
+    "notes": "Khởi tạo data source News"
   },
   {
-    "action": "UpdateSchedule",
-    "entityType": "WidgetSchedule",
-    "entityId": "daily_payment_trend",
+    "action": "CreateWidgetGroup",
+    "entityType": "WidgetGroup",
+    "entityId": "Tổng quan doanh thu",
     "userEmail": "manager@widgetdata.com",
     "randomIp": true,
-    "daysAgo": 50,
-    "oldValues": "{\"cron\":\"0 */6 * * *\"}",
-    "newValues": "{\"cron\":\"0 */4 * * *\"}",
-    "notes": "Tăng tần suất chạy"
+    "daysAgo": 73,
+    "notes": "Tạo nhóm widget tổng quan"
   },
   {
-    "action": "UpdateTenant",
-    "entityType": "Tenant",
-    "entityId": "shop",
-    "userEmail": "superadmin@widgetdata.com",
-    "ipAddress": "192.168.1.1",
-    "daysAgo": 39,
-    "oldValues": "{\"plan\":\"free\"}",
-    "newValues": "{\"plan\":\"starter\"}",
-    "notes": "Nâng cấp gói dịch vụ"
-  },
-  {
-    "action": "UpdateWidget",
-    "entityType": "Widget",
-    "entityId": "top_products_by_revenue",
+    "action": "CreateWidgetGroup",
+    "entityType": "WidgetGroup",
+    "entityId": "Báo cáo sản phẩm",
     "userEmail": "manager@widgetdata.com",
     "randomIp": true,
-    "daysAgo": 31,
-    "notes": "Thêm cột danh mục vào bảng"
-  },
-  {
-    "action": "UpdateWidget",
-    "entityType": "Widget",
-    "entityId": "low_stock_products",
-    "userEmail": "admin@widgetdata.com",
-    "randomIp": true,
-    "daysAgo": 30,
-    "oldValues": "{\"threshold\":100}",
-    "newValues": "{\"threshold\":50}",
-    "notes": "Giảm ngưỡng tồn kho"
+    "daysAgo": 72,
+    "notes": "Tạo nhóm widget sản phẩm"
   },
   {
     "action": "CreateWidget",
     "entityType": "Widget",
-    "entityId": "avg_order_value_metric",
+    "entityId": "monthly_revenue_trend",
+    "userEmail": "dev@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 71,
+    "notes": "Khởi tạo widget chart doanh thu theo tháng"
+  },
+  {
+    "action": "CreateWidget",
+    "entityType": "Widget",
+    "entityId": "top_products_by_revenue",
+    "userEmail": "dev@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 70,
+    "notes": "Khởi tạo widget top sản phẩm"
+  },
+  {
+    "action": "CreateSchedule",
+    "entityType": "WidgetSchedule",
+    "entityId": "monthly_revenue_trend",
+    "userEmail": "manager@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 69,
+    "newValues": "{\"cron\":\"0 6 * * *\",\"timezone\":\"Asia/Ho_Chi_Minh\"}",
+    "notes": "Thiết lập schedule chạy mỗi sáng"
+  },
+  {
+    "action": "TriggerSchedule",
+    "entityType": "WidgetSchedule",
+    "entityId": "monthly_revenue_trend",
+    "userEmail": "ops@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 66,
+    "notes": "Trigger schedule thủ công để kiểm tra"
+  },
+  {
+    "action": "ArchiveWidgetConfig",
+    "entityType": "WidgetConfigArchive",
+    "entityId": "monthly_revenue_trend",
     "userEmail": "admin@widgetdata.com",
     "randomIp": true,
-    "daysAgo": 29,
-    "notes": "Tạo KPI giá trị đơn TB"
+    "daysAgo": 60,
+    "notes": "Lưu cấu hình trước khi chỉnh sửa"
+  },
+  {
+    "action": "UpdateWidget",
+    "entityType": "Widget",
+    "entityId": "monthly_revenue_trend",
+    "userEmail": "dev@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 59,
+    "oldValues": "{\"chart\":\"bar\"}",
+    "newValues": "{\"chart\":\"line\"}",
+    "notes": "Đổi loại chart từ Bar sang Line"
+  },
+  {
+    "action": "CreatePage",
+    "entityType": "Page",
+    "entityId": "sales",
+    "userEmail": "admin@shop.demo",
+    "randomIp": true,
+    "daysAgo": 58,
+    "notes": "Tạo trang sales cho tenant shop"
+  },
+  {
+    "action": "CreatePage",
+    "entityType": "Page",
+    "entityId": "news",
+    "userEmail": "admin@news.demo",
+    "randomIp": true,
+    "daysAgo": 57,
+    "notes": "Tạo trang analytics cho tenant news"
+  },
+  {
+    "action": "PublishPage",
+    "entityType": "Page",
+    "entityId": "sales",
+    "userEmail": "admin@shop.demo",
+    "randomIp": true,
+    "daysAgo": 56,
+    "notes": "Publish trang sales lần đầu"
+  },
+  {
+    "action": "PublishPage",
+    "entityType": "Page",
+    "entityId": "news",
+    "userEmail": "admin@news.demo",
+    "randomIp": true,
+    "daysAgo": 55,
+    "notes": "Publish trang news analytics"
+  },
+  {
+    "action": "CreatePermission",
+    "entityType": "Permission",
+    "entityId": "user@shop.demo:top_products_by_revenue",
+    "userEmail": "admin@shop.demo",
+    "randomIp": true,
+    "daysAgo": 52,
+    "notes": "Cấp quyền xem widget cho user tenant"
+  },
+  {
+    "action": "TestDataSource",
+    "entityType": "DataSource",
+    "entityId": "Analytics REST API",
+    "userEmail": "admin@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 50,
+    "notes": "Kiểm tra kết nối API thành công"
+  },
+  {
+    "action": "DeliveryTriggered",
+    "entityType": "DeliveryTarget",
+    "entityId": "Báo cáo doanh thu hàng ngày (Email)",
+    "userEmail": "ops@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 45,
+    "notes": "Trigger gửi báo cáo email thủ công"
+  },
+  {
+    "action": "DeliveryFailed",
+    "entityType": "DeliveryTarget",
+    "entityId": "Thông báo đơn hàng mới (Telegram)",
+    "userEmail": "ops@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 44,
+    "notes": "Telegram API timeout, sẽ retry"
+  },
+  {
+    "action": "CreateIdeaPost",
+    "entityType": "IdeaPost",
+    "entityId": "Thêm bộ lọc theo khoảng giá",
+    "userEmail": "user@shop.demo",
+    "randomIp": true,
+    "daysAgo": 40,
+    "notes": "Người dùng gửi feedback sản phẩm"
+  },
+  {
+    "action": "ProcessIdeaPost",
+    "entityType": "IdeaPost",
+    "entityId": "Thêm bộ lọc theo khoảng giá",
+    "userEmail": "manager@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 39,
+    "notes": "Phân công dev xử lý ý tưởng"
+  },
+  {
+    "action": "RollbackPage",
+    "entityType": "Page",
+    "entityId": "sales",
+    "userEmail": "admin@shop.demo",
+    "randomIp": true,
+    "daysAgo": 35,
+    "notes": "Rollback về version ổn định do lỗi layout"
+  },
+  {
+    "action": "DisableTenant",
+    "entityType": "Tenant",
+    "entityId": "fintech",
+    "userEmail": "superadmin@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 32,
+    "oldValues": "{\"isActive\":true}",
+    "newValues": "{\"isActive\":false}",
+    "notes": "Tạm khóa tenant do chưa hoàn tất xác minh billing"
   },
   {
     "action": "Login",
     "entityType": "User",
-    "userEmail": "admin@retail.demo",
+    "userEmail": "admin@health.demo",
     "randomIp": true,
-    "daysAgo": 19,
-    "notes": "Đăng nhập thành công"
+    "daysAgo": 30,
+    "notes": "Đăng nhập tài khoản tenant healthcare"
+  },
+  {
+    "action": "CreateWidget",
+    "entityType": "Widget",
+    "entityId": "health_patient_kpi",
+    "userEmail": "admin@health.demo",
+    "randomIp": true,
+    "daysAgo": 29,
+    "notes": "Tạo widget KPI bệnh nhân cho tenant health"
+  },
+  {
+    "action": "CreatePage",
+    "entityType": "Page",
+    "entityId": "health-overview",
+    "userEmail": "admin@health.demo",
+    "randomIp": true,
+    "daysAgo": 28,
+    "notes": "Tạo trang dashboard health overview"
+  },
+  {
+    "action": "Login",
+    "entityType": "User",
+    "userEmail": "admin@logistics.demo",
+    "randomIp": true,
+    "daysAgo": 26,
+    "notes": "Đăng nhập tài khoản tenant logistics"
+  },
+  {
+    "action": "CreateWidget",
+    "entityType": "Widget",
+    "entityId": "logistics_delivery_time",
+    "userEmail": "admin@logistics.demo",
+    "randomIp": true,
+    "daysAgo": 25,
+    "notes": "Tạo widget theo dõi thời gian giao hàng"
+  },
+  {
+    "action": "CreatePage",
+    "entityType": "Page",
+    "entityId": "logistics-operations",
+    "userEmail": "admin@logistics.demo",
+    "randomIp": true,
+    "daysAgo": 24,
+    "notes": "Tạo trang operations cho tenant logistics"
+  },
+  {
+    "action": "UpdateWidget",
+    "entityType": "Widget",
+    "entityId": "customers_by_city_chart",
+    "userEmail": "admin@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 20,
+    "notes": "Thêm tham số groupBy"
   },
   {
     "action": "TestDataSource",
@@ -225,13 +420,40 @@
     "notes": "Kiểm tra kết nối API thành công"
   },
   {
-    "action": "UpdateWidget",
-    "entityType": "Widget",
-    "entityId": "customers_by_city_chart",
-    "userEmail": "admin@widgetdata.com",
+    "action": "EnableSchedule",
+    "entityType": "WidgetSchedule",
+    "entityId": "daily_payment_trend",
+    "userEmail": "ops@widgetdata.com",
     "randomIp": true,
-    "daysAgo": 16,
-    "notes": "Thêm tham số groupBy"
+    "daysAgo": 14,
+    "notes": "Bật lại schedule sau khi ổn định hạ tầng"
+  },
+  {
+    "action": "PublishPage",
+    "entityType": "Page",
+    "entityId": "course",
+    "userEmail": "admin@course.demo",
+    "randomIp": true,
+    "daysAgo": 10,
+    "notes": "Publish trang learning dashboard"
+  },
+  {
+    "action": "RunAuditExport",
+    "entityType": "AuditLog",
+    "entityId": "monthly-audit-export",
+    "userEmail": "auditor@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 7,
+    "notes": "Xuất báo cáo audit định kỳ"
+  },
+  {
+    "action": "ResetPassword",
+    "entityType": "User",
+    "entityId": "user@retail.demo",
+    "userEmail": "support@widgetdata.com",
+    "randomIp": true,
+    "daysAgo": 5,
+    "notes": "Hỗ trợ reset mật khẩu người dùng retail"
   },
   {
     "action": "Login",

@@ -5,5 +5,10 @@
   "Viewer",
   "SuperAdmin",
   "TenantAdmin",
-  "TenantUser"
+  "TenantUser",
+  "Analyst",
+  "Support",
+  "Ops",
+  "Auditor",
+  "ContentEditor"
 ]
