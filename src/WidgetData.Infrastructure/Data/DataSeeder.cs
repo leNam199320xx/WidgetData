@@ -34,22 +34,29 @@ public class DataSeeder
         if (!tenantBySlug.TryGetValue("demo", out var demoTenant))
             throw new InvalidOperationException("Missing required 'demo' tenant in admin seed data.");
 
-        // Ensure SQLite demo databases exist
-        var salesDbPath  = Path.Combine(AppContext.BaseDirectory, "sales.db");
-        var courseDbPath = Path.Combine(AppContext.BaseDirectory, "course.db");
-        var newsDbPath   = Path.Combine(AppContext.BaseDirectory, "news.db");
-        SalesDataSeeder.EnsureSalesDatabase(salesDbPath);
-        CourseDataSeeder.EnsureCourseDatabase(courseDbPath);
-        NewsDataSeeder.EnsureNewsDatabase(newsDbPath);
+        var salesJsonPath = Path.Combine(AppContext.BaseDirectory, "demo-sales.json");
+        var courseJsonPath = Path.Combine(AppContext.BaseDirectory, "demo-course.json");
+        var newsJsonPath = Path.Combine(AppContext.BaseDirectory, "demo-news.json");
+
+        EnsureDemoJsonFile(salesJsonPath, GetSalesDemoJson());
+        EnsureDemoJsonFile(courseJsonPath, GetCourseDemoJson());
+        EnsureDemoJsonFile(newsJsonPath, GetNewsDemoJson());
+        await EnsureDemoSourcesUseJsonFilesAsync(salesJsonPath, courseJsonPath, newsJsonPath);
 
         if (!await _context.DataSources.AnyAsync())
         {
             var dsSales = new DataSource
             {
-                Name = "Cửa hàng - Sales DB",
-                SourceType = DataSourceType.SQLite,
-                Description = "Cơ sở dữ liệu SQLite chứa dữ liệu bán hàng, khách hàng, sản phẩm và thanh toán",
-                ConnectionString = $"Data Source={salesDbPath}",
+                Name = "Cửa hàng - Sales Data",
+                SourceType = DataSourceType.Json,
+                Description = "Dữ liệu JSON demo cho bán hàng, khách hàng, sản phẩm và thanh toán",
+                FileStoragePath = salesJsonPath,
+                OriginalFileName = "demo-sales.json",
+                StoredFileName = "demo-sales.json",
+                FileContentType = "application/json",
+                FileSizeBytes = new FileInfo(salesJsonPath).Length,
+                FileUploadedAt = DateTime.UtcNow,
+                FileUploadedBy = "system",
                 IsActive = true,
                 CreatedBy = "system",
                 LastTestedAt = DateTime.UtcNow,
@@ -69,10 +76,16 @@ public class DataSeeder
             };
             var dsCourse = new DataSource
             {
-                Name = "EduViet - Course DB",
-                SourceType = DataSourceType.SQLite,
-                Description = "Cơ sở dữ liệu SQLite cho nền tảng học trực tuyến EduViet: khóa học, học viên, đăng ký, thanh toán",
-                ConnectionString = $"Data Source={courseDbPath}",
+                Name = "EduViet - Course Data",
+                SourceType = DataSourceType.Json,
+                Description = "Dữ liệu JSON demo cho nền tảng học trực tuyến EduViet",
+                FileStoragePath = courseJsonPath,
+                OriginalFileName = "demo-course.json",
+                StoredFileName = "demo-course.json",
+                FileContentType = "application/json",
+                FileSizeBytes = new FileInfo(courseJsonPath).Length,
+                FileUploadedAt = DateTime.UtcNow,
+                FileUploadedBy = "system",
                 IsActive = true,
                 CreatedBy = "system",
                 LastTestedAt = DateTime.UtcNow,
@@ -80,10 +93,16 @@ public class DataSeeder
             };
             var dsNews = new DataSource
             {
-                Name = "VietNews - News DB",
-                SourceType = DataSourceType.SQLite,
-                Description = "Cơ sở dữ liệu SQLite cho cổng tin tức VietNews: bài viết, độc giả, lượt xem, bình luận",
-                ConnectionString = $"Data Source={newsDbPath}",
+                Name = "VietNews - News Data",
+                SourceType = DataSourceType.Json,
+                Description = "Dữ liệu JSON demo cho cổng tin tức VietNews",
+                FileStoragePath = newsJsonPath,
+                OriginalFileName = "demo-news.json",
+                StoredFileName = "demo-news.json",
+                FileContentType = "application/json",
+                FileSizeBytes = new FileInfo(newsJsonPath).Length,
+                FileUploadedAt = DateTime.UtcNow,
+                FileUploadedBy = "system",
                 IsActive = true,
                 CreatedBy = "system",
                 LastTestedAt = DateTime.UtcNow,
@@ -1205,6 +1224,102 @@ public class DataSeeder
             });
         await _context.SaveChangesAsync();
     }
+
+    private async Task EnsureDemoSourcesUseJsonFilesAsync(string salesJsonPath, string courseJsonPath, string newsJsonPath)
+    {
+        var demoSources = await _context.DataSources
+            .Where(ds =>
+                ds.Name == "Cửa hàng - Sales DB" ||
+                ds.Name == "Cửa hàng - Sales Data" ||
+                ds.Name == "EduViet - Course DB" ||
+                ds.Name == "EduViet - Course Data" ||
+                ds.Name == "VietNews - News DB" ||
+                ds.Name == "VietNews - News Data")
+            .ToListAsync();
+
+        if (demoSources.Count == 0) return;
+
+        foreach (var ds in demoSources)
+        {
+            if (ds.Name.StartsWith("Cửa hàng", StringComparison.OrdinalIgnoreCase))
+            {
+                ds.Name = "Cửa hàng - Sales Data";
+                ds.SourceType = DataSourceType.Json;
+                ds.Description = "Dữ liệu JSON demo cho bán hàng, khách hàng, sản phẩm và thanh toán";
+                ds.FileStoragePath = salesJsonPath;
+                ds.OriginalFileName = "demo-sales.json";
+                ds.StoredFileName = "demo-sales.json";
+                ds.FileContentType = "application/json";
+                ds.ConnectionString = null;
+            }
+            else if (ds.Name.StartsWith("EduViet", StringComparison.OrdinalIgnoreCase))
+            {
+                ds.Name = "EduViet - Course Data";
+                ds.SourceType = DataSourceType.Json;
+                ds.Description = "Dữ liệu JSON demo cho nền tảng học trực tuyến EduViet";
+                ds.FileStoragePath = courseJsonPath;
+                ds.OriginalFileName = "demo-course.json";
+                ds.StoredFileName = "demo-course.json";
+                ds.FileContentType = "application/json";
+                ds.ConnectionString = null;
+            }
+            else if (ds.Name.StartsWith("VietNews", StringComparison.OrdinalIgnoreCase))
+            {
+                ds.Name = "VietNews - News Data";
+                ds.SourceType = DataSourceType.Json;
+                ds.Description = "Dữ liệu JSON demo cho cổng tin tức VietNews";
+                ds.FileStoragePath = newsJsonPath;
+                ds.OriginalFileName = "demo-news.json";
+                ds.StoredFileName = "demo-news.json";
+                ds.FileContentType = "application/json";
+                ds.ConnectionString = null;
+            }
+
+            ds.FileSizeBytes = new FileInfo(ds.FileStoragePath!).Length;
+            ds.FileUploadedAt = DateTime.UtcNow;
+            ds.FileUploadedBy = "system";
+            ds.LastTestedAt = DateTime.UtcNow;
+            ds.LastTestResult = "Connection successful";
+        }
+
+        await _context.SaveChangesAsync();
+    }
+
+    private static void EnsureDemoJsonFile(string filePath, string content)
+    {
+        if (File.Exists(filePath)) return;
+        File.WriteAllText(filePath, content);
+    }
+
+    private static string GetSalesDemoJson() => """
+[
+  { "value": 125000000, "month": "2026-01", "revenue": 125000000, "category": "Điện thoại", "quantity": 420, "status": "completed", "payment_method": "bank_transfer", "amount": 125000000, "label": "Điện thoại", "city": "Hà Nội", "day": "01/15" },
+  { "value": 119500000, "month": "2026-02", "revenue": 119500000, "category": "Laptop", "quantity": 250, "status": "completed", "payment_method": "card", "amount": 119500000, "label": "Laptop", "city": "TP. Hồ Chí Minh", "day": "02/15" },
+  { "value": 132800000, "month": "2026-03", "revenue": 132800000, "category": "Phụ kiện", "quantity": 960, "status": "completed", "payment_method": "cash", "amount": 132800000, "label": "Phụ kiện", "city": "Đà Nẵng", "day": "03/15" },
+  { "value": 141200000, "month": "2026-04", "revenue": 141200000, "category": "Máy tính bảng", "quantity": 340, "status": "completed", "payment_method": "e_wallet", "amount": 141200000, "label": "Máy tính bảng", "city": "Cần Thơ", "day": "04/15" },
+  { "value": 138400000, "month": "2026-05", "revenue": 138400000, "category": "Thiết bị mạng", "quantity": 220, "status": "completed", "payment_method": "bank_transfer", "amount": 138400000, "label": "Thiết bị mạng", "city": "Hải Phòng", "day": "05/15" }
+]
+""";
+
+    private static string GetCourseDemoJson() => """
+[
+  { "value": 3850, "month": "2026-01", "revenue": 385000000, "category": "Lập trình", "quantity": 520, "status": "active", "payment_method": "card", "amount": 385000000, "label": "Lập trình", "city": "Hà Nội", "day": "01/20" },
+  { "value": 4020, "month": "2026-02", "revenue": 402000000, "category": "Thiết kế", "quantity": 470, "status": "active", "payment_method": "bank_transfer", "amount": 402000000, "label": "Thiết kế", "city": "TP. Hồ Chí Minh", "day": "02/20" },
+  { "value": 4175, "month": "2026-03", "revenue": 417500000, "category": "Marketing", "quantity": 560, "status": "active", "payment_method": "e_wallet", "amount": 417500000, "label": "Marketing", "city": "Đà Nẵng", "day": "03/20" },
+  { "value": 4380, "month": "2026-04", "revenue": 438000000, "category": "Data", "quantity": 610, "status": "active", "payment_method": "card", "amount": 438000000, "label": "Data", "city": "Huế", "day": "04/20" },
+  { "value": 4510, "month": "2026-05", "revenue": 451000000, "category": "AI", "quantity": 645, "status": "active", "payment_method": "bank_transfer", "amount": 451000000, "label": "AI", "city": "Nha Trang", "day": "05/20" }
+]
+""";
+
+    private static string GetNewsDemoJson() => """
+[
+  { "value": 188000, "month": "2026-01", "revenue": 188000, "category": "Thời sự", "quantity": 95, "status": "published", "payment_method": "organic", "amount": 188000, "label": "Thời sự", "city": "Hà Nội", "day": "01/10" },
+  { "value": 201500, "month": "2026-02", "revenue": 201500, "category": "Kinh doanh", "quantity": 88, "status": "published", "payment_method": "social", "amount": 201500, "label": "Kinh doanh", "city": "TP. Hồ Chí Minh", "day": "02/10" },
+  { "value": 213200, "month": "2026-03", "revenue": 213200, "category": "Công nghệ", "quantity": 102, "status": "published", "payment_method": "search", "amount": 213200, "label": "Công nghệ", "city": "Đà Nẵng", "day": "03/10" },
+  { "value": 209700, "month": "2026-04", "revenue": 209700, "category": "Giáo dục", "quantity": 91, "status": "published", "payment_method": "direct", "amount": 209700, "label": "Giáo dục", "city": "Cần Thơ", "day": "04/10" },
+  { "value": 227900, "month": "2026-05", "revenue": 227900, "category": "Thể thao", "quantity": 110, "status": "published", "payment_method": "organic", "amount": 227900, "label": "Thể thao", "city": "Hải Phòng", "day": "05/10" }
+]
+""";
 
     private static readonly JsonSerializerOptions SeedJsonOptions = new() { PropertyNameCaseInsensitive = true };
     private static readonly string AdminSeedDirectory = Path.Combine(AppContext.BaseDirectory, "Data", "Seed", "admin");
