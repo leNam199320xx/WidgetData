@@ -216,6 +216,13 @@ else if (_widget != null)
             var data = await ApiService.GetWidgetDataAsync(WidgetId);
             if (data != null)
             {
+                if (!string.IsNullOrWhiteSpace(data.Error))
+                {
+                    _previewError = data.Error;
+                    _previewData = null;
+                    _dataColumns = null;
+                    return;
+                }
                 _previewData = data;
                 _dataColumns = data.Columns?.ToList();
             }
@@ -251,6 +258,13 @@ else if (_widget != null)
         {
             var data = await ApiService.GetWidgetDataAsync(WidgetId);
             if (data == null) { _previewError = "Không thể lấy dữ liệu widget."; return; }
+            if (!string.IsNullOrWhiteSpace(data.Error))
+            {
+                _previewError = data.Error;
+                _previewData = null;
+                _dataColumns = null;
+                return;
+            }
             _previewData = data;
             _dataColumns = data.Columns?.ToList();
         }
