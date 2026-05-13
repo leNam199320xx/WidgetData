@@ -432,10 +432,7 @@ public class WidgetService : IWidgetService
                 break;
             }
 
-            if (foundArray)
-            {
-            }
-            else
+            if (!foundArray)
             {
                 return Task.FromResult<object>(new
                 {
