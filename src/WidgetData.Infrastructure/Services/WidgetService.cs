@@ -423,11 +423,17 @@ public class WidgetService : IWidgetService
         }
         else if (root.ValueKind == System.Text.Json.JsonValueKind.Object)
         {
-            var firstArray = root.EnumerateObject()
-                .FirstOrDefault(p => p.Value.ValueKind == System.Text.Json.JsonValueKind.Array);
-            if (firstArray.Value.ValueKind == System.Text.Json.JsonValueKind.Array)
+            var foundArray = false;
+            foreach (var prop in root.EnumerateObject())
             {
-                arrayEl = firstArray.Value;
+                if (prop.Value.ValueKind != System.Text.Json.JsonValueKind.Array) continue;
+                arrayEl = prop.Value;
+                foundArray = true;
+                break;
+            }
+
+            if (foundArray)
+            {
             }
             else
             {

@@ -233,7 +233,7 @@ public class DataSourceService : IDataSourceService
         try
         {
             using var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using var _ = JsonDocument.Parse(stream);
+            using var jsonDoc = JsonDocument.Parse(stream);
             return Task.FromResult("Connection successful");
         }
         catch (JsonException ex)
