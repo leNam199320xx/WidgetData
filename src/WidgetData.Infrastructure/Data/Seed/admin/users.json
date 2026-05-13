@@ -5,7 +5,9 @@
     "password": "SuperAdmin@123!",
     "isActive": true,
     "tenantSlug": null,
-    "roles": ["SuperAdmin"]
+    "roles": [
+      "SuperAdmin"
+    ]
   },
   {
     "email": "admin@widgetdata.com",
@@ -13,7 +15,9 @@
     "password": "Admin@123!",
     "isActive": true,
     "tenantSlug": null,
-    "roles": ["Admin"]
+    "roles": [
+      "Admin"
+    ]
   },
   {
     "email": "manager@widgetdata.com",
@@ -21,7 +25,9 @@
     "password": "Manager@123!",
     "isActive": true,
     "tenantSlug": null,
-    "roles": ["Manager"]
+    "roles": [
+      "Manager"
+    ]
   },
   {
     "email": "dev@widgetdata.com",
@@ -29,7 +35,75 @@
     "password": "Developer@123!",
     "isActive": true,
     "tenantSlug": null,
-    "roles": ["Developer"]
+    "roles": [
+      "Developer"
+    ]
+  },
+  {
+    "email": "analyst@widgetdata.com",
+    "displayName": "Data Analyst",
+    "password": "Analyst@123!",
+    "isActive": true,
+    "tenantSlug": null,
+    "roles": [
+      "Analyst",
+      "Viewer"
+    ]
+  },
+  {
+    "email": "support@widgetdata.com",
+    "displayName": "Support Engineer",
+    "password": "Support@123!",
+    "isActive": true,
+    "tenantSlug": null,
+    "roles": [
+      "Support",
+      "Viewer"
+    ]
+  },
+  {
+    "email": "ops@widgetdata.com",
+    "displayName": "Ops Engineer",
+    "password": "Ops@123!",
+    "isActive": true,
+    "tenantSlug": null,
+    "roles": [
+      "Ops",
+      "Auditor"
+    ]
+  },
+  {
+    "email": "auditor@widgetdata.com",
+    "displayName": "Internal Auditor",
+    "password": "Auditor@123!",
+    "isActive": true,
+    "tenantSlug": null,
+    "roles": [
+      "Auditor",
+      "Viewer"
+    ]
+  },
+  {
+    "email": "admin@demo.tenant",
+    "displayName": "Admin — Demo Tenant",
+    "password": "TenantAdmin@123!",
+    "isActive": true,
+    "tenantSlug": "demo",
+    "lastLoginDaysAgo": 1,
+    "roles": [
+      "TenantAdmin"
+    ]
+  },
+  {
+    "email": "user@demo.tenant",
+    "displayName": "User — Demo Tenant",
+    "password": "TenantUser@123!",
+    "isActive": true,
+    "tenantSlug": "demo",
+    "lastLoginDaysAgo": 3,
+    "roles": [
+      "TenantUser"
+    ]
   },
   {
     "email": "admin@shop.demo",
@@ -38,7 +112,9 @@
     "isActive": true,
     "tenantSlug": "shop",
     "lastLoginDaysAgo": 1,
-    "roles": ["TenantAdmin"]
+    "roles": [
+      "TenantAdmin"
+    ]
   },
   {
     "email": "user@shop.demo",
@@ -47,7 +123,9 @@
     "isActive": true,
     "tenantSlug": "shop",
     "lastLoginDaysAgo": 2,
-    "roles": ["TenantUser"]
+    "roles": [
+      "TenantUser"
+    ]
   },
   {
     "email": "admin@news.demo",
@@ -56,7 +134,9 @@
     "isActive": true,
     "tenantSlug": "news",
     "lastLoginDaysAgo": 1,
-    "roles": ["TenantAdmin"]
+    "roles": [
+      "TenantAdmin"
+    ]
   },
   {
     "email": "user@news.demo",
@@ -65,7 +145,9 @@
     "isActive": true,
     "tenantSlug": "news",
     "lastLoginDaysAgo": 2,
-    "roles": ["TenantUser"]
+    "roles": [
+      "TenantUser"
+    ]
   },
   {
     "email": "admin@course.demo",
@@ -74,7 +156,9 @@
     "isActive": true,
     "tenantSlug": "course",
     "lastLoginDaysAgo": 1,
-    "roles": ["TenantAdmin"]
+    "roles": [
+      "TenantAdmin"
+    ]
   },
   {
     "email": "user@course.demo",
@@ -83,7 +167,9 @@
     "isActive": true,
     "tenantSlug": "course",
     "lastLoginDaysAgo": 2,
-    "roles": ["TenantUser"]
+    "roles": [
+      "TenantUser"
+    ]
   },
   {
     "email": "admin@retail.demo",
@@ -92,7 +178,9 @@
     "isActive": true,
     "tenantSlug": "retail",
     "lastLoginDaysAgo": 1,
-    "roles": ["TenantAdmin"]
+    "roles": [
+      "TenantAdmin"
+    ]
   },
   {
     "email": "user@retail.demo",
@@ -101,6 +189,63 @@
     "isActive": true,
     "tenantSlug": "retail",
     "lastLoginDaysAgo": 2,
-    "roles": ["TenantUser"]
+    "roles": [
+      "TenantUser"
+    ]
+  },
+  {
+    "email": "admin@health.demo",
+    "displayName": "Admin — Healthcare Tenant",
+    "password": "TenantAdmin@123!",
+    "isActive": true,
+    "tenantSlug": "health",
+    "lastLoginDaysAgo": 2,
+    "roles": [
+      "TenantAdmin"
+    ]
+  },
+  {
+    "email": "user@health.demo",
+    "displayName": "User — Healthcare Tenant",
+    "password": "TenantUser@123!",
+    "isActive": true,
+    "tenantSlug": "health",
+    "lastLoginDaysAgo": 4,
+    "roles": [
+      "TenantUser"
+    ]
+  },
+  {
+    "email": "admin@logistics.demo",
+    "displayName": "Admin — Logistics Tenant",
+    "password": "TenantAdmin@123!",
+    "isActive": true,
+    "tenantSlug": "logistics",
+    "lastLoginDaysAgo": 3,
+    "roles": [
+      "TenantAdmin"
+    ]
+  },
+  {
+    "email": "user@logistics.demo",
+    "displayName": "User — Logistics Tenant",
+    "password": "TenantUser@123!",
+    "isActive": true,
+    "tenantSlug": "logistics",
+    "lastLoginDaysAgo": 5,
+    "roles": [
+      "TenantUser"
+    ]
+  },
+  {
+    "email": "admin@fintech.demo",
+    "displayName": "Admin — Fintech Tenant",
+    "password": "TenantAdmin@123!",
+    "isActive": false,
+    "tenantSlug": "fintech",
+    "lastLoginDaysAgo": 30,
+    "roles": [
+      "TenantAdmin"
+    ]
   }
 ]

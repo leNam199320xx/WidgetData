@@ -33,5 +33,26 @@
     "isActive": true,
     "plan": "enterprise",
     "contactEmail": "retail@widgetdata.com"
+  },
+  {
+    "name": "Healthcare Tenant",
+    "slug": "health",
+    "isActive": true,
+    "plan": "enterprise",
+    "contactEmail": "health@widgetdata.com"
+  },
+  {
+    "name": "Logistics Tenant",
+    "slug": "logistics",
+    "isActive": true,
+    "plan": "starter",
+    "contactEmail": "logistics@widgetdata.com"
+  },
+  {
+    "name": "Fintech Tenant",
+    "slug": "fintech",
+    "isActive": false,
+    "plan": "pro",
+    "contactEmail": "fintech@widgetdata.com"
   }
 ]
