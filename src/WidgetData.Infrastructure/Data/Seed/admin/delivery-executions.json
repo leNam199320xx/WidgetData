@@ -1,0 +1,205 @@
+[
+  {
+    "deliveryTargetName": "Báo cáo doanh thu hàng ngày (Email)",
+    "status": "Success",
+    "message": "Đã gửi đến 2 người nhận",
+    "triggeredBy": "scheduler",
+    "daysAgo": 30
+  },
+  {
+    "deliveryTargetName": "Báo cáo doanh thu hàng ngày (Email)",
+    "status": "Success",
+    "message": "Đã gửi đến 2 người nhận",
+    "triggeredBy": "scheduler",
+    "daysAgo": 29
+  },
+  {
+    "deliveryTargetName": "Báo cáo doanh thu hàng ngày (Email)",
+    "status": "Failed",
+    "message": "SMTP connection timeout after 30s",
+    "triggeredBy": "scheduler",
+    "daysAgo": 28
+  },
+  {
+    "deliveryTargetName": "Báo cáo doanh thu hàng ngày (Email)",
+    "status": "Success",
+    "message": "Đã gửi đến 2 người nhận",
+    "triggeredBy": "scheduler",
+    "daysAgo": 27
+  },
+  {
+    "deliveryTargetName": "Báo cáo doanh thu hàng ngày (Email)",
+    "status": "Success",
+    "message": "Đã gửi đến 2 người nhận",
+    "triggeredBy": "scheduler",
+    "daysAgo": 26
+  },
+  {
+    "deliveryTargetName": "Báo cáo doanh thu hàng ngày (Email)",
+    "status": "Success",
+    "message": "Đã gửi đến 2 người nhận",
+    "triggeredBy": "scheduler",
+    "daysAgo": 25
+  },
+  {
+    "deliveryTargetName": "Báo cáo doanh thu hàng ngày (Email)",
+    "status": "Failed",
+    "message": "Authentication failed: Invalid credentials",
+    "triggeredBy": "scheduler",
+    "daysAgo": 20
+  },
+  {
+    "deliveryTargetName": "Báo cáo doanh thu hàng ngày (Email)",
+    "status": "Failed",
+    "message": "Authentication failed: Invalid credentials",
+    "triggeredBy": "scheduler",
+    "daysAgo": 19
+  },
+  {
+    "deliveryTargetName": "Báo cáo doanh thu hàng ngày (Email)",
+    "status": "Success",
+    "message": "Đã gửi đến 2 người nhận",
+    "triggeredBy": "scheduler",
+    "daysAgo": 18
+  },
+  {
+    "deliveryTargetName": "Báo cáo doanh thu hàng ngày (Email)",
+    "status": "Success",
+    "message": "Đã gửi đến 2 người nhận",
+    "triggeredBy": "manual",
+    "daysAgo": 15
+  },
+  {
+    "deliveryTargetName": "Báo cáo doanh thu hàng ngày (Email)",
+    "status": "Success",
+    "message": "Đã gửi đến 2 người nhận",
+    "triggeredBy": "scheduler",
+    "daysAgo": 10
+  },
+  {
+    "deliveryTargetName": "Báo cáo doanh thu hàng ngày (Email)",
+    "status": "Success",
+    "message": "Đã gửi đến 2 người nhận",
+    "triggeredBy": "scheduler",
+    "daysAgo": 5
+  },
+  {
+    "deliveryTargetName": "Báo cáo doanh thu hàng ngày (Email)",
+    "status": "Success",
+    "message": "Đã gửi đến 2 người nhận",
+    "triggeredBy": "scheduler",
+    "daysAgo": 1
+  },
+  {
+    "deliveryTargetName": "Thông báo đơn hàng mới (Telegram)",
+    "status": "Success",
+    "message": "Message sent successfully",
+    "triggeredBy": "scheduler",
+    "daysAgo": 30
+  },
+  {
+    "deliveryTargetName": "Thông báo đơn hàng mới (Telegram)",
+    "status": "Success",
+    "message": "Message sent successfully",
+    "triggeredBy": "scheduler",
+    "daysAgo": 25
+  },
+  {
+    "deliveryTargetName": "Thông báo đơn hàng mới (Telegram)",
+    "status": "Failed",
+    "message": "Telegram API error 403: bot was blocked by the user",
+    "triggeredBy": "scheduler",
+    "daysAgo": 22
+  },
+  {
+    "deliveryTargetName": "Thông báo đơn hàng mới (Telegram)",
+    "status": "Success",
+    "message": "Message sent successfully",
+    "triggeredBy": "scheduler",
+    "daysAgo": 20
+  },
+  {
+    "deliveryTargetName": "Thông báo đơn hàng mới (Telegram)",
+    "status": "Success",
+    "message": "Message sent successfully",
+    "triggeredBy": "scheduler",
+    "daysAgo": 15
+  },
+  {
+    "deliveryTargetName": "Thông báo đơn hàng mới (Telegram)",
+    "status": "Success",
+    "message": "Message sent successfully",
+    "triggeredBy": "manual",
+    "daysAgo": 12
+  },
+  {
+    "deliveryTargetName": "Thông báo đơn hàng mới (Telegram)",
+    "status": "Success",
+    "message": "Message sent successfully",
+    "triggeredBy": "scheduler",
+    "daysAgo": 10
+  },
+  {
+    "deliveryTargetName": "Thông báo đơn hàng mới (Telegram)",
+    "status": "Success",
+    "message": "Message sent successfully",
+    "triggeredBy": "scheduler",
+    "daysAgo": 7
+  },
+  {
+    "deliveryTargetName": "Thông báo đơn hàng mới (Telegram)",
+    "status": "Failed",
+    "message": "Network timeout after 10s — retrying next run",
+    "triggeredBy": "scheduler",
+    "daysAgo": 4
+  },
+  {
+    "deliveryTargetName": "Thông báo đơn hàng mới (Telegram)",
+    "status": "Success",
+    "message": "Message sent successfully",
+    "triggeredBy": "scheduler",
+    "daysAgo": 3
+  },
+  {
+    "deliveryTargetName": "Thông báo đơn hàng mới (Telegram)",
+    "status": "Success",
+    "message": "Message sent successfully",
+    "triggeredBy": "scheduler",
+    "daysAgo": 2
+  },
+  {
+    "deliveryTargetName": "Thông báo đơn hàng mới (Telegram)",
+    "status": "Success",
+    "message": "Message sent successfully",
+    "triggeredBy": "manual",
+    "hoursAgo": 5
+  },
+  {
+    "deliveryTargetName": "Xuất top sản phẩm dạng CSV (FTP)",
+    "status": "Success",
+    "message": "File exported: /reports/top-products.csv (42KB)",
+    "triggeredBy": "scheduler",
+    "daysAgo": 14
+  },
+  {
+    "deliveryTargetName": "Xuất top sản phẩm dạng CSV (FTP)",
+    "status": "Failed",
+    "message": "FTP connection refused: host unreachable",
+    "triggeredBy": "scheduler",
+    "daysAgo": 13
+  },
+  {
+    "deliveryTargetName": "Xuất top sản phẩm dạng CSV (FTP)",
+    "status": "Failed",
+    "message": "FTP connection refused: host unreachable",
+    "triggeredBy": "scheduler",
+    "daysAgo": 12
+  },
+  {
+    "deliveryTargetName": "Xuất top sản phẩm dạng CSV (FTP)",
+    "status": "Success",
+    "message": "File exported: /reports/top-products.csv (45KB)",
+    "triggeredBy": "manual",
+    "daysAgo": 11
+  }
+]

@@ -1,0 +1,36 @@
+[
+  {
+    "widgetName": "monthly_revenue_trend",
+    "name": "Báo cáo doanh thu hàng ngày (Email)",
+    "type": "Email",
+    "configuration": {
+      "recipients": [ "manager@widgetdata.com", "admin@widgetdata.com" ],
+      "subject": "[WidgetData] Báo cáo doanh thu tháng",
+      "format": "excel"
+    },
+    "isEnabled": true
+  },
+  {
+    "widgetName": "recent_orders_table",
+    "name": "Thông báo đơn hàng mới (Telegram)",
+    "type": "Telegram",
+    "configuration": {
+      "botToken": "demo-bot-token-7654321",
+      "chatId": "-100123456789",
+      "messageTemplate": "📦 Có {{row_count}} đơn hàng mới — xem tại WidgetData!"
+    },
+    "isEnabled": true
+  },
+  {
+    "widgetName": "top_products_by_revenue",
+    "name": "Xuất top sản phẩm dạng CSV (FTP)",
+    "type": "Csv",
+    "configuration": {
+      "host": "ftp.internal.company.vn",
+      "port": 21,
+      "username": "ftpuser",
+      "path": "/reports/top-products.csv"
+    },
+    "isEnabled": false
+  }
+]
