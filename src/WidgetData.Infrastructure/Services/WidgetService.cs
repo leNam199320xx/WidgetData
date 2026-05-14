@@ -392,7 +392,7 @@ public class WidgetService : IWidgetService
 
     private static Task<object> GetDataFromJsonAsync(Widget widget, DataSource ds)
     {
-        var filePath = ds.ConnectionString;
+        var filePath = ds.FileStoragePath ?? ds.ConnectionString;
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
             return Task.FromResult<object>(new { error = $"JSON file not found: {filePath}" });
 
@@ -409,12 +409,43 @@ public class WidgetService : IWidgetService
         if (!string.IsNullOrWhiteSpace(jsonPath))
         {
             foreach (var segment in jsonPath.Split('.', StringSplitOptions.RemoveEmptyEntries))
-                if (arrayEl.TryGetProperty(segment, out var child))
-                    arrayEl = child;
+            {
+                if (arrayEl.ValueKind != System.Text.Json.JsonValueKind.Object
+                    || !arrayEl.TryGetProperty(segment, out var child))
+                {
+                    return Task.FromResult<object>(new
+                    {
+                        error = $"JSON path '{jsonPath}' is invalid. Segment '{segment}' was not found."
+                    });
+                }
+                arrayEl = child;
+            }
+        }
+        else if (root.ValueKind == System.Text.Json.JsonValueKind.Object)
+        {
+            var foundArray = false;
+            foreach (var prop in root.EnumerateObject())
+            {
+                if (prop.Value.ValueKind != System.Text.Json.JsonValueKind.Array) continue;
+                arrayEl = prop.Value;
+                foundArray = true;
+                break;
+            }
+
+            if (!foundArray)
+            {
+                return Task.FromResult<object>(new
+                {
+                    error = "JSON root is an object and no array field was found. Configure `jsonPath` in widget Configuration, e.g. {\"jsonPath\":\"items\"}."
+                });
+            }
         }
 
         if (arrayEl.ValueKind != System.Text.Json.JsonValueKind.Array)
-            return Task.FromResult<object>(new { error = "JSON root or jsonPath is not an array." });
+            return Task.FromResult<object>(new
+            {
+                error = "JSON root/jsonPath does not point to an array. Set widget Configuration `jsonPath` to an array field."
+            });
 
         var rows = new List<Dictionary<string, object?>>();
         var columns = new List<string>();

@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Hosting;
 using WidgetData.Application.DTOs;
@@ -164,6 +165,9 @@ public class DataSourceService : IDataSourceService
             {
                 DataSourceType.SQLite => await TestSqliteAsync(ds.ConnectionString),
                 DataSourceType.RestApi => await TestRestApiAsync(ds.ApiEndpoint, ds.ApiKey),
+                DataSourceType.Csv => await TestFileSourceAsync(ds.FileStoragePath ?? ds.ConnectionString, "CSV"),
+                DataSourceType.Excel => await TestFileSourceAsync(ds.FileStoragePath ?? ds.ConnectionString, "Excel"),
+                DataSourceType.Json => await TestJsonFileAsync(ds.FileStoragePath ?? ds.ConnectionString),
                 _ => "Connection test not supported for this source type"
             };
         }
@@ -198,6 +202,48 @@ public class DataSourceService : IDataSourceService
         return response.IsSuccessStatusCode
             ? $"Connection successful (HTTP {(int)response.StatusCode})"
             : $"Connection failed: HTTP {(int)response.StatusCode} {response.ReasonPhrase}";
+    }
+
+    private static Task<string> TestFileSourceAsync(string? filePath, string sourceType)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+            return Task.FromResult($"Connection failed: {sourceType} file path is empty");
+        if (!File.Exists(filePath))
+            return Task.FromResult($"Connection failed: {sourceType} file not found: {filePath}");
+
+        try
+        {
+            using var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            _ = stream.Length;
+            return Task.FromResult("Connection successful");
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult($"Connection failed: cannot read {sourceType} file - {ex.Message}");
+        }
+    }
+
+    private static Task<string> TestJsonFileAsync(string? filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+            return Task.FromResult("Connection failed: JSON file path is empty");
+        if (!File.Exists(filePath))
+            return Task.FromResult($"Connection failed: JSON file not found: {filePath}");
+
+        try
+        {
+            using var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var jsonDoc = JsonDocument.Parse(stream);
+            return Task.FromResult("Connection successful");
+        }
+        catch (JsonException ex)
+        {
+            return Task.FromResult($"Connection failed: invalid JSON format - {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult($"Connection failed: cannot read JSON file - {ex.Message}");
+        }
     }
 
     private static DataSourceDto MapToDto(DataSource ds) => new()
