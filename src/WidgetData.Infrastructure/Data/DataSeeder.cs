@@ -661,7 +661,7 @@ public class DataSeeder
             "payment_method_distribution", "daily_payment_trend", "payment_summary_by_method", "failed_refunded_payments"
         };
 
-        var actRand = new Random(77);
+        var activityRandom = new Random(77);
         var activities = new List<WidgetApiActivity>();
         foreach (var name in activityWidgetNames)
         {
@@ -672,10 +672,10 @@ public class DataSeeder
                 {
                     WidgetId      = widget.Id,
                     ApiEndpoint   = $"/api/widgets/{widget.Id}/execute",
-                    UserId        = actRand.Next(0, 4) == 0 ? null : $"user-demo-{actRand.Next(1, 5)}",
-                    CalledAt      = DateTime.UtcNow.AddHours(-actRand.Next(1, 720)),
-                    ResponseTimeMs = actRand.Next(40, 650),
-                    StatusCode    = actRand.Next(0, 12) == 0 ? 500 : (actRand.Next(0, 20) == 0 ? 429 : 200)
+                    UserId        = activityRandom.Next(0, 4) == 0 ? null : $"user-demo-{activityRandom.Next(1, 5)}",
+                    CalledAt      = DateTime.UtcNow.AddHours(-activityRandom.Next(1, 720)),
+                    ResponseTimeMs = activityRandom.Next(40, 650),
+                    StatusCode    = activityRandom.Next(0, 12) == 0 ? 500 : (activityRandom.Next(0, 20) == 0 ? 429 : 200)
                 });
             }
         }

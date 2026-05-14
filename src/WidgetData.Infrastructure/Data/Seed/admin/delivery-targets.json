@@ -15,7 +15,7 @@
     "name": "Thông báo đơn hàng mới (Telegram)",
     "type": "Telegram",
     "configuration": {
-      "botToken": "demo-bot-token-7654321",
+      "botToken": "YOUR_TELEGRAM_BOT_TOKEN",
       "chatId": "-100123456789",
       "messageTemplate": "📦 Có {{row_count}} đơn hàng mới — xem tại WidgetData!"
     },

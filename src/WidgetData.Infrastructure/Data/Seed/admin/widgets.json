@@ -211,7 +211,20 @@
     "widgetType": "Form",
     "description": "Form liên hệ tích hợp trên trang contact",
     "dataSourceName": "Cửa hàng - Sales Data",
-    "configuration": { "fields": [ { "name": "ho_ten", "label": "Họ và tên", "type": "text", "required": true }, { "name": "email", "label": "Email", "type": "email", "required": true }, { "name": "dien_thoai", "label": "Số điện thoại", "type": "text", "required": false }, { "name": "chu_de", "label": "Chủ đề", "type": "select", "required": true, "options": [ "Tư vấn sản phẩm", "Hỗ trợ kỹ thuật", "Khiếu nại đơn hàng", "Hợp tác kinh doanh", "Khác" ] }, { "name": "noi_dung", "label": "Nội dung", "type": "textarea", "required": true } ], "submitLabel": "Gửi tin nhắn", "successMessage": "Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi trong vòng 24 giờ." },
+    "configuration": {
+      "fields": [
+        { "name": "ho_ten", "label": "Họ và tên", "type": "text", "required": true },
+        { "name": "email", "label": "Email", "type": "email", "required": true },
+        { "name": "dien_thoai", "label": "Số điện thoại", "type": "text", "required": false },
+        {
+          "name": "chu_de", "label": "Chủ đề", "type": "select", "required": true,
+          "options": [ "Tư vấn sản phẩm", "Hỗ trợ kỹ thuật", "Khiếu nại đơn hàng", "Hợp tác kinh doanh", "Khác" ]
+        },
+        { "name": "noi_dung", "label": "Nội dung", "type": "textarea", "required": true }
+      ],
+      "submitLabel": "Gửi tin nhắn",
+      "successMessage": "Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi trong vòng 24 giờ."
+    },
     "isActive": true, "cacheEnabled": false, "cacheTtlMinutes": 0,
     "lastRowCount": null
   },
