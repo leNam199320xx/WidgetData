@@ -73,8 +73,7 @@ public class DataSeeder
     {
         if (!_context.Database.IsSqlite())
         {
-            await ReconcileMigrationHistoryAsync();
-            await _context.Database.MigrateAsync();
+            await _context.Database.EnsureCreatedAsync();
             return;
         }
 
@@ -91,9 +90,6 @@ public class DataSeeder
             await _context.Database.EnsureCreatedAsync();
             return;
         }
-
-        await ReconcileMigrationHistoryAsync();
-        await _context.Database.MigrateAsync();
     }
 
     private async Task<bool> HasCoreSchemaAsync()
@@ -1115,117 +1111,4 @@ public class DataSeeder
     }
 
 
-    /// <summary>
-    /// Detects databases that were created outside of EF Core migrations (e.g., via EnsureCreated
-    /// or from a previous migration set that was later squashed) and marks the corresponding
-    /// migrations as applied in __EFMigrationsHistory so that MigrateAsync does not attempt
-    /// to re-create tables that already exist.
-    /// </summary>
-    private async Task ReconcileMigrationHistoryAsync()
-    {
-        var connection = _context.Database.GetDbConnection();
-        if (connection.State != System.Data.ConnectionState.Open)
-            await connection.OpenAsync();
-
-        using var cmd = connection.CreateCommand();
-
-        // Ensure the EF migrations history table exists
-        cmd.CommandText = """
-            CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
-                "MigrationId" TEXT NOT NULL CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY,
-                "ProductVersion" TEXT NOT NULL
-            )
-            """;
-        await cmd.ExecuteNonQueryAsync();
-
-        await EnsureWidgetApiActivitiesTableAsync(connection);
-
-        // For each migration, if its characteristic schema object exists but the migration
-        // is not yet recorded, mark it as applied so MigrateAsync will skip it.
-        await TryMarkMigrationAppliedAsync(connection,
-            "20260421161413_AddWidgetApiActivityAndInactivityFields",
-            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='WidgetApiActivities'");
-
-        await TryMarkMigrationAppliedAsync(connection,
-            "20260425170354_AddFormSubmissions",
-            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='FormSubmissions'");
-
-        await TryMarkMigrationAppliedAsync(connection,
-            "20260505164318_AddTenantAndPageSupport",
-            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Tenants'");
-
-        await TryMarkMigrationAppliedAsync(connection,
-            "20260507152721_AddOperationalIndexes",
-            "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='IX_WidgetExecutions_WidgetId_StartedAt'");
-
-        await TryMarkMigrationAppliedAsync(connection,
-            "20260508165905_AddScreenLifecycleAndDatasourceFileUpload",
-            "SELECT COUNT(*) FROM pragma_table_info('Pages') WHERE name='CurrentVersion'");
-    }
-
-    private static async Task EnsureWidgetApiActivitiesTableAsync(System.Data.Common.DbConnection connection)
-    {
-        using var cmd = connection.CreateCommand();
-        cmd.CommandText = """
-            CREATE TABLE IF NOT EXISTS "WidgetApiActivities" (
-                "Id" INTEGER NOT NULL CONSTRAINT "PK_WidgetApiActivities" PRIMARY KEY AUTOINCREMENT,
-                "WidgetId" INTEGER NOT NULL,
-                "ApiEndpoint" TEXT NOT NULL,
-                "UserId" TEXT NULL,
-                "CalledAt" TEXT NOT NULL,
-                "ResponseTimeMs" INTEGER NULL,
-                "StatusCode" INTEGER NOT NULL,
-                CONSTRAINT "FK_WidgetApiActivities_Widgets_WidgetId" FOREIGN KEY ("WidgetId") REFERENCES "Widgets" ("Id") ON DELETE CASCADE
-            );
-            """;
-        await cmd.ExecuteNonQueryAsync();
-
-        cmd.CommandText = """
-            CREATE INDEX IF NOT EXISTS "IX_WidgetApiActivities_WidgetId_CalledAt"
-            ON "WidgetApiActivities" ("WidgetId", "CalledAt");
-            """;
-        await cmd.ExecuteNonQueryAsync();
-    }
-
-    private static async Task TryMarkMigrationAppliedAsync(
-        System.Data.Common.DbConnection connection,
-        string migrationId,
-        string schemaExistsQuery)
-    {
-        // Derive the EF Core product version from the assembly to keep history consistent
-        var efAttr = Attribute.GetCustomAttribute(typeof(DbContext).Assembly,
-            typeof(System.Reflection.AssemblyInformationalVersionAttribute))
-            as System.Reflection.AssemblyInformationalVersionAttribute;
-        var efVersion = efAttr?.InformationalVersion ?? "10.0.0";
-        var plusIndex = efVersion.IndexOf('+');
-        if (plusIndex >= 0) efVersion = efVersion[..plusIndex];
-
-        using var cmd = connection.CreateCommand();
-
-        // Skip if already recorded in history
-        cmd.CommandText = "SELECT COUNT(*) FROM \"__EFMigrationsHistory\" WHERE \"MigrationId\" = @migrationId";
-        var p = cmd.CreateParameter();
-        p.ParameterName = "@migrationId";
-        p.Value = migrationId;
-        cmd.Parameters.Add(p);
-        var alreadyRecorded = (long)(await cmd.ExecuteScalarAsync())! > 0;
-        if (alreadyRecorded) return;
-
-        // Only mark as applied if the schema already exists in the database
-        cmd.CommandText = schemaExistsQuery;
-        cmd.Parameters.Clear();
-        var schemaExists = (long)(await cmd.ExecuteScalarAsync())! > 0;
-        if (!schemaExists) return;
-
-        cmd.CommandText = "INSERT INTO \"__EFMigrationsHistory\" (\"MigrationId\", \"ProductVersion\") VALUES (@migrationId, @productVersion)";
-        var pId = cmd.CreateParameter();
-        pId.ParameterName = "@migrationId";
-        pId.Value = migrationId;
-        cmd.Parameters.Add(pId);
-        var pVer = cmd.CreateParameter();
-        pVer.ParameterName = "@productVersion";
-        pVer.Value = efVersion;
-        cmd.Parameters.Add(pVer);
-        await cmd.ExecuteNonQueryAsync();
-    }
 }
