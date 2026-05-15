@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
@@ -11,12 +13,21 @@ public class DataSeeder
     private readonly ApplicationDbContext _context;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly IHostEnvironment _environment;
+    private readonly ILogger<DataSeeder> _logger;
 
-    public DataSeeder(ApplicationDbContext context, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+    public DataSeeder(
+        ApplicationDbContext context,
+        UserManager<ApplicationUser> userManager,
+        RoleManager<IdentityRole> roleManager,
+        IHostEnvironment environment,
+        ILogger<DataSeeder> logger)
     {
         _context = context;
         _userManager = userManager;
         _roleManager = roleManager;
+        _environment = environment;
+        _logger = logger;
     }
 
     public async Task SeedAsync()
@@ -67,9 +78,15 @@ public class DataSeeder
             return;
         }
 
-        var hasWidgetsTable = await HasTableAsync("Widgets");
-        if (!hasWidgetsTable)
+        var hasCoreSchema = await HasCoreSchemaAsync();
+        if (!hasCoreSchema)
         {
+            if (!_environment.IsDevelopment())
+                throw new InvalidOperationException(
+                    "SQLite schema is incomplete (missing core tables). " +
+                    "Automatic database reset is allowed only in Development.");
+
+            _logger.LogWarning("Detected incomplete SQLite schema. Recreating development database.");
             await _context.Database.EnsureDeletedAsync();
             await _context.Database.EnsureCreatedAsync();
             return;
@@ -79,6 +96,13 @@ public class DataSeeder
         await _context.Database.MigrateAsync();
     }
 
+    private async Task<bool> HasCoreSchemaAsync()
+    {
+        return await HasTableAsync("Widgets")
+               && await HasTableAsync("DataSources")
+               && await HasTableAsync("AspNetUsers");
+    }
+
     private async Task<bool> HasTableAsync(string tableName)
     {
         var connection = _context.Database.GetDbConnection();
@@ -86,16 +110,23 @@ public class DataSeeder
         if (openedHere)
             await connection.OpenAsync();
 
-        using var cmd = connection.CreateCommand();
-        cmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=@name";
-        var p = cmd.CreateParameter();
-        p.ParameterName = "@name";
-        p.Value = tableName;
-        cmd.Parameters.Add(p);
-        var count = (long)(await cmd.ExecuteScalarAsync())!;
-        if (openedHere)
-            await connection.CloseAsync();
-        return count > 0;
+        try
+        {
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=@name";
+            var p = cmd.CreateParameter();
+            p.ParameterName = "@name";
+            p.Value = tableName;
+            cmd.Parameters.Add(p);
+            var scalar = await cmd.ExecuteScalarAsync();
+            var count = scalar as long? ?? 0;
+            return count > 0;
+        }
+        finally
+        {
+            if (openedHere)
+                await connection.CloseAsync();
+        }
     }
 
     private async Task EnsureDemoSourcesUseJsonFilesAsync(string salesJsonPath, string courseJsonPath, string newsJsonPath)
