@@ -55,7 +55,7 @@ public class PagesController : ControllerBase
         var tenantId = GetCurrentTenantId();
         // When tenantId is null (Admin/SuperAdmin without a tenant context), pass null
         // to the service so the EF Core global query filter returns all accessible pages.
-        var pages = await _pageService.GetAllAsync(tenantId, screenType);
+        var pages = await _pageService.GetAllAsync(tenantId, screenType, includeWidgetContent: false);
         return Ok(pages);
     }
 
@@ -222,7 +222,10 @@ public class PagesController : ControllerBase
         var tenantId = GetCurrentTenantId();
         if (tenantId == null) return Forbid();
 
-        var pages = (await _pageService.GetAllAsync(tenantId.Value))
+        var pages = (await _pageService.GetAllAsync(
+                tenantId: tenantId.Value,
+                screenType: null,
+                includeWidgetContent: true))
             .Where(p => p.IsActive)
             .ToList();
 
@@ -249,7 +252,11 @@ public class PagesController : ControllerBase
         var tenantId = GetCurrentTenantId();
         if (tenantId == null) return Forbid();
 
-        var allPages = (await _pageService.GetAllAsync(tenantId.Value)).ToList();
+        var allPages = (await _pageService.GetAllAsync(
+                tenantId: tenantId.Value,
+                screenType: null,
+                includeWidgetContent: true))
+            .ToList();
 
         List<PageDto> pages;
         if (pageIds is { Length: > 0 })

@@ -16,22 +16,25 @@ public class PageService : IPageService
         _repo = repo;
     }
 
-    public async Task<IEnumerable<PageDto>> GetAllAsync(int? tenantId = null, ScreenType? screenType = null)
+    public async Task<IEnumerable<PageDto>> GetAllAsync(
+        int? tenantId = null,
+        ScreenType? screenType = null,
+        bool includeWidgetContent = true)
     {
         var pages = await _repo.GetAllAsync(tenantId, screenType);
-        return pages.Select(MapToDto);
+        return pages.Select(p => MapToDto(p, includeWidgetContent));
     }
 
     public async Task<PageDto?> GetByIdAsync(int id)
     {
         var page = await _repo.GetByIdAsync(id);
-        return page == null ? null : MapToDto(page);
+        return page == null ? null : MapToDto(page, includeWidgetContent: true);
     }
 
     public async Task<PageDto?> GetBySlugAsync(string slug, int? tenantId = null)
     {
         var page = await _repo.GetBySlugAsync(slug, tenantId);
-        return page == null ? null : MapToDto(page);
+        return page == null ? null : MapToDto(page, includeWidgetContent: true);
     }
 
     public async Task<PageDto> CreateAsync(CreatePageDto dto, int tenantId, string createdBy)
@@ -50,7 +53,7 @@ public class PageService : IPageService
         };
         var created = await _repo.CreateAsync(page);
         await SaveVersionAsync(created, createdBy, "DraftSaved", "Initial draft created");
-        return MapToDto(created);
+        return MapToDto(created, includeWidgetContent: true);
     }
 
     public async Task<PageDto?> UpdateAsync(int id, UpdatePageDto dto)
@@ -67,7 +70,7 @@ public class PageService : IPageService
         page.CurrentVersion++;
         var updated = await _repo.UpdateAsync(page);
         await SaveVersionAsync(updated, updated.CreatedBy ?? "system", "DraftSaved", "Draft updated");
-        return MapToDto(updated);
+        return MapToDto(updated, includeWidgetContent: true);
     }
 
     public async Task<PageDto?> PublishAsync(int id, string userId, PublishPageDto? dto = null)
@@ -82,7 +85,7 @@ public class PageService : IPageService
 
         var updated = await _repo.UpdateAsync(page);
         await SaveVersionAsync(updated, userId, "Published", dto?.Note ?? "Published screen");
-        return MapToDto(updated);
+        return MapToDto(updated, includeWidgetContent: true);
     }
 
     public async Task<PageDto?> RollbackAsync(int id, int versionNumber, string userId, RollbackPageDto? dto = null)
@@ -117,7 +120,7 @@ public class PageService : IPageService
 
         var updated = await _repo.UpdateAsync(page);
         await SaveVersionAsync(updated, userId, "Rollback", dto?.Note ?? $"Rollback to v{versionNumber}");
-        return MapToDto(updated);
+        return MapToDto(updated, includeWidgetContent: true);
     }
 
     public async Task<IEnumerable<PageVersionDto>> GetVersionsAsync(int id)
@@ -185,7 +188,7 @@ public class PageService : IPageService
         });
     }
 
-    private static PageDto MapToDto(Page page) => new()
+    private static PageDto MapToDto(Page page, bool includeWidgetContent) => new()
     {
         Id = page.Id,
         TenantId = page.TenantId,
@@ -208,8 +211,8 @@ public class PageService : IPageService
                 WidgetId = pw.WidgetId,
                 WidgetName = pw.Widget?.Name ?? string.Empty,
                 FriendlyLabel = pw.Widget?.FriendlyLabel,
-                HtmlTemplate = pw.Widget?.HtmlTemplate,
-                Configuration = pw.Widget?.Configuration,
+                HtmlTemplate = includeWidgetContent ? pw.Widget?.HtmlTemplate : null,
+                Configuration = includeWidgetContent ? pw.Widget?.Configuration : null,
                 WidgetType = pw.Widget?.WidgetType.ToString() ?? string.Empty,
                 Position = pw.Position,
                 Width = pw.Width
