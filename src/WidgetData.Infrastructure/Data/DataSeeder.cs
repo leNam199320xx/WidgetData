@@ -21,8 +21,7 @@ public class DataSeeder
 
     public async Task SeedAsync()
     {
-        await ReconcileMigrationHistoryAsync();
-        await _context.Database.MigrateAsync();
+        await EnsureDatabaseSchemaReadyAsync();
 
         var adminSeed = await LoadAdminSeedAsync();
 
@@ -57,6 +56,46 @@ public class DataSeeder
         await EnsureIdeaPostsAsync(adminSeed.IdeaPosts, widgetMap);
         await EnsurePagesAsync(adminSeed.Pages, tenantBySlug, widgetMap);
         await SeedAuditLogsAsync(adminSeed.AuditLogs);
+    }
+
+    private async Task EnsureDatabaseSchemaReadyAsync()
+    {
+        if (!_context.Database.IsSqlite())
+        {
+            await ReconcileMigrationHistoryAsync();
+            await _context.Database.MigrateAsync();
+            return;
+        }
+
+        var hasWidgetsTable = await HasTableAsync("Widgets");
+        if (!hasWidgetsTable)
+        {
+            await _context.Database.EnsureDeletedAsync();
+            await _context.Database.EnsureCreatedAsync();
+            return;
+        }
+
+        await ReconcileMigrationHistoryAsync();
+        await _context.Database.MigrateAsync();
+    }
+
+    private async Task<bool> HasTableAsync(string tableName)
+    {
+        var connection = _context.Database.GetDbConnection();
+        var openedHere = connection.State != System.Data.ConnectionState.Open;
+        if (openedHere)
+            await connection.OpenAsync();
+
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=@name";
+        var p = cmd.CreateParameter();
+        p.ParameterName = "@name";
+        p.Value = tableName;
+        cmd.Parameters.Add(p);
+        var count = (long)(await cmd.ExecuteScalarAsync())!;
+        if (openedHere)
+            await connection.CloseAsync();
+        return count > 0;
     }
 
     private async Task EnsureDemoSourcesUseJsonFilesAsync(string salesJsonPath, string courseJsonPath, string newsJsonPath)
@@ -1087,6 +1126,10 @@ public class DataSeeder
         await TryMarkMigrationAppliedAsync(connection,
             "20260507152721_AddOperationalIndexes",
             "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='IX_WidgetExecutions_WidgetId_StartedAt'");
+
+        await TryMarkMigrationAppliedAsync(connection,
+            "20260508165905_AddScreenLifecycleAndDatasourceFileUpload",
+            "SELECT COUNT(*) FROM pragma_table_info('Pages') WHERE name='CurrentVersion'");
     }
 
     private static async Task EnsureWidgetApiActivitiesTableAsync(System.Data.Common.DbConnection connection)
