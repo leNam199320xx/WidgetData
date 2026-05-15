@@ -26,6 +26,8 @@ public class PageRepository : IPageRepository
             : _context.Pages;
 
         query = query
+            .AsNoTracking()
+            .AsSplitQuery()
             .Include(p => p.PageWidgets)
             .ThenInclude(pw => pw.Widget);
 
