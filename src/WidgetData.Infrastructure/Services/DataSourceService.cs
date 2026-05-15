@@ -1,6 +1,5 @@
 using System.Net.Http;
 using System.Text.Json;
-using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Hosting;
 using WidgetData.Application.DTOs;
 using WidgetData.Application.Interfaces;
@@ -37,6 +36,8 @@ public class DataSourceService : IDataSourceService
 
     public async Task<DataSourceDto> CreateAsync(CreateDataSourceDto dto, string userId)
     {
+        EnsureJsonOnlySourceType(dto.SourceType);
+
         var entity = new DataSource
         {
             Name = dto.Name,
@@ -60,6 +61,8 @@ public class DataSourceService : IDataSourceService
 
     public async Task<DataSourceDto?> UpdateAsync(int id, UpdateDataSourceDto dto)
     {
+        EnsureJsonOnlySourceType(dto.SourceType);
+
         var entity = await _repo.GetByIdAsync(id);
         if (entity == null) return null;
         entity.Name = dto.Name;
@@ -163,12 +166,11 @@ public class DataSourceService : IDataSourceService
         {
             result = ds.SourceType switch
             {
-                DataSourceType.SQLite => await TestSqliteAsync(ds.ConnectionString),
                 DataSourceType.RestApi => await TestRestApiAsync(ds.ApiEndpoint, ds.ApiKey),
                 DataSourceType.Csv => await TestFileSourceAsync(ds.FileStoragePath ?? ds.ConnectionString, "CSV"),
                 DataSourceType.Excel => await TestFileSourceAsync(ds.FileStoragePath ?? ds.ConnectionString, "Excel"),
                 DataSourceType.Json => await TestJsonFileAsync(ds.FileStoragePath ?? ds.ConnectionString),
-                _ => "Connection test not supported for this source type"
+                _ => "Only JSON data source is supported"
             };
         }
         catch (Exception ex)
@@ -180,15 +182,6 @@ public class DataSourceService : IDataSourceService
         ds.LastTestResult = result;
         await _repo.UpdateAsync(ds);
         return result;
-    }
-
-    private static async Task<string> TestSqliteAsync(string? connectionString)
-    {
-        if (string.IsNullOrWhiteSpace(connectionString))
-            return "Connection failed: connection string is empty";
-        using var conn = new SqliteConnection(connectionString);
-        await conn.OpenAsync();
-        return "Connection successful";
     }
 
     private static async Task<string> TestRestApiAsync(string? endpoint, string? apiKey)
@@ -279,5 +272,11 @@ public class DataSourceService : IDataSourceService
         if (_tenantContext?.IsSuperAdmin == true) return true;
         if (_tenantContext?.CurrentTenantId == null) return true;
         return ds.TenantId == null || ds.TenantId == _tenantContext.CurrentTenantId;
+    }
+
+    private static void EnsureJsonOnlySourceType(DataSourceType sourceType)
+    {
+        if (sourceType != DataSourceType.Json)
+            throw new InvalidOperationException("Only JSON data source is supported.");
     }
 }
