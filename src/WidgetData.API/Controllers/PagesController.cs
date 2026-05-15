@@ -222,7 +222,10 @@ public class PagesController : ControllerBase
         var tenantId = GetCurrentTenantId();
         if (tenantId == null) return Forbid();
 
-        var pages = (await _pageService.GetAllAsync(tenantId.Value, includeWidgetContent: true))
+        var pages = (await _pageService.GetAllAsync(
+                tenantId: tenantId.Value,
+                screenType: null,
+                includeWidgetContent: true))
             .Where(p => p.IsActive)
             .ToList();
 
@@ -249,7 +252,11 @@ public class PagesController : ControllerBase
         var tenantId = GetCurrentTenantId();
         if (tenantId == null) return Forbid();
 
-        var allPages = (await _pageService.GetAllAsync(tenantId.Value, includeWidgetContent: true)).ToList();
+        var allPages = (await _pageService.GetAllAsync(
+                tenantId: tenantId.Value,
+                screenType: null,
+                includeWidgetContent: true))
+            .ToList();
 
         List<PageDto> pages;
         if (pageIds is { Length: > 0 })
