@@ -23,7 +23,7 @@
             </MudItem>
             <MudItem xs="12" sm="6">
                 <MudSelect @bind-Value="_form.SourceType" Label="@L["Type"]" Variant="Variant.Outlined">
-                    @foreach (var t in Enum.GetValues<DataSourceType>())
+                    @foreach (var t in SupportedSourceTypes)
                     {
                         <MudSelectItem Value="@t">@t</MudSelectItem>
                     }
@@ -32,14 +32,7 @@
             <MudItem xs="12">
                 <MudTextField @bind-Value="_form.Description" Label="@L["Description"]" Variant="Variant.Outlined" Lines="2" />
             </MudItem>
-            @if (_form.SourceType == DataSourceType.SQLite)
-            {
-                <MudItem xs="12">
-                    <MudTextField @bind-Value="_form.ConnectionString" Label="@L["DS_ConnString"]" Variant="Variant.Outlined"
-                                  Placeholder="Data Source=mydb.db" />
-                </MudItem>
-            }
-            else if (_form.SourceType == DataSourceType.RestApi)
+            @if (_form.SourceType == DataSourceType.RestApi)
             {
                 <MudItem xs="12">
                     <MudTextField @bind-Value="_form.ApiEndpoint" Label="@L["DS_ApiEndpoint"]" Variant="Variant.Outlined"
@@ -114,7 +107,7 @@
             <MudItem xs="6" sm="3">
                 <MudSelect @bind-Value="_filterType" T="DataSourceType?" Label="@L["Type"]" Variant="Variant.Outlined" Dense="true"
                            Clearable="true">
-                    @foreach (var t in Enum.GetValues<DataSourceType>())
+                    @foreach (var t in SupportedSourceTypes)
                     {
                         <MudSelectItem T="DataSourceType?" Value="@((DataSourceType?)t)">@t</MudSelectItem>
                     }
@@ -235,6 +228,7 @@ else
     string _searchText = string.Empty;
     DataSourceType? _filterType;
     bool? _filterStatus;
+    static readonly DataSourceType[] SupportedSourceTypes = [DataSourceType.Json];
 
     IEnumerable<DataSourceDto> FilteredSources => (_sources ?? Array.Empty<DataSourceDto>())
         .Where(ds =>
@@ -260,7 +254,7 @@ else
     void OpenAddForm()
     {
         _editingId = null;
-        _form = new CreateDataSourceDto { SourceType = DataSourceType.SQLite };
+        _form = new CreateDataSourceDto { SourceType = DataSourceType.Json };
         _formIsActive = true;
         _showForm = true;
     }
@@ -270,7 +264,7 @@ else
         _editingId = ds.Id;
         _form = new CreateDataSourceDto
         {
-            Name = ds.Name, SourceType = ds.SourceType, Description = ds.Description,
+            Name = ds.Name, SourceType = DataSourceType.Json, Description = ds.Description,
             Host = ds.Host, Port = ds.Port, DatabaseName = ds.DatabaseName,
             Username = ds.Username, ApiEndpoint = ds.ApiEndpoint, AdditionalConfig = ds.AdditionalConfig
         };

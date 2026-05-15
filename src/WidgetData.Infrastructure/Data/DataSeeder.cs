@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
@@ -11,18 +13,26 @@ public class DataSeeder
     private readonly ApplicationDbContext _context;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly IHostEnvironment _environment;
+    private readonly ILogger<DataSeeder> _logger;
 
-    public DataSeeder(ApplicationDbContext context, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+    public DataSeeder(
+        ApplicationDbContext context,
+        UserManager<ApplicationUser> userManager,
+        RoleManager<IdentityRole> roleManager,
+        IHostEnvironment environment,
+        ILogger<DataSeeder> logger)
     {
         _context = context;
         _userManager = userManager;
         _roleManager = roleManager;
+        _environment = environment;
+        _logger = logger;
     }
 
     public async Task SeedAsync()
     {
-        await ReconcileMigrationHistoryAsync();
-        await _context.Database.MigrateAsync();
+        await EnsureDatabaseSchemaReadyAsync();
 
         var adminSeed = await LoadAdminSeedAsync();
 
@@ -57,6 +67,62 @@ public class DataSeeder
         await EnsureIdeaPostsAsync(adminSeed.IdeaPosts, widgetMap);
         await EnsurePagesAsync(adminSeed.Pages, tenantBySlug, widgetMap);
         await SeedAuditLogsAsync(adminSeed.AuditLogs);
+    }
+
+    private async Task EnsureDatabaseSchemaReadyAsync()
+    {
+        if (!_context.Database.IsSqlite())
+        {
+            await _context.Database.EnsureCreatedAsync();
+            return;
+        }
+
+        var hasCoreSchema = await HasCoreSchemaAsync();
+        if (!hasCoreSchema)
+        {
+            if (!_environment.IsDevelopment())
+                throw new InvalidOperationException(
+                    "Database schema is incomplete (missing core tables). " +
+                    "Automatic database reset is allowed only in Development.");
+
+            _logger.LogWarning("Detected incomplete database schema. Recreating development database.");
+            await _context.Database.EnsureDeletedAsync();
+            await _context.Database.EnsureCreatedAsync();
+            return;
+        }
+    }
+
+    private async Task<bool> HasCoreSchemaAsync()
+    {
+        return await HasTableAsync("Widgets")
+               && await HasTableAsync("DataSources")
+               && await HasTableAsync("AspNetUsers");
+    }
+
+    private async Task<bool> HasTableAsync(string tableName)
+    {
+        var connection = _context.Database.GetDbConnection();
+        var openedHere = connection.State != System.Data.ConnectionState.Open;
+        if (openedHere)
+            await connection.OpenAsync();
+
+        try
+        {
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=@name";
+            var p = cmd.CreateParameter();
+            p.ParameterName = "@name";
+            p.Value = tableName;
+            cmd.Parameters.Add(p);
+            var scalar = await cmd.ExecuteScalarAsync();
+            var count = scalar as long? ?? 0;
+            return count > 0;
+        }
+        finally
+        {
+            if (openedHere)
+                await connection.CloseAsync();
+        }
     }
 
     private async Task EnsureDemoSourcesUseJsonFilesAsync(string salesJsonPath, string courseJsonPath, string newsJsonPath)
@@ -1045,113 +1111,4 @@ public class DataSeeder
     }
 
 
-    /// <summary>
-    /// Detects databases that were created outside of EF Core migrations (e.g., via EnsureCreated
-    /// or from a previous migration set that was later squashed) and marks the corresponding
-    /// migrations as applied in __EFMigrationsHistory so that MigrateAsync does not attempt
-    /// to re-create tables that already exist.
-    /// </summary>
-    private async Task ReconcileMigrationHistoryAsync()
-    {
-        var connection = _context.Database.GetDbConnection();
-        if (connection.State != System.Data.ConnectionState.Open)
-            await connection.OpenAsync();
-
-        using var cmd = connection.CreateCommand();
-
-        // Ensure the EF migrations history table exists
-        cmd.CommandText = """
-            CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
-                "MigrationId" TEXT NOT NULL CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY,
-                "ProductVersion" TEXT NOT NULL
-            )
-            """;
-        await cmd.ExecuteNonQueryAsync();
-
-        await EnsureWidgetApiActivitiesTableAsync(connection);
-
-        // For each migration, if its characteristic schema object exists but the migration
-        // is not yet recorded, mark it as applied so MigrateAsync will skip it.
-        await TryMarkMigrationAppliedAsync(connection,
-            "20260421161413_AddWidgetApiActivityAndInactivityFields",
-            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='WidgetApiActivities'");
-
-        await TryMarkMigrationAppliedAsync(connection,
-            "20260425170354_AddFormSubmissions",
-            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='FormSubmissions'");
-
-        await TryMarkMigrationAppliedAsync(connection,
-            "20260505164318_AddTenantAndPageSupport",
-            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Tenants'");
-
-        await TryMarkMigrationAppliedAsync(connection,
-            "20260507152721_AddOperationalIndexes",
-            "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='IX_WidgetExecutions_WidgetId_StartedAt'");
-    }
-
-    private static async Task EnsureWidgetApiActivitiesTableAsync(System.Data.Common.DbConnection connection)
-    {
-        using var cmd = connection.CreateCommand();
-        cmd.CommandText = """
-            CREATE TABLE IF NOT EXISTS "WidgetApiActivities" (
-                "Id" INTEGER NOT NULL CONSTRAINT "PK_WidgetApiActivities" PRIMARY KEY AUTOINCREMENT,
-                "WidgetId" INTEGER NOT NULL,
-                "ApiEndpoint" TEXT NOT NULL,
-                "UserId" TEXT NULL,
-                "CalledAt" TEXT NOT NULL,
-                "ResponseTimeMs" INTEGER NULL,
-                "StatusCode" INTEGER NOT NULL,
-                CONSTRAINT "FK_WidgetApiActivities_Widgets_WidgetId" FOREIGN KEY ("WidgetId") REFERENCES "Widgets" ("Id") ON DELETE CASCADE
-            );
-            """;
-        await cmd.ExecuteNonQueryAsync();
-
-        cmd.CommandText = """
-            CREATE INDEX IF NOT EXISTS "IX_WidgetApiActivities_WidgetId_CalledAt"
-            ON "WidgetApiActivities" ("WidgetId", "CalledAt");
-            """;
-        await cmd.ExecuteNonQueryAsync();
-    }
-
-    private static async Task TryMarkMigrationAppliedAsync(
-        System.Data.Common.DbConnection connection,
-        string migrationId,
-        string schemaExistsQuery)
-    {
-        // Derive the EF Core product version from the assembly to keep history consistent
-        var efAttr = Attribute.GetCustomAttribute(typeof(DbContext).Assembly,
-            typeof(System.Reflection.AssemblyInformationalVersionAttribute))
-            as System.Reflection.AssemblyInformationalVersionAttribute;
-        var efVersion = efAttr?.InformationalVersion ?? "10.0.0";
-        var plusIndex = efVersion.IndexOf('+');
-        if (plusIndex >= 0) efVersion = efVersion[..plusIndex];
-
-        using var cmd = connection.CreateCommand();
-
-        // Skip if already recorded in history
-        cmd.CommandText = "SELECT COUNT(*) FROM \"__EFMigrationsHistory\" WHERE \"MigrationId\" = @migrationId";
-        var p = cmd.CreateParameter();
-        p.ParameterName = "@migrationId";
-        p.Value = migrationId;
-        cmd.Parameters.Add(p);
-        var alreadyRecorded = (long)(await cmd.ExecuteScalarAsync())! > 0;
-        if (alreadyRecorded) return;
-
-        // Only mark as applied if the schema already exists in the database
-        cmd.CommandText = schemaExistsQuery;
-        cmd.Parameters.Clear();
-        var schemaExists = (long)(await cmd.ExecuteScalarAsync())! > 0;
-        if (!schemaExists) return;
-
-        cmd.CommandText = "INSERT INTO \"__EFMigrationsHistory\" (\"MigrationId\", \"ProductVersion\") VALUES (@migrationId, @productVersion)";
-        var pId = cmd.CreateParameter();
-        pId.ParameterName = "@migrationId";
-        pId.Value = migrationId;
-        cmd.Parameters.Add(pId);
-        var pVer = cmd.CreateParameter();
-        pVer.ParameterName = "@productVersion";
-        pVer.Value = efVersion;
-        cmd.Parameters.Add(pVer);
-        await cmd.ExecuteNonQueryAsync();
-    }
 }

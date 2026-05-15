@@ -1,5 +1,4 @@
 using ClosedXML.Excel;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using WidgetData.Application.DTOs;
@@ -248,61 +247,17 @@ public class WidgetService : IWidgetService
 
             return ds.SourceType switch
             {
-                WidgetData.Domain.Enums.DataSourceType.SQLite => await GetDataFromSqliteAsync(widget, ds),
                 WidgetData.Domain.Enums.DataSourceType.Csv => await GetDataFromCsvAsync(widget, ds),
                 WidgetData.Domain.Enums.DataSourceType.Json => await GetDataFromJsonAsync(widget, ds),
                 WidgetData.Domain.Enums.DataSourceType.Excel => await GetDataFromExcelAsync(widget, ds),
                 WidgetData.Domain.Enums.DataSourceType.RestApi => await GetDataFromRestApiAsync(widget, ds),
-                _ => new { message = "Data retrieval not implemented for this source type", widgetId = id }
+                _ => new { error = $"Only JSON data source is supported. Current source type: {ds.SourceType}", widgetId = id }
             };
         }
         catch (Exception ex)
         {
             return new { error = ex.Message, widgetId = id };
         }
-    }
-
-    // ── SQLite ────────────────────────────────────────────────────────────────
-
-    private static async Task<object> GetDataFromSqliteAsync(Widget widget, DataSource ds)
-    {
-        if (string.IsNullOrWhiteSpace(ds.ConnectionString))
-            return new { error = "Connection string is empty" };
-
-        var config = string.IsNullOrWhiteSpace(widget.Configuration) ? null
-            : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(widget.Configuration);
-        var query = config?.GetValueOrDefault("query")?.ToString();
-        if (string.IsNullOrWhiteSpace(query))
-            return new { error = "No query configured for this widget" };
-
-        // Strip SQL comments before validation to prevent bypass (e.g. "/**/SELECT" or "-- comment\nDROP")
-        var strippedQuery = System.Text.RegularExpressions.Regex.Replace(
-            query.TrimStart(), @"(/\*[\s\S]*?\*/|--[^\r\n]*)", " ").TrimStart();
-
-        if (!strippedQuery.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
-            return new { error = "Only SELECT queries are permitted for widget data retrieval" };
-
-        string[] disallowedKeywords = ["INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER", "EXEC", "EXECUTE", "TRUNCATE", "MERGE", "ATTACH", "DETACH"];
-        if (disallowedKeywords.Any(k => System.Text.RegularExpressions.Regex.IsMatch(
-                strippedQuery, $@"\b{k}\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase)))
-            return new { error = "Query contains disallowed SQL statements" };
-
-        using var conn = new SqliteConnection(ds.ConnectionString);
-        await conn.OpenAsync();
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = query;
-        using var reader = await cmd.ExecuteReaderAsync();
-
-        var columns = Enumerable.Range(0, reader.FieldCount).Select(reader.GetName).ToList();
-        var rows = new List<Dictionary<string, object?>>();
-        while (await reader.ReadAsync())
-        {
-            var row = new Dictionary<string, object?>();
-            for (int i = 0; i < reader.FieldCount; i++)
-                row[columns[i]] = reader.IsDBNull(i) ? null : reader.GetValue(i);
-            rows.Add(row);
-        }
-        return new { columns, rows };
     }
 
     // ── CSV ───────────────────────────────────────────────────────────────────

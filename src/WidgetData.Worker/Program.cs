@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using Serilog;
 using WidgetData.Infrastructure;
 using WidgetData.Infrastructure.Data;
@@ -27,7 +26,7 @@ try
     using (var scope = host.Services.CreateScope())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        await dbContext.Database.MigrateAsync();
+        await dbContext.Database.EnsureCreatedAsync();
     }
 
     await host.RunAsync();

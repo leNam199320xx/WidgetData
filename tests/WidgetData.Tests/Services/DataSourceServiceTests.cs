@@ -65,7 +65,7 @@ public class DataSourceServiceTests
         Assert.NotNull(result);
         Assert.Equal(1, result.Id);
         Assert.Equal("My DB", result.Name);
-        Assert.Equal(DataSourceType.SQLite, result.SourceType);
+        Assert.Equal(DataSourceType.Json, result.SourceType);
     }
 
     [Fact]
@@ -112,15 +112,12 @@ public class DataSourceServiceTests
     public async Task CreateAsync_SetsCorrectSourceType()
     {
         var dto = TestDataBuilder.CreateDataSourceDto();
-        dto.SourceType = DataSourceType.RestApi;
-        dto.ApiEndpoint = "https://api.example.com";
-        dto.ApiKey = "secret-key";
+        dto.SourceType = DataSourceType.Json;
         var created = new DataSource
         {
             Id = 6,
             Name = dto.Name,
-            SourceType = DataSourceType.RestApi,
-            ApiEndpoint = dto.ApiEndpoint,
+            SourceType = DataSourceType.Json,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -128,7 +125,18 @@ public class DataSourceServiceTests
 
         var result = await _service.CreateAsync(dto, "user2");
 
-        Assert.Equal(DataSourceType.RestApi, result.SourceType);
+        Assert.Equal(DataSourceType.Json, result.SourceType);
+    }
+
+    [Fact]
+    public async Task CreateAsync_NonJsonSourceType_ThrowsInvalidOperationException()
+    {
+        var dto = TestDataBuilder.CreateDataSourceDto();
+        dto.SourceType = DataSourceType.SQLite;
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.CreateAsync(dto, "user2"));
+
+        _repoMock.Verify(r => r.CreateAsync(It.IsAny<DataSource>()), Times.Never);
     }
 
     // ─── UpdateAsync ──────────────────────────────────────────────────────────
@@ -155,7 +163,7 @@ public class DataSourceServiceTests
 
         Assert.NotNull(result);
         Assert.Equal("Updated DS", result.Name);
-        Assert.Equal(DataSourceType.PostgreSql, result.SourceType);
+        Assert.Equal(DataSourceType.Json, result.SourceType);
         _repoMock.Verify(r => r.UpdateAsync(It.Is<DataSource>(d =>
             d.Name == "Updated DS" && d.UpdatedAt != null)), Times.Once);
     }
@@ -168,6 +176,18 @@ public class DataSourceServiceTests
         var result = await _service.UpdateAsync(99, TestDataBuilder.UpdateDataSourceDto());
 
         Assert.Null(result);
+        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<DataSource>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_NonJsonSourceType_ThrowsInvalidOperationException()
+    {
+        var dto = TestDataBuilder.UpdateDataSourceDto();
+        dto.SourceType = DataSourceType.SQLite;
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.UpdateAsync(1, dto));
+
+        _repoMock.Verify(r => r.GetByIdAsync(It.IsAny<int>()), Times.Never);
         _repoMock.Verify(r => r.UpdateAsync(It.IsAny<DataSource>()), Times.Never);
     }
 

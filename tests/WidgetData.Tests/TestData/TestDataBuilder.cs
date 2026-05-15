@@ -69,8 +69,8 @@ public static class TestDataBuilder
         {
             Id = id,
             Name = name,
-            SourceType = DataSourceType.SQLite,
-            Description = "Cơ sở dữ liệu test SQLite",
+            SourceType = DataSourceType.Json,
+            Description = "Nguồn dữ liệu JSON test",
             Host = "localhost",
             Port = 5432,
             DatabaseName = "testdb",
@@ -85,7 +85,7 @@ public static class TestDataBuilder
         new()
         {
             Name = name,
-            SourceType = DataSourceType.SQLite,
+            SourceType = DataSourceType.Json,
             Description = "Mô tả nguồn dữ liệu",
             Host = "localhost",
             Port = 5432,
@@ -98,7 +98,7 @@ public static class TestDataBuilder
         new()
         {
             Name = name,
-            SourceType = DataSourceType.PostgreSql,
+            SourceType = DataSourceType.Json,
             Description = "Mô tả đã cập nhật",
             Host = "newhost",
             Port = 5433,
