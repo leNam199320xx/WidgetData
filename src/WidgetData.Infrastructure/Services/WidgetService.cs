@@ -251,7 +251,7 @@ public class WidgetService : IWidgetService
                 WidgetData.Domain.Enums.DataSourceType.Json => await GetDataFromJsonAsync(widget, ds),
                 WidgetData.Domain.Enums.DataSourceType.Excel => await GetDataFromExcelAsync(widget, ds),
                 WidgetData.Domain.Enums.DataSourceType.RestApi => await GetDataFromRestApiAsync(widget, ds),
-                _ => new { error = "Only JSON data source is supported", widgetId = id }
+                _ => new { error = $"Only JSON data source is supported. Current source type: {ds.SourceType}", widgetId = id }
             };
         }
         catch (Exception ex)

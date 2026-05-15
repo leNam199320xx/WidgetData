@@ -264,7 +264,7 @@ else
         _editingId = ds.Id;
         _form = new CreateDataSourceDto
         {
-            Name = ds.Name, SourceType = ds.SourceType == DataSourceType.Json ? ds.SourceType : DataSourceType.Json, Description = ds.Description,
+            Name = ds.Name, SourceType = DataSourceType.Json, Description = ds.Description,
             Host = ds.Host, Port = ds.Port, DatabaseName = ds.DatabaseName,
             Username = ds.Username, ApiEndpoint = ds.ApiEndpoint, AdditionalConfig = ds.AdditionalConfig
         };

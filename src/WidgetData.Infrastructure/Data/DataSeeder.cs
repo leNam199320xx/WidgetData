@@ -82,10 +82,10 @@ public class DataSeeder
         {
             if (!_environment.IsDevelopment())
                 throw new InvalidOperationException(
-                    "SQLite schema is incomplete (missing core tables). " +
+                    "Database schema is incomplete (missing core tables). " +
                     "Automatic database reset is allowed only in Development.");
 
-            _logger.LogWarning("Detected incomplete SQLite schema. Recreating development database.");
+            _logger.LogWarning("Detected incomplete database schema. Recreating development database.");
             await _context.Database.EnsureDeletedAsync();
             await _context.Database.EnsureCreatedAsync();
             return;
