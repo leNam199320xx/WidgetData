@@ -1,0 +1,57 @@
+[
+  {
+    "widgetName": "monthly_revenue_trend",
+    "cronExpression": "0 6 * * *",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "isEnabled": true,
+    "retryOnFailure": true,
+    "maxRetries": 3,
+    "hoursAgoLastRun": 18,
+    "hoursUntilNextRun": 6,
+    "lastRunStatus": "Success"
+  },
+  {
+    "widgetName": "recent_orders_table",
+    "cronExpression": "*/5 * * * *",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "isEnabled": true,
+    "retryOnFailure": false,
+    "maxRetries": 1,
+    "minutesAgoLastRun": 5,
+    "minutesUntilNextRun": 5,
+    "lastRunStatus": "Success"
+  },
+  {
+    "widgetName": "daily_payment_trend",
+    "cronExpression": "0 */4 * * *",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "isEnabled": true,
+    "retryOnFailure": true,
+    "maxRetries": 2,
+    "hoursAgoLastRun": 4,
+    "hoursUntilNextRun": 4,
+    "lastRunStatus": "Success"
+  },
+  {
+    "widgetName": "course_monthly_revenue_trend",
+    "cronExpression": "0 7 * * *",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "isEnabled": true,
+    "retryOnFailure": true,
+    "maxRetries": 3,
+    "hoursAgoLastRun": 19,
+    "hoursUntilNextRun": 5,
+    "lastRunStatus": "Success"
+  },
+  {
+    "widgetName": "news_monthly_views_trend",
+    "cronExpression": "0 6 * * *",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "isEnabled": true,
+    "retryOnFailure": true,
+    "maxRetries": 3,
+    "hoursAgoLastRun": 18,
+    "hoursUntilNextRun": 6,
+    "lastRunStatus": "Success"
+  }
+]

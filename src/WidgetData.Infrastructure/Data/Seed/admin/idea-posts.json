@@ -1,0 +1,192 @@
+{
+  "subscriptions": [
+    {
+      "widgetName": "top_products_by_revenue",
+      "name": "Product Feedback — Internal",
+      "labelFilter": "feedback,suggestion",
+      "isActive": true
+    }
+  ],
+  "posts": [
+    {
+      "widgetName": "top_products_by_revenue",
+      "title": "Thêm bộ lọc theo khoảng giá",
+      "content": "Khách hàng muốn lọc sản phẩm theo khoảng giá (dưới 500K, 500K-1M, trên 1M) để tìm kiếm nhanh hơn.",
+      "labels": "feedback,suggestion",
+      "status": "Processed",
+      "createdBy": "customer@example.com",
+      "daysAgo": 30,
+      "processedDaysAgo": 28,
+      "results": [
+        {
+          "subscriptionName": "Product Feedback — Internal",
+          "resultContent": "{\"status\":\"acknowledged\",\"assignedTo\":\"dev@widgetdata.com\",\"note\":\"Sẽ triển khai bộ lọc giá trong sprint Q3-2026\"}",
+          "status": "Processed",
+          "daysAgo": 28
+        }
+      ]
+    },
+    {
+      "widgetName": "top_products_by_revenue",
+      "title": "Hiển thị đánh giá sao sản phẩm",
+      "content": "Thêm cột điểm đánh giá trung bình (⭐) vào widget top sản phẩm để khách dễ so sánh.",
+      "labels": "suggestion",
+      "status": "Pending",
+      "createdBy": "admin@widgetdata.com",
+      "daysAgo": 20,
+      "results": [
+        {
+          "subscriptionName": "Product Feedback — Internal",
+          "resultContent": "{\"status\":\"backlog\",\"note\":\"Ghi nhận vào backlog Q4-2026, cần schema rating trong CSDL\"}",
+          "status": "Received",
+          "daysAgo": 18
+        }
+      ]
+    },
+    {
+      "widgetName": "top_products_by_revenue",
+      "title": "Tồn kho hiển thị màu cảnh báo",
+      "content": "Sản phẩm có tồn kho < 10 nên được tô màu đỏ, 10-50 màu vàng để nhân viên dễ theo dõi.",
+      "labels": "feedback",
+      "status": "Processed",
+      "createdBy": "manager@widgetdata.com",
+      "daysAgo": 18,
+      "processedDaysAgo": 16,
+      "results": [
+        {
+          "subscriptionName": "Product Feedback — Internal",
+          "resultContent": "{\"status\":\"acknowledged\",\"note\":\"Đã ghi nhận, sẽ thêm conditional formatting trong UI update tháng 6\"}",
+          "status": "Received",
+          "daysAgo": 16
+        }
+      ]
+    },
+    {
+      "widgetName": "monthly_revenue_trend",
+      "title": "So sánh doanh thu cùng kỳ năm trước",
+      "content": "Biểu đồ doanh thu nên có thêm đường so sánh năm trước để dễ thấy tăng trưởng hay sụt giảm.",
+      "labels": "suggestion,enhancement",
+      "status": "Pending",
+      "createdBy": "manager@widgetdata.com",
+      "daysAgo": 15,
+      "results": [
+        {
+          "subscriptionName": "Product Feedback — Internal",
+          "resultContent": "{\"status\":\"backlog\",\"note\":\"Thêm tham số so sánh năm trước vào chart config — dự kiến v1.5\"}",
+          "status": "Received",
+          "daysAgo": 13
+        }
+      ]
+    },
+    {
+      "widgetName": "monthly_revenue_trend",
+      "title": "Xuất biểu đồ dạng PNG/PDF",
+      "content": "Cần nút tải biểu đồ xuống dạng hình ảnh để đưa vào báo cáo PowerPoint.",
+      "labels": "suggestion",
+      "status": "Processed",
+      "createdBy": "admin@widgetdata.com",
+      "daysAgo": 14,
+      "processedDaysAgo": 12,
+      "results": [
+        {
+          "subscriptionName": "Product Feedback — Internal",
+          "resultContent": "{\"status\":\"implemented\",\"note\":\"Đã thêm nút Export PNG/PDF trong toolbar của widget chart\",\"releasedIn\":\"v1.4.0\"}",
+          "status": "Processed",
+          "daysAgo": 12
+        }
+      ]
+    },
+    {
+      "widgetName": "recent_orders_table",
+      "title": "Thêm nút xem chi tiết đơn hàng",
+      "content": "Từ bảng đơn hàng gần đây, cần click để xem toàn bộ sản phẩm trong đơn.",
+      "labels": "feedback,enhancement",
+      "status": "Pending",
+      "createdBy": "user@shop.demo",
+      "daysAgo": 12,
+      "results": [
+        {
+          "subscriptionName": "Product Feedback — Internal",
+          "resultContent": "{\"status\":\"acknowledged\",\"note\":\"Cần hỗ trợ drill-down từ widget — đang thiết kế API\"}",
+          "status": "Received",
+          "daysAgo": 10
+        }
+      ]
+    },
+    {
+      "widgetName": "recent_orders_table",
+      "title": "Lọc đơn hàng theo trạng thái real-time",
+      "content": "Muốn filter đơn hàng theo trạng thái (pending/completed/cancelled) ngay trên bảng mà không cần reload.",
+      "labels": "suggestion",
+      "status": "Pending",
+      "createdBy": "admin@shop.demo",
+      "daysAgo": 10,
+      "results": []
+    },
+    {
+      "widgetName": "customers_by_city_chart",
+      "title": "Thêm bản đồ Việt Nam theo tỉnh thành",
+      "content": "Biểu đồ phân bổ khách hàng dạng choropleth map sẽ trực quan hơn Donut chart hiện tại.",
+      "labels": "suggestion,enhancement",
+      "status": "Processed",
+      "createdBy": "manager@widgetdata.com",
+      "daysAgo": 9,
+      "processedDaysAgo": 7,
+      "results": [
+        {
+          "subscriptionName": "Product Feedback — Internal",
+          "resultContent": "{\"status\":\"in-progress\",\"assignedTo\":\"dev@widgetdata.com\",\"note\":\"Đang nghiên cứu thư viện Leaflet.js cho map Việt Nam, dự kiến Q4-2026\"}",
+          "status": "Received",
+          "daysAgo": 7
+        }
+      ]
+    },
+    {
+      "widgetName": "payment_method_distribution",
+      "title": "Hiển thị tỷ lệ phần trăm trong biểu đồ tròn",
+      "content": "Label trên Pie chart nên hiển thị cả số tuyệt đối và phần trăm để dễ đọc.",
+      "labels": "feedback",
+      "status": "Pending",
+      "createdBy": "dev@widgetdata.com",
+      "daysAgo": 7,
+      "results": [
+        {
+          "subscriptionName": "Product Feedback — Internal",
+          "resultContent": "{\"status\":\"acknowledged\",\"note\":\"Sẽ cấu hình qua chartConfig.showPercent trong bản cập nhật tới\"}",
+          "status": "Received",
+          "daysAgo": 5
+        }
+      ]
+    },
+    {
+      "widgetName": "top_products_by_revenue",
+      "title": "Tích hợp ảnh sản phẩm trong bảng",
+      "content": "Nếu URL ảnh có trong CSDL, widget nên hiển thị thumbnail nhỏ cạnh tên sản phẩm.",
+      "labels": "suggestion",
+      "status": "Pending",
+      "createdBy": "admin@shop.demo",
+      "daysAgo": 5,
+      "results": []
+    },
+    {
+      "widgetName": "daily_orders_last30",
+      "title": "Cảnh báo khi đơn hàng giảm đột ngột",
+      "content": "Nếu số đơn trong ngày thấp hơn 30% so với trung bình 7 ngày, nên tô đỏ và gửi Telegram.",
+      "labels": "feedback,suggestion",
+      "status": "Pending",
+      "createdBy": "manager@widgetdata.com",
+      "daysAgo": 3,
+      "results": []
+    },
+    {
+      "widgetName": "low_stock_products",
+      "title": "Tự động tạo đơn đặt hàng khi tồn kho thấp",
+      "content": "Khi sản phẩm dưới ngưỡng, hệ thống nên tự tạo draft PO gửi email cho nhà cung cấp.",
+      "labels": "enhancement",
+      "status": "Pending",
+      "createdBy": "admin@widgetdata.com",
+      "daysAgo": 1,
+      "results": []
+    }
+  ]
+}

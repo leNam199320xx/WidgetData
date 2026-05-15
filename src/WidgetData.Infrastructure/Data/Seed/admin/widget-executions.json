@@ -1,0 +1,31 @@
+[
+  {
+    "groupNames": [
+      "Tổng quan doanh thu",
+      "Báo cáo sản phẩm",
+      "Báo cáo khách hàng",
+      "Báo cáo thanh toán"
+    ],
+    "excludeWidgetTypes": [ "Form" ],
+    "entries": [
+      { "hoursAgo": 2.0, "executionTimeMs": 180, "triggeredBy": "Scheduler" },
+      { "hoursAgo": 0.5, "executionTimeMs": 210, "triggeredBy": "Manual" }
+    ]
+  },
+  {
+    "groupNames": [ "Phân tích học tập — EduViet" ],
+    "excludeWidgetTypes": [],
+    "entries": [
+      { "hoursAgo": 3.0, "executionTimeMs": 150, "triggeredBy": "Scheduler" },
+      { "hoursAgo": 0.333, "executionTimeMs": 160, "triggeredBy": "Manual" }
+    ]
+  },
+  {
+    "groupNames": [ "Phân tích tin tức — VietNews" ],
+    "excludeWidgetTypes": [],
+    "entries": [
+      { "hoursAgo": 2.0, "executionTimeMs": 120, "triggeredBy": "Scheduler" },
+      { "hoursAgo": 0.25, "executionTimeMs": 130, "triggeredBy": "Manual" }
+    ]
+  }
+]

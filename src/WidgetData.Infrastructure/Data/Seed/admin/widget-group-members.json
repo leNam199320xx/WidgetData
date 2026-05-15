@@ -1,0 +1,71 @@
+[
+  {
+    "groupName": "Tổng quan doanh thu",
+    "widgetNames": [
+      "total_revenue_metric",
+      "total_orders_metric",
+      "avg_order_value_metric",
+      "total_customers_metric",
+      "monthly_revenue_trend",
+      "revenue_by_category_chart",
+      "order_status_summary"
+    ]
+  },
+  {
+    "groupName": "Báo cáo sản phẩm",
+    "widgetNames": [
+      "top_products_by_revenue",
+      "product_sales_by_category_chart",
+      "low_stock_products",
+      "daily_orders_last30"
+    ]
+  },
+  {
+    "groupName": "Báo cáo khách hàng",
+    "widgetNames": [
+      "top_customers_by_revenue",
+      "customers_by_city_chart",
+      "recent_orders_table",
+      "contact_form"
+    ]
+  },
+  {
+    "groupName": "Báo cáo thanh toán",
+    "widgetNames": [
+      "payment_method_distribution",
+      "daily_payment_trend",
+      "payment_summary_by_method",
+      "failed_refunded_payments"
+    ]
+  },
+  {
+    "groupName": "Phân tích học tập — EduViet",
+    "widgetNames": [
+      "course_enrollments_today",
+      "course_active_courses_count",
+      "course_completion_rate",
+      "course_revenue_today",
+      "course_enrollments_by_category",
+      "course_popular_courses",
+      "course_completion_progress_chart",
+      "course_recent_student_activity",
+      "course_monthly_revenue_trend",
+      "course_top_instructors"
+    ]
+  },
+  {
+    "groupName": "Phân tích tin tức — VietNews",
+    "widgetNames": [
+      "news_total_views_today",
+      "news_articles_published_today",
+      "news_new_readers_today",
+      "news_read_completion_rate",
+      "news_views_by_category",
+      "news_popular_articles_week",
+      "news_traffic_sources",
+      "news_recent_reader_activity",
+      "news_monthly_views_trend",
+      "news_top_authors"
+    ]
+  }
+]

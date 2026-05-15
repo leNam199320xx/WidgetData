@@ -1,0 +1,121 @@
+[
+  {
+    "tenantSlug": "demo",
+    "title": "Cửa hàng - Sales Dashboard",
+    "slug": "sales",
+    "description": "Dashboard tổng quan bán hàng: doanh thu, đơn hàng, khách hàng và thanh toán",
+    "widgetNames": [
+      "total_revenue_metric",
+      "total_orders_metric",
+      "avg_order_value_metric",
+      "total_customers_metric",
+      "monthly_revenue_trend",
+      "revenue_by_category_chart",
+      "order_status_summary",
+      "recent_orders_table"
+    ],
+    "narrowWidgetCount": 4
+  },
+  {
+    "tenantSlug": "demo",
+    "title": "EduViet - Learning Dashboard",
+    "slug": "course",
+    "description": "Dashboard theo dõi khóa học, học viên và doanh thu nền tảng học trực tuyến",
+    "widgetNames": [
+      "course_enrollments_today",
+      "course_active_courses_count",
+      "course_completion_rate",
+      "course_revenue_today",
+      "course_enrollments_by_category",
+      "course_popular_courses",
+      "course_completion_progress_chart",
+      "course_recent_student_activity"
+    ],
+    "narrowWidgetCount": 4
+  },
+  {
+    "tenantSlug": "demo",
+    "title": "VietNews - News Analytics",
+    "slug": "news",
+    "description": "Dashboard phân tích tin tức: lượt xem, bài viết, độc giả và tác giả",
+    "widgetNames": [
+      "news_total_views_today",
+      "news_articles_published_today",
+      "news_new_readers_today",
+      "news_read_completion_rate",
+      "news_views_by_category",
+      "news_popular_articles_week",
+      "news_traffic_sources",
+      "news_recent_reader_activity"
+    ],
+    "narrowWidgetCount": 4
+  },
+  {
+    "tenantSlug": "shop",
+    "title": "Shop - Sales Dashboard",
+    "slug": "shop-sales-dashboard",
+    "description": "Dashboard bán hàng cho Shop Tenant: doanh thu, đơn hàng và khách hàng",
+    "widgetNames": [
+      "total_revenue_metric",
+      "total_orders_metric",
+      "avg_order_value_metric",
+      "total_customers_metric",
+      "monthly_revenue_trend",
+      "revenue_by_category_chart",
+      "order_status_summary",
+      "recent_orders_table"
+    ],
+    "narrowWidgetCount": 4
+  },
+  {
+    "tenantSlug": "news",
+    "title": "VietNews - News Analytics",
+    "slug": "vietnews-analytics",
+    "description": "Dashboard phân tích tin tức cho News Tenant: lượt xem, bài viết và độc giả",
+    "widgetNames": [
+      "news_total_views_today",
+      "news_articles_published_today",
+      "news_new_readers_today",
+      "news_read_completion_rate",
+      "news_views_by_category",
+      "news_popular_articles_week",
+      "news_traffic_sources",
+      "news_recent_reader_activity"
+    ],
+    "narrowWidgetCount": 4
+  },
+  {
+    "tenantSlug": "course",
+    "title": "EduViet - Learning Dashboard",
+    "slug": "eduviet-learning",
+    "description": "Dashboard học trực tuyến cho Course Tenant: khóa học, học viên và tiến độ",
+    "widgetNames": [
+      "course_enrollments_today",
+      "course_active_courses_count",
+      "course_completion_rate",
+      "course_revenue_today",
+      "course_enrollments_by_category",
+      "course_popular_courses",
+      "course_completion_progress_chart",
+      "course_recent_student_activity"
+    ],
+    "narrowWidgetCount": 4
+  },
+  {
+    "tenantSlug": "retail",
+    "title": "Retail - Overview Dashboard",
+    "slug": "retail-overview",
+    "description": "Dashboard tổng quan cho Retail Tenant: doanh thu, sản phẩm và thanh toán",
+    "widgetNames": [
+      "total_revenue_metric",
+      "total_orders_metric",
+      "avg_order_value_metric",
+      "total_customers_metric",
+      "monthly_revenue_trend",
+      "revenue_by_category_chart",
+      "order_status_summary",
+      "recent_orders_table"
+    ],
+    "narrowWidgetCount": 4
+  }
+]

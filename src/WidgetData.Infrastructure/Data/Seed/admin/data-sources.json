@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Cửa hàng - Sales Data",
+    "sourceType": "Json",
+    "description": "Dữ liệu JSON demo cho bán hàng, khách hàng, sản phẩm và thanh toán",
+    "fileNameInBaseDirectory": "demo-sales.json",
+    "isActive": true
+  },
+  {
+    "name": "Analytics REST API",
+    "sourceType": "RestApi",
+    "description": "REST API endpoint for analytics data",
+    "apiEndpoint": "https://api.example.com/analytics",
+    "apiKey": "demo-api-key-12345",
+    "isActive": true,
+    "lastTestedHoursAgo": 1
+  },
+  {
+    "name": "EduViet - Course Data",
+    "sourceType": "Json",
+    "description": "Dữ liệu JSON demo cho nền tảng học trực tuyến EduViet",
+    "fileNameInBaseDirectory": "demo-course.json",
+    "isActive": true
+  },
+  {
+    "name": "VietNews - News Data",
+    "sourceType": "Json",
+    "description": "Dữ liệu JSON demo cho cổng tin tức VietNews",
+    "fileNameInBaseDirectory": "demo-news.json",
+    "isActive": true
+  }
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Tổng quan doanh thu",
+    "description": "Dashboard tổng quan về doanh thu, đơn hàng và hiệu suất kinh doanh",
+    "isActive": true
+  },
+  {
+    "name": "Báo cáo sản phẩm",
+    "description": "Phân tích doanh số theo sản phẩm và danh mục",
+    "isActive": true
+  },
+  {
+    "name": "Báo cáo khách hàng",
+    "description": "Thống kê khách hàng, doanh thu theo khách hàng",
+    "isActive": true
+  },
+  {
+    "name": "Báo cáo thanh toán",
+    "description": "Phân tích phương thức thanh toán và trạng thái giao dịch",
+    "isActive": true
+  },
+  {
+    "name": "Phân tích học tập — EduViet",
+    "description": "Dashboard theo dõi đăng ký khóa học, tiến độ học viên và doanh thu nền tảng học trực tuyến",
+    "isActive": true
+  },
+  {
+    "name": "Phân tích tin tức — VietNews",
+    "description": "Dashboard theo dõi lượt xem bài viết, độc giả, bình luận và nguồn truy cập cổng tin tức",
+    "isActive": true
+  }
+]

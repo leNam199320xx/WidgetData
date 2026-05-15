@@ -1,0 +1,88 @@
+[
+  {
+    "widgetName": "monthly_revenue_trend",
+    "configuration": "{\"query\":\"SELECT strftime('%Y-%m', created_at) as month, ROUND(SUM(total_amount),0) as revenue FROM orders WHERE status='completed' AND created_at >= date('now','-6 months') GROUP BY month ORDER BY month ASC\"}",
+    "chartConfig": "{\"type\":\"Bar\",\"xAxis\":\"month\",\"yAxis\":\"revenue\",\"seriesLabel\":\"Doanh thu\"}",
+    "note": "Phiên bản gốc — Bar chart, chỉ 6 tháng",
+    "triggerSource": "Manual",
+    "archivedBy": "admin@widgetdata.com",
+    "daysAgo": 30
+  },
+  {
+    "widgetName": "monthly_revenue_trend",
+    "configuration": "{\"query\":\"SELECT strftime('%Y-%m', created_at) as month, ROUND(SUM(total_amount),0) as revenue FROM orders WHERE status='completed' AND created_at >= date('now','-9 months') GROUP BY month ORDER BY month ASC\"}",
+    "chartConfig": "{\"type\":\"Line\",\"xAxis\":\"month\",\"yAxis\":\"revenue\",\"seriesLabel\":\"Doanh thu\"}",
+    "note": "Mở rộng 9 tháng, chuyển sang Line chart",
+    "triggerSource": "Manual",
+    "archivedBy": "manager@widgetdata.com",
+    "daysAgo": 7
+  },
+  {
+    "widgetName": "revenue_by_category_chart",
+    "configuration": "{\"query\":\"SELECT c.name as category, ROUND(SUM(oi.line_total),0) as revenue FROM order_items oi JOIN products p ON oi.product_id=p.id JOIN categories c ON p.category_id=c.id GROUP BY c.name ORDER BY revenue DESC\"}",
+    "chartConfig": "{\"type\":\"Pie\",\"xAxis\":\"category\",\"yAxis\":\"revenue\",\"seriesLabel\":\"Doanh thu\"}",
+    "note": "Phiên bản Pie chart (trước khi đổi sang Bar)",
+    "triggerSource": "OnSave",
+    "archivedBy": "system",
+    "daysAgo": 14
+  },
+  {
+    "widgetName": "revenue_by_category_chart",
+    "configuration": "{\"query\":\"SELECT c.name as category, ROUND(SUM(oi.line_total),0) as revenue FROM order_items oi JOIN products p ON oi.product_id=p.id JOIN categories c ON p.category_id=c.id JOIN orders o ON oi.order_id=o.id WHERE o.status='completed' GROUP BY c.name ORDER BY revenue DESC\"}",
+    "chartConfig": "{\"type\":\"Bar\",\"xAxis\":\"category\",\"yAxis\":\"revenue\",\"seriesLabel\":\"Doanh thu\"}",
+    "note": "Lọc chỉ đơn hàng completed, đổi sang Bar chart",
+    "triggerSource": "Manual",
+    "archivedBy": "admin@widgetdata.com",
+    "daysAgo": 5
+  },
+  {
+    "widgetName": "top_products_by_revenue",
+    "configuration": "{\"query\":\"SELECT p.name as 'Sản phẩm', SUM(oi.quantity) as 'SL bán', ROUND(SUM(oi.line_total),0) as 'Doanh thu' FROM order_items oi JOIN products p ON oi.product_id=p.id JOIN orders o ON oi.order_id=o.id WHERE o.status='completed' GROUP BY p.id ORDER BY SUM(oi.line_total) DESC LIMIT 5\"}",
+    "note": "Phiên bản v1 — Top 5, chưa có danh mục",
+    "triggerSource": "OnSave",
+    "archivedBy": "system",
+    "daysAgo": 21
+  },
+  {
+    "widgetName": "top_products_by_revenue",
+    "configuration": "{\"query\":\"SELECT p.name as 'Sản phẩm', c.name as 'Danh mục', SUM(oi.quantity) as 'SL bán', ROUND(SUM(oi.line_total),0) as 'Doanh thu' FROM order_items oi JOIN products p ON oi.product_id=p.id JOIN categories c ON p.category_id=c.id JOIN orders o ON oi.order_id=o.id WHERE o.status='completed' GROUP BY p.id ORDER BY SUM(oi.line_total) DESC LIMIT 10\"}",
+    "note": "Thêm cột Danh mục, tăng giới hạn lên Top 10",
+    "triggerSource": "Manual",
+    "archivedBy": "manager@widgetdata.com",
+    "daysAgo": 10
+  },
+  {
+    "widgetName": "order_status_summary",
+    "configuration": "{\"query\":\"SELECT status as 'Trạng thái', COUNT(*) as 'Số đơn' FROM orders GROUP BY status ORDER BY COUNT(*) DESC\"}",
+    "note": "Phiên bản đơn giản — chưa tính tổng tiền",
+    "triggerSource": "OnSave",
+    "archivedBy": "system",
+    "daysAgo": 18
+  },
+  {
+    "widgetName": "payment_method_distribution",
+    "configuration": "{\"query\":\"SELECT payment_method as label, COUNT(*) as value FROM payments GROUP BY payment_method ORDER BY COUNT(*) DESC\"}",
+    "chartConfig": "{\"type\":\"Donut\",\"xAxis\":\"label\",\"yAxis\":\"value\",\"seriesLabel\":\"Giao dịch\"}",
+    "note": "Phiên bản Donut, chưa lọc status=success",
+    "triggerSource": "OnSave",
+    "archivedBy": "system",
+    "daysAgo": 16
+  },
+  {
+    "widgetName": "customers_by_city_chart",
+    "configuration": "{\"query\":\"SELECT city as label, COUNT(*) as value FROM customers GROUP BY city ORDER BY COUNT(*) DESC LIMIT 5\"}",
+    "chartConfig": "{\"type\":\"Pie\",\"xAxis\":\"label\",\"yAxis\":\"value\",\"seriesLabel\":\"Khách hàng\"}",
+    "note": "Giới hạn Top 5 thành phố",
+    "triggerSource": "Manual",
+    "archivedBy": "admin@widgetdata.com",
+    "daysAgo": 9
+  },
+  {
+    "widgetName": "low_stock_products",
+    "configuration": "{\"query\":\"SELECT p.sku as 'SKU', p.name as 'Sản phẩm', p.stock_quantity as 'Tồn kho' FROM products p WHERE p.stock_quantity < 100 ORDER BY p.stock_quantity ASC LIMIT 20\"}",
+    "note": "Phiên bản v1 — ngưỡng < 100 (đã giảm xuống < 50)",
+    "triggerSource": "Manual",
+    "archivedBy": "manager@widgetdata.com",
+    "daysAgo": 25
+  }
+]
