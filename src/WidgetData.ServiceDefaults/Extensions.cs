@@ -1,3 +1,4 @@
+using System.Threading;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,9 +18,18 @@ public static class Extensions
         builder.ConfigureOpenTelemetry();
         builder.AddDefaultHealthChecks();
         builder.Services.AddServiceDiscovery();
+        var isDevelopment = builder.Environment.IsDevelopment();
         builder.Services.ConfigureHttpClientDefaults(http =>
         {
-            http.AddStandardResilienceHandler();
+            if (isDevelopment)
+            {
+                http.ConfigureHttpClient(client => client.Timeout = Timeout.InfiniteTimeSpan);
+            }
+            else
+            {
+                http.AddStandardResilienceHandler();
+            }
+
             http.AddServiceDiscovery();
         });
 

@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Threading;
 using System.Text.Json;
 using Microsoft.Extensions.Hosting;
 using WidgetData.Application.DTOs;
@@ -184,11 +185,13 @@ public class DataSourceService : IDataSourceService
         return result;
     }
 
-    private static async Task<string> TestRestApiAsync(string? endpoint, string? apiKey)
+    private async Task<string> TestRestApiAsync(string? endpoint, string? apiKey)
     {
         if (string.IsNullOrWhiteSpace(endpoint))
             return "Connection failed: API endpoint is empty";
-        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+        using var http = new HttpClient();
+        if (_hostEnvironment.IsDevelopment())
+            http.Timeout = Timeout.InfiniteTimeSpan;
         if (!string.IsNullOrWhiteSpace(apiKey))
             http.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
         var response = await http.GetAsync(endpoint);

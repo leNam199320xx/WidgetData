@@ -76,7 +76,6 @@ public class IdeaBoardService : IIdeaBoardService
         try
         {
             var client = _httpClientFactory.CreateClient();
-            client.Timeout = TimeSpan.FromSeconds(30);
             var payload = new
             {
                 postId = post.Id,
