@@ -17,9 +17,18 @@ public static class Extensions
         builder.ConfigureOpenTelemetry();
         builder.AddDefaultHealthChecks();
         builder.Services.AddServiceDiscovery();
+        var isDevelopment = builder.Environment.IsDevelopment();
         builder.Services.ConfigureHttpClientDefaults(http =>
         {
-            http.AddStandardResilienceHandler();
+            if (isDevelopment)
+            {
+                http.ConfigureHttpClient(client => client.Timeout = System.Threading.Timeout.InfiniteTimeSpan);
+            }
+            else
+            {
+                http.AddStandardResilienceHandler();
+            }
+
             http.AddServiceDiscovery();
         });
 
