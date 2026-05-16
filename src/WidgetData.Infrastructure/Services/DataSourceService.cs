@@ -1,5 +1,4 @@
 using System.Net.Http;
-using System.Threading;
 using System.Text.Json;
 using Microsoft.Extensions.Hosting;
 using WidgetData.Application.DTOs;
@@ -13,12 +12,18 @@ namespace WidgetData.Infrastructure.Services;
 public class DataSourceService : IDataSourceService
 {
     private readonly IDataSourceRepository _repo;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly ITenantContext? _tenantContext;
     private readonly IHostEnvironment _hostEnvironment;
 
-    public DataSourceService(IDataSourceRepository repo, IHostEnvironment hostEnvironment, ITenantContext? tenantContext = null)
+    public DataSourceService(
+        IDataSourceRepository repo,
+        IHttpClientFactory httpClientFactory,
+        IHostEnvironment hostEnvironment,
+        ITenantContext? tenantContext = null)
     {
         _repo = repo;
+        _httpClientFactory = httpClientFactory;
         _hostEnvironment = hostEnvironment;
         _tenantContext = tenantContext;
     }
@@ -189,9 +194,7 @@ public class DataSourceService : IDataSourceService
     {
         if (string.IsNullOrWhiteSpace(endpoint))
             return "Connection failed: API endpoint is empty";
-        using var http = new HttpClient();
-        if (_hostEnvironment.IsDevelopment())
-            http.Timeout = Timeout.InfiniteTimeSpan;
+        using var http = _httpClientFactory.CreateClient();
         if (!string.IsNullOrWhiteSpace(apiKey))
             http.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
         var response = await http.GetAsync(endpoint);

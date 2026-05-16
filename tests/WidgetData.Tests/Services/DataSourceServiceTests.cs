@@ -12,15 +12,17 @@ namespace WidgetData.Tests.Services;
 public class DataSourceServiceTests
 {
     private readonly Mock<IDataSourceRepository> _repoMock;
+    private readonly Mock<IHttpClientFactory> _httpClientFactoryMock;
     private readonly Mock<IHostEnvironment> _hostEnvironmentMock;
     private readonly DataSourceService _service;
 
     public DataSourceServiceTests()
     {
         _repoMock = new Mock<IDataSourceRepository>();
+        _httpClientFactoryMock = new Mock<IHttpClientFactory>();
         _hostEnvironmentMock = new Mock<IHostEnvironment>();
         _hostEnvironmentMock.SetupGet(x => x.ContentRootPath).Returns(Path.GetTempPath());
-        _service = new DataSourceService(_repoMock.Object, _hostEnvironmentMock.Object);
+        _service = new DataSourceService(_repoMock.Object, _httpClientFactoryMock.Object, _hostEnvironmentMock.Object);
     }
 
     // ─── GetAllAsync ─────────────────────────────────────────────────────────

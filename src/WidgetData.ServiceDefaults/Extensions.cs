@@ -1,4 +1,3 @@
-using System.Threading;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,7 +22,7 @@ public static class Extensions
         {
             if (isDevelopment)
             {
-                http.ConfigureHttpClient(client => client.Timeout = Timeout.InfiniteTimeSpan);
+                http.ConfigureHttpClient(client => client.Timeout = System.Threading.Timeout.InfiniteTimeSpan);
             }
             else
             {
