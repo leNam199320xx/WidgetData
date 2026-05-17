@@ -37,11 +37,11 @@ public class WidgetActivityService : IWidgetActivityService
         await _activityRepo.RecordAsync(activity);
 
         // Update LastActivityAt on widget
-        var widget = await _context.Widgets.FindAsync(widgetId);
+        var widget = await _widgetRepo.GetByIdAsync(widgetId);
         if (widget != null)
         {
             widget.LastActivityAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+            await _widgetRepo.UpdateAsync(widget);
         }
     }
 

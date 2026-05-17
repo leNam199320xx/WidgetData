@@ -10,6 +10,8 @@ using WidgetData.API.Middleware;
 using WidgetData.Domain.Entities;
 using WidgetData.Infrastructure;
 using WidgetData.Infrastructure.Data;
+using WidgetData.Infrastructure.Data.Json.Repositories;
+using WidgetData.Infrastructure.Tools;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -130,6 +132,18 @@ try
     {
         var seeder = scope.ServiceProvider.GetRequiredService<DataSeeder>();
         await seeder.SeedAsync();
+
+        var businessDataProvider = builder.Configuration["Storage:BusinessDataProvider"];
+        if (string.Equals(businessDataProvider, "json", StringComparison.OrdinalIgnoreCase))
+        {
+            var jsonWidgetRepo = scope.ServiceProvider.GetRequiredService<IJsonWidgetRepository>();
+            var jsonWidgets = await jsonWidgetRepo.GetAllAsync();
+            if (jsonWidgets.Count == 0)
+            {
+                var migrationTool = scope.ServiceProvider.GetRequiredService<DbToJsonMigrationTool>();
+                await migrationTool.MigrateAllAsync();
+            }
+        }
     }
 
     if (app.Environment.IsDevelopment())

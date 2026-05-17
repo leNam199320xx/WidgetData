@@ -228,7 +228,7 @@ else
     string _searchText = string.Empty;
     DataSourceType? _filterType;
     bool? _filterStatus;
-    static readonly DataSourceType[] SupportedSourceTypes = [DataSourceType.Json];
+    static readonly DataSourceType[] SupportedSourceTypes = [DataSourceType.Json, DataSourceType.Csv];
 
     IEnumerable<DataSourceDto> FilteredSources => (_sources ?? Array.Empty<DataSourceDto>())
         .Where(ds =>
