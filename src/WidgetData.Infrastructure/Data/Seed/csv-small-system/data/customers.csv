@@ -1,0 +1,4 @@
+customer_id,full_name,email,city,loyalty_points,total_spent
+2,Anna Customer,customer.anna@widgetdata.com,HCM,120,2900000
+3,Binh Customer,customer.binh@widgetdata.com,Ha Noi,80,930000
+4,Chi Tran,chi.tran@example.com,Da Nang,35,450000

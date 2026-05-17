@@ -1,0 +1,4 @@
+user_id,email,display_name,password,role,tenant_slug,is_active
+1,admin.small@widgetdata.com,Small System Admin,Admin@123!,Admin,small,true
+2,customer.anna@widgetdata.com,Anna Customer,Customer@123!,Customer,small,true
+3,customer.binh@widgetdata.com,Binh Customer,Customer@123!,Customer,small,true

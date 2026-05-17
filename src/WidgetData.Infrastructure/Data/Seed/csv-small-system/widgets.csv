@@ -1,0 +1,5 @@
+widget_key,name,friendly_label,widget_type,data_source_key,description,is_active,cache_enabled,cache_ttl_minutes
+orders_table,orders_table_widget,Bảng đơn hàng gần đây,Table,orders_csv,Hiển thị danh sách đơn hàng từ CSV,true,true,10
+customers_table,customers_table_widget,Bảng khách hàng,Table,customers_csv,Hiển thị danh sách khách hàng từ CSV,true,true,10
+payments_table,payments_table_widget,Bảng thanh toán,Table,payments_csv,Hiển thị giao dịch thanh toán từ CSV,true,true,10
+orders_chart,orders_status_chart_widget,Phân bố trạng thái đơn hàng,Chart,orders_csv,Biểu đồ trạng thái đơn hàng từ CSV,true,false,0
