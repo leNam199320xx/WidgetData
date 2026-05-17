@@ -5,8 +5,11 @@ using QuestPDF.Infrastructure;
 using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Interfaces;
 using WidgetData.Infrastructure.Data;
+using WidgetData.Infrastructure.Data.Json;
+using WidgetData.Infrastructure.Data.Json.Repositories;
 using WidgetData.Infrastructure.Repositories;
 using WidgetData.Infrastructure.Services;
+using WidgetData.Infrastructure.Tools;
 
 namespace WidgetData.Infrastructure;
 
@@ -20,11 +23,42 @@ public static class DependencyInjection
         services.AddScoped<TenantContext>();
         services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
 
+        // Register IdentityDbContext (User Management)
+        services.AddDbContext<IdentityDbContext>((sp, options) =>
+        {
+            options.UseSqlite(configuration.GetConnectionString("DefaultConnection") ?? "Data Source=widgetdata.db");
+        });
+
+        // Keep ApplicationDbContext for backward compatibility (will be removed later)
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {
             options.UseSqlite(configuration.GetConnectionString("DefaultConnection") ?? "Data Source=widgetdata.db");
         });
 
+        // Register JSON Data Provider
+        var dataDirectory = Path.Combine(AppContext.BaseDirectory, "data");
+        services.AddSingleton(new JsonDataProvider(dataDirectory));
+
+        // Register JSON Repositories (Business Data)
+        services.AddScoped<IJsonWidgetRepository, JsonWidgetRepository>();
+        services.AddScoped<IJsonDataSourceRepository, JsonDataSourceRepository>();
+        services.AddScoped<IJsonScheduleRepository, JsonScheduleRepository>();
+        services.AddScoped<IJsonExecutionRepository, JsonExecutionRepository>();
+        services.AddScoped<IJsonPageRepository, JsonPageRepository>();
+        services.AddScoped<IJsonPageVersionRepository, JsonPageVersionRepository>();
+        services.AddScoped<IJsonPageWidgetRepository, JsonPageWidgetRepository>();
+        services.AddScoped<IJsonWidgetGroupRepository, JsonWidgetGroupRepository>();
+        services.AddScoped<IJsonWidgetGroupMemberRepository, JsonWidgetGroupMemberRepository>();
+        services.AddScoped<IJsonWidgetConfigArchiveRepository, JsonWidgetConfigArchiveRepository>();
+        services.AddScoped<IJsonDeliveryTargetRepository, JsonDeliveryTargetRepository>();
+        services.AddScoped<IJsonDeliveryExecutionRepository, JsonDeliveryExecutionRepository>();
+        services.AddScoped<IJsonIdeaPostRepository, JsonIdeaPostRepository>();
+        services.AddScoped<IJsonIdeaSubscriptionRepository, JsonIdeaSubscriptionRepository>();
+        services.AddScoped<IJsonIdeaResultRepository, JsonIdeaResultRepository>();
+        services.AddScoped<IJsonFormSubmissionRepository, JsonFormSubmissionRepository>();
+        services.AddScoped<IJsonWidgetActivityRepository, JsonWidgetActivityRepository>();
+
+        // Keep DB Repositories for now (backward compatibility)
         services.AddScoped<IWidgetRepository, WidgetRepository>();
         services.AddScoped<IDataSourceRepository, DataSourceRepository>();
         services.AddScoped<IScheduleRepository, ScheduleRepository>();
@@ -53,6 +87,9 @@ public static class DependencyInjection
         services.AddScoped<IPageService, PageService>();
 
         services.AddHostedService<InactivityMonitorService>();
+
+        // Register migration tool
+        services.AddScoped<DbToJsonMigrationTool>();
 
         services.AddHttpClient();
         services.AddScoped<DataSeeder>();

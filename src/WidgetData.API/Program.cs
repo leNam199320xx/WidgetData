@@ -37,7 +37,7 @@ try
         options.Password.RequireUppercase = true;
         options.Password.RequireNonAlphanumeric = true;
     })
-    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddEntityFrameworkStores<IdentityDbContext>()
     .AddDefaultTokenProviders();
 
     var jwtSecret = builder.Configuration["JwtSettings:Secret"];

@@ -90,6 +90,39 @@ public class DataSeeder
             await _context.Database.EnsureCreatedAsync();
             return;
         }
+
+        var hasCompatibleData = await HasCompatibleCoreDataAsync();
+        if (!hasCompatibleData)
+        {
+            if (!_environment.IsDevelopment() && !_environment.IsEnvironment("Test"))
+                throw new InvalidOperationException(
+                    "Database data format is incompatible with the current model. " +
+                    "Automatic database reset is allowed only in Development/Test.");
+
+            _logger.LogWarning("Detected incompatible SQLite data format. Recreating database for current model.");
+            await _context.Database.EnsureDeletedAsync();
+            await _context.Database.EnsureCreatedAsync();
+        }
+    }
+
+    private async Task<bool> HasCompatibleCoreDataAsync()
+    {
+        try
+        {
+            // Force materialization of DateTime columns that often break after schema drift.
+            await _context.Widgets
+                .AsNoTracking()
+                .Select(w => new { w.Id, w.LastExecutedAt, w.LastActivityAt })
+                .Take(1)
+                .ToListAsync();
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Core SQLite data compatibility check failed.");
+            return false;
+        }
     }
 
     private async Task<bool> HasCoreSchemaAsync()
@@ -483,6 +516,12 @@ public class DataSeeder
         var names = seeds.Select(s => s.Name).ToList();
         return await _context.Widgets.IgnoreQueryFilters()
             .Where(w => names.Contains(w.Name))
+            .Select(w => new Widget
+            {
+                Id = w.Id,
+                Name = w.Name,
+                DataSourceId = w.DataSourceId
+            })
             .ToDictionaryAsync(w => w.Name);
     }
 

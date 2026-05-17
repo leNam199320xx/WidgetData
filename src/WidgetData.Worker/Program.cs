@@ -25,7 +25,7 @@ try
 
     using (var scope = host.Services.CreateScope())
     {
-        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         await dbContext.Database.EnsureCreatedAsync();
     }
 

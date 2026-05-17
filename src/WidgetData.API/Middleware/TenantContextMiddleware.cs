@@ -22,7 +22,7 @@ public class TenantContextMiddleware
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, TenantContext tenantContext, ApplicationDbContext dbContext)
+    public async Task InvokeAsync(HttpContext context, TenantContext tenantContext, IdentityDbContext dbContext)
     {
         if (context.User.Identity?.IsAuthenticated == true)
         {
