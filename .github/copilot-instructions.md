@@ -1,195 +1,80 @@
 # GitHub Copilot Instructions — WidgetData
 
-## Tổng quan project
-**WidgetData** là No-Code data pipeline platform. Admin tạo **Widget** để kéo dữ liệu từ nhiều nguồn (SQLite, CSV, JSON, Excel, REST API), xử lý qua multi-step pipeline, hiển thị real-time lên Blazor dashboard.
+## Build, test, and hygiene commands
 
-Stack: **.NET 10** · **Blazor Server** (MudBlazor) · **ASP.NET Core Web API** · **EF Core + SQLite** · **.NET Aspire** · **SignalR** · **Serilog** · **JWT Auth** · **Redis cache**
+```powershell
+dotnet restore WidgetData.sln
+dotnet build WidgetData.sln --configuration Release --no-restore
 
----
+# Run the full stack through .NET Aspire
+dotnet run --project src\WidgetData.AppHost
 
-## Enums quan trọng
+# Run individual services
+dotnet run --project src\WidgetData.API
+dotnet run --project src\WidgetData.Web
+dotnet run --project src\WidgetData.Worker
+dotnet run --project src\WidgetData.Gateway
 
-```csharp
-enum DataSourceType { SqlServer, PostgreSql, MySql, SQLite, Csv, Excel, Json, RestApi }
-enum WidgetType     { Chart, Table, Metric, Map, Form, EtlJob }
-enum ExecutionStatus { Running, Success, Failed }
-enum ExecutionTrigger { Manual, Scheduler }
+# Unit tests
+dotnet test tests\WidgetData.Tests\WidgetData.Tests.csproj --configuration Release --no-build
+
+# Integration tests
+dotnet test tests\WidgetData.IntegrationTests\WidgetData.IntegrationTests.csproj --configuration Release --no-build
+
+# Run a single xUnit test
+dotnet test tests\WidgetData.Tests\WidgetData.Tests.csproj --configuration Release --no-build --filter "FullyQualifiedName~WidgetData.Tests.Services.WidgetServiceTests.GetAllAsync_ReturnsAllWidgets"
+
+# Run a single integration test
+dotnet test tests\WidgetData.IntegrationTests\WidgetData.IntegrationTests.csproj --configuration Release --no-build --filter "FullyQualifiedName~WidgetData.IntegrationTests.ApiSmokeTests.Health_Endpoint_Should_ReturnSuccess"
+
+# CI coverage run
+dotnet test WidgetData.sln --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory TestResults
+
+# No dedicated linter is configured; the extra CI hygiene check is package vulnerability scanning
+dotnet list WidgetData.sln package --vulnerable --include-transitive
 ```
 
----
+CI currently enforces a combined coverage floor of **20%** from the Cobertura files produced by the coverage run above.
 
-## Kiến trúc — Clean Architecture
+## High-level architecture
 
-```
-WidgetData.Domain          → Entities, Enums, Interfaces (không dependency ngoài)
-WidgetData.Application     → DTOs, Interfaces, Helpers (dùng Domain)
-WidgetData.Infrastructure  → EF Core, Repositories, Services (impl Application interfaces)
-WidgetData.API             → ASP.NET Core Controllers, JWT, Rate Limiting (REST API)
-WidgetData.Web             → Blazor Server admin dashboard (MudBlazor, SignalR)
-WidgetData.Worker          → BackgroundService, SchedulerWorkerService (cron jobs)
-WidgetData.Gateway         → API Gateway (YARP routing)
-WidgetData.AppHost         → .NET Aspire orchestration (chạy tất cả service)
-WidgetData.ServiceDefaults → Shared Aspire service configuration
-```
+- **Clean architecture with explicit project references.** `WidgetData.Domain` is the base layer, `WidgetData.Application` holds DTOs/interfaces, `WidgetData.Infrastructure` implements repositories and services, and the executable apps (`API`, `Web`, `Worker`, `Gateway`, `AppHost`) sit on top.
+- **AppHost is the runtime entry point for local full-stack work.** `src\WidgetData.AppHost\Program.cs` wires up `widgetdata-api`, `widgetdata-worker`, `widgetdata-gateway`, and `widgetdata-web`; `WidgetData.ServiceDefaults` adds service discovery, resilience handlers, OpenTelemetry, and `/health` + `/alive`.
+- **The Blazor app is an admin client, not the business-logic host.** `WidgetData.Web` uses `ApiService` with the service-discovery base address `https+http://widgetdata-api`, so app-to-app calls are expected to go through Aspire service discovery instead of hard-coded localhost URLs.
+- **Most real behavior lives in Infrastructure services.** Controllers are thin; `WidgetService`, `DataSourceService`, `ScheduleService`, `PageService`, `PermissionService`, and related services in `src\WidgetData.Infrastructure\Services` contain the orchestration logic.
+- **API startup has side effects.** `src\WidgetData.API\Program.cs` not only configures auth/CORS/rate limiting and middleware, it also resolves `DataSeeder` and runs `SeedAsync()`, which applies EF migrations before seeding demo/admin data.
+- **Worker startup also migrates the database.** `src\WidgetData.Worker\Program.cs` resolves `ApplicationDbContext` and calls `Database.MigrateAsync()` before starting `SchedulerWorkerService`.
+- **Widget execution is centralized.** `WidgetService.ExecuteAsync()` creates a `WidgetExecution`, optionally archives config for scheduled runs, dispatches to a source-specific loader, and updates execution history plus `Widget.LastExecutedAt` / `LastRowCount`.
+- **Integration tests boot the real API startup path.** `tests\WidgetData.IntegrationTests` uses `WebApplicationFactory<Program>`, so those tests exercise the same middleware, configuration, migration, and seeding path as the API itself.
 
-**Dependency rule**: Domain ← Application ← Infrastructure ← API/Web/Worker
+## Key conventions
 
----
+- **Tenant filtering is ambient and starts before EF.** `TenantContext` is registered before `ApplicationDbContext`; `TenantContextMiddleware` fills it from JWT claim `tenant_id` first, then from `X-Tenant-Id` or `X-Tenant-Slug` headers for anonymous/embed requests.
+- **`TenantId == null` means shared data.** Global query filters in `ApplicationDbContext` allow super-admin access, the current tenant, or records with no tenant. Shared widgets, data sources, and groups are intentionally visible across tenants.
+- **Bypassing tenant filters is explicit.** Repositories only call `IgnoreQueryFilters()` when they need an exact tenant-targeted query or version lookup; `PageRepository` is the model to follow here.
+- **Repository/service naming is uniform.** The codebase consistently uses `IXxxRepository -> XxxRepository` and `IXxxService -> XxxService`, all registered as scoped dependencies in `src\WidgetData.Infrastructure\DependencyInjection.cs`.
+- **Widget configuration changes must preserve history.** `WidgetService.UpdateAsync()` automatically creates a `WidgetConfigArchive` whenever `Configuration`, `ChartConfig`, or `HtmlTemplate` changes. Scheduled runs can also archive config when `WidgetSchedule.ArchiveConfigOnRun` is enabled.
+- **Widget data loaders all normalize to the same payload shape.** Source-specific methods in `WidgetService` return anonymous objects with `columns` and `rows`; rows are dictionaries keyed by column name for SQLite, CSV, JSON, Excel, and REST API loaders.
+- **SQLite widget queries are intentionally read-only.** Before execution, `WidgetService` strips SQL comments, requires the statement to start with `SELECT`, and blocks mutating keywords such as `INSERT`, `UPDATE`, `DELETE`, `DROP`, `CREATE`, `ALTER`, `EXEC`, `TRUNCATE`, `MERGE`, `ATTACH`, and `DETACH`.
+- **File-backed data sources are stored under tenant-aware upload paths.** `DataSourceService.UploadFileAsync()` writes files to `uploads\datasources\<tenant-or-shared>\<dataSourceId>\`, updates the metadata fields, and sets the stored path back onto the `DataSource`.
+- **Blazor routing expects authentication state to be cascaded.** `src\WidgetData.Web\Components\Routes.razor` wraps the router in `CascadingAuthenticationState`; keep that intact when changing auth-aware UI.
 
-## Entities chính (Domain)
+## Important docs
 
-| Entity | Mô tả |
-|--------|-------|
-| `Widget` | Đơn vị trung tâm: có DataSourceId, Configuration (JSON), HtmlTemplate, TenantId, cache settings |
-| `DataSource` | Nguồn dữ liệu: SQLite, CSV, JSON, Excel, REST API |
-| `WidgetSchedule` | Cron schedule cho Widget (Cronos lib), RetryOnFailure, NextRunAt |
-| `WidgetExecution` | Log mỗi lần chạy widget |
-| `WidgetApiActivity` | Theo dõi mọi lần gọi API widget (endpoint, user, latency, status) |
-| `Page` / `PageWidget` | Dashboard page ghép nhiều widget |
-| `Tenant` | Multi-tenant: mỗi Widget/DataSource có TenantId |
-| `WidgetGroup` / `WidgetGroupMember` | Nhóm widget, phân quyền |
-| `DeliveryTarget` | Gửi kết quả qua email/webhook |
-| `FormSubmission` | Submit từ Form Widget |
+- `README.md`
+- `doc\architecture.md`
+- `doc\deployment.md`
+- `doc\testing.md`
+- `doc\security.md`
+- `doc\multi-step-processing.md`
+- `doc\branching-variables.md`
 
----
+## Playwright MCP
 
-## Services đã đăng ký (Infrastructure DI)
-
-- `IWidgetService` → `WidgetService` — execute widget, multi-step pipeline
-- `IDataSourceService` → `DataSourceService` — đọc dữ liệu từ các nguồn
-- `IScheduleService` → `ScheduleService` — quản lý cron
-- `IDashboardService` → `DashboardService`
-- `IPageService` → `PageService`
-- `IFormService` → `FormService`
-- `ITenantService` → `TenantService`
-- `IWidgetActivityService` → `WidgetActivityService`
-- `IExportService` → `ExportService` (QuestPDF)
-- `IDeliveryService` → `DeliveryService`
-- `IAuditService` → `AuditService`
-- `IPermissionService` → `PermissionService`
-- `InactivityMonitorService` → HostedService tự vô hiệu hoá widget không dùng
-
----
-
-## Luồng chính
-
-### Widget Execution (chi tiết thực tế trong `WidgetService.cs`)
-```
-API Request → WidgetsController → IWidgetService.ExecuteAsync(id, userId, scheduleId?)
-  → GetByIdAsync → nếu scheduleId + ArchiveConfigOnRun=true → lưu WidgetConfigArchive
-  → Tạo WidgetExecution { Status=Running }
-  → GetDataAsync(id):
-      switch ds.SourceType:
-        SQLite  → validate query (chỉ SELECT, block INSERT/DROP/...) → SqliteConnection
-        CSV     → CsvHelper đọc file từ ds.FileStoragePath
-        JSON    → đọc file / gọi URL
-        Excel   → ClosedXML đọc sheet đầu tiên
-        RestApi → HttpClient GET ds.ApiEndpoint + Bearer ds.ApiKey
-      → trả về { columns: string[], rows: object[][] }
-  → Cập nhật WidgetExecution { Status=Success/Failed, RowCount, ExecutionTimeMs }
-  → Cập nhật Widget.LastExecutedAt, LastRowCount
-  → Return WidgetExecutionDto
-```
-
-### Scheduled Execution (Worker)
-```
-SchedulerWorkerService poll 30s → GetDueAsync(now)
-  → RunScheduleAsync per schedule → IWidgetService.ExecuteAsync
-  → On fail + RetryOnFailure=true → retry (MaxRetries, 5s delay)
-  → Update LastRunAt, LastRunStatus, NextRunAt (Cronos)
-  → SignalR broadcast
-```
-
-### Widget Update với Auto-Archive
-```
-UpdateAsync(id, dto):
-  → So sánh Configuration / ChartConfig / HtmlTemplate cũ vs mới
-  → Nếu có thay đổi → tự lưu WidgetConfigArchive (TriggerSource="OnSave")
-  → Cập nhật widget fields → SaveChangesAsync
-```
-
-### Multi-Step Pipeline (Configuration JSON)
-Widget.Configuration chứa JSON định nghĩa pipeline với các step types:
-- `extract` — đọc dữ liệu (database/file/api/widget)
-- `transform` — filter, add_column, rename, type conversion
-- `join` — inner/left/right join, union
-- `aggregate` — GROUP BY, SUM/AVG/COUNT/MIN/MAX
-- `filter` — WHERE conditions, TOP N
-- `branch_condition` — if/else dựa trên expression → true_branch / false_branch
-- `branch_switch` — switch-case routing theo variable
-- `merge` — gom kết quả nhiều nhánh (union_all)
-- `output` — format, cache, webhook, save to DB
-
-### Branching (Conditional Logic)
-```json
-{ "step_type": "branch_condition",
-  "condition": { "expression": "total_spent > 10000",
-                 "true_branch": 3, "false_branch": 5 } }
-```
-Các nhánh merge lại bằng step `merge` với `"mode": "union_all"`.
-
----
-
-## Conventions
-
-- **Repository pattern**: `IXxxRepository` → `XxxRepository` (scoped)
-- **Service pattern**: `IXxxService` → `XxxService` (scoped)
-- **Multi-tenancy**: Luôn filter theo `TenantId` (Shared DB). `ITenantContext` inject vào service để lấy `CurrentTenantId`. EF Global Query Filter tự lọc.
-- **Kết quả data**: Tất cả nguồn trả về `{ columns: string[], rows: object[][] }`
-- **Caching**: Check `Widget.CacheEnabled` + `CacheTtlMinutes` trước khi execute
-- **SQL security**: Chỉ cho phép SELECT. Strip comment trước khi validate. Block: INSERT/UPDATE/DELETE/DROP/CREATE/ALTER/EXEC/TRUNCATE/MERGE/ATTACH
-- **Config archive**: `WidgetService.UpdateAsync` tự archive config cũ khi Configuration/ChartConfig/HtmlTemplate thay đổi
-- **Auth**: JWT Bearer, ASP.NET Identity, RBAC (`[Authorize(Roles = "...")]`). Password: 8+ ký tự, có digit, uppercase, special char. Lockout sau 5 lần sai.
-- **Logging**: Serilog structured logging, ghi `WidgetExecution` và `AuditLog` vào DB
-- **DB**: SQLite (dev), EF Core migrations trong `WidgetData.Infrastructure/Migrations/`
-- **File storage**: DataSource file (CSV/Excel/JSON) lưu tại `ds.FileStoragePath`. Metadata: OriginalFileName, StoredFileName, FileSizeBytes, FileUploadedAt
-
----
-
-## DataSource — cách đọc từng nguồn
-
-| SourceType | Cách đọc | Config cần thiết |
-|------------|----------|-----------------|
-| `SQLite` | `Microsoft.Data.Sqlite`, chỉ SELECT | `ds.ConnectionString`, `widget.Configuration["query"]` |
-| `Csv` | `CsvHelper` | `ds.FileStoragePath` |
-| `Json` | Đọc file hoặc HTTP GET | `ds.FileStoragePath` hoặc `ds.ApiEndpoint` |
-| `Excel` | `ClosedXML`, sheet đầu tiên | `ds.FileStoragePath` |
-| `RestApi` | `HttpClient` GET + Bearer token | `ds.ApiEndpoint`, `ds.ApiKey` |
-
----
-
-## Controllers (API)
-
-`WidgetsController` · `DataSourcesController` · `SchedulesController` · `AuthController`
-`PagesController` · `FormController` · `ReportsController` · `StoreController`
-`TenantsController` · `WidgetGroupsController` · `PermissionsController`
-`WidgetActivityController` · `AuditLogsController` · `DashboardController`
-`DeliveryTargetsController` · `IdeaBoardController` · `WidgetConfigArchivesController`
-
----
-
-## Libraries quan trọng
-
-| Thư viện | Dùng cho |
-|----------|----------|
-| MudBlazor | Blazor UI components |
-| Cronos | Parse cron expression, tính NextRunAt |
-| CsvHelper | Đọc CSV |
-| ClosedXML | Đọc/ghi Excel |
-| QuestPDF | Export PDF |
-| Serilog | Structured logging |
-| SignalR | Real-time push |
-| YARP | API Gateway routing |
-
----
-
-## Tài liệu chi tiết
-
-- `doc/architecture.md` — System design đầy đủ
-- `doc/database-schema.md` — ERD và schema
-- `doc/multi-step-processing.md` — Pipeline chi tiết
-- `doc/branching-variables.md` — Branching if-else, switch-case, variables
-- `doc/multi-tenancy.md` — ⚠️ Shared DB + TenantId, Global Query Filter
-- `doc/security.md` — Auth, RBAC, encryption (8 lớp)
-- `doc/api.md` — REST API reference
-- `doc/deployment.md` — Cách chạy dev/Docker/Azure
+- Start **`dotnet run --project src\WidgetData.AppHost`** before browser automation when you need the full admin stack; `WidgetData.Web` expects service discovery to reach `widgetdata-api`.
+- Default local targets from the docs are:
+  - Blazor admin app: `https://localhost:5001`
+  - Gateway: `https://localhost:7000`
+  - Demo storefront: `http://localhost:3000` after serving `demo\shop\shop-front`
+- Use `/health` as the first readiness check before navigating into auth-protected flows.
+- Seeded demo credentials live in `src\WidgetData.Infrastructure\Data\Seed\admin\users.json`; the default admin login is `admin@widgetdata.com` / `Admin@123!`.

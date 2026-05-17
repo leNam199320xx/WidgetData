@@ -18,14 +18,28 @@ public static class Extensions
         builder.AddDefaultHealthChecks();
         builder.Services.AddServiceDiscovery();
         var isDevelopment = builder.Environment.IsDevelopment();
+        var isTest = builder.Environment.IsEnvironment("Test");
+        var isStaging = builder.Environment.IsEnvironment("Staging");
         builder.Services.ConfigureHttpClientDefaults(http =>
         {
             if (isDevelopment)
             {
+                // No timeout in development
                 http.ConfigureHttpClient(client => client.Timeout = System.Threading.Timeout.InfiniteTimeSpan);
+            }
+            else if (isTest)
+            {
+                // Large timeout for test environment (10 minutes)
+                http.ConfigureHttpClient(client => client.Timeout = TimeSpan.FromMinutes(10));
+            }
+            else if (isStaging)
+            {
+                // Moderate timeout for staging environment (5 minutes)
+                http.ConfigureHttpClient(client => client.Timeout = TimeSpan.FromMinutes(5));
             }
             else
             {
+                // Production: standard resilience handler
                 http.AddStandardResilienceHandler();
             }
 
