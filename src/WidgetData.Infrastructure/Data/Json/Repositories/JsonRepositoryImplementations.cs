@@ -143,7 +143,9 @@ public class JsonPageRepository : BaseJsonRepository<Page>, IJsonPageRepository
     public async Task<Page?> GetBySlugAsync(string slug, int? tenantId)
     {
         var all = await GetAllAsync();
-        return all.FirstOrDefault(p => p.Slug == slug && (p.TenantId == tenantId || p.TenantId == null));
+        return tenantId.HasValue
+            ? all.FirstOrDefault(p => p.Slug == slug && (p.TenantId == tenantId.Value || p.TenantId == 0))
+            : all.FirstOrDefault(p => p.Slug == slug);
     }
 
     public async Task<List<Page>> GetPublishedAsync()
@@ -156,7 +158,7 @@ public class JsonPageRepository : BaseJsonRepository<Page>, IJsonPageRepository
     {
         var all = await GetAllAsync();
         if (tenantId == null) return all;
-        return all.Where(p => p.TenantId == tenantId || p.TenantId == null).ToList();
+        return all.Where(p => p.TenantId == tenantId.Value || p.TenantId == 0).ToList();
     }
 }
 

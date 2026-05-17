@@ -2,6 +2,7 @@ using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
 using WidgetData.Domain.Interfaces;
 using WidgetData.Infrastructure.Data.Json.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace WidgetData.Infrastructure.Repositories;
 
@@ -65,8 +66,10 @@ public class FileBackedWidgetRepository : IWidgetRepository
             ? await _repo.GetAllAsync()
             : await _repo.GetByTenantAsync(_tenantContext.CurrentTenantId);
 
+        var dataSources = await _dataSourceRepo.GetAllAsync();
+        var dataSourceMap = dataSources.ToDictionary(d => d.Id);
         foreach (var widget in widgets)
-            widget.DataSource = await _dataSourceRepo.GetByIdAsync(widget.DataSourceId) ?? new DataSource { Id = widget.DataSourceId };
+            widget.DataSource = dataSourceMap.GetValueOrDefault(widget.DataSourceId) ?? new DataSource { Id = widget.DataSourceId };
 
         return widgets;
     }
@@ -119,18 +122,31 @@ public class FileBackedScheduleRepository : IScheduleRepository
 {
     private readonly IJsonScheduleRepository _repo;
     private readonly IJsonWidgetRepository _widgetRepo;
+    private readonly ILogger<FileBackedScheduleRepository> _logger;
 
-    public FileBackedScheduleRepository(IJsonScheduleRepository repo, IJsonWidgetRepository widgetRepo)
+    public FileBackedScheduleRepository(
+        IJsonScheduleRepository repo,
+        IJsonWidgetRepository widgetRepo,
+        ILogger<FileBackedScheduleRepository> logger)
     {
         _repo = repo;
         _widgetRepo = widgetRepo;
+        _logger = logger;
     }
 
     public async Task<IEnumerable<WidgetSchedule>> GetAllAsync()
     {
         var items = await _repo.GetAllAsync();
         foreach (var item in items)
-            item.Widget = await _widgetRepo.GetByIdAsync(item.WidgetId) ?? new Widget { Id = item.WidgetId, Name = $"Widget {item.WidgetId}" };
+        {
+            var widget = await _widgetRepo.GetByIdAsync(item.WidgetId);
+            if (widget == null)
+            {
+                _logger.LogWarning("Missing widget reference for schedule {ScheduleId}, widget {WidgetId}", item.Id, item.WidgetId);
+                widget = new Widget { Id = item.WidgetId, Name = $"Widget {item.WidgetId}" };
+            }
+            item.Widget = widget;
+        }
         return items;
     }
 
@@ -147,7 +163,13 @@ public class FileBackedScheduleRepository : IScheduleRepository
     {
         var item = await _repo.GetByIdAsync(id);
         if (item == null) return null;
-        item.Widget = await _widgetRepo.GetByIdAsync(item.WidgetId) ?? new Widget { Id = item.WidgetId, Name = $"Widget {item.WidgetId}" };
+        var widget = await _widgetRepo.GetByIdAsync(item.WidgetId);
+        if (widget == null)
+        {
+            _logger.LogWarning("Missing widget reference for schedule {ScheduleId}, widget {WidgetId}", item.Id, item.WidgetId);
+            widget = new Widget { Id = item.WidgetId, Name = $"Widget {item.WidgetId}" };
+        }
+        item.Widget = widget;
         return item;
     }
 
@@ -167,18 +189,31 @@ public class FileBackedWidgetConfigArchiveRepository : IWidgetConfigArchiveRepos
 {
     private readonly IJsonWidgetConfigArchiveRepository _repo;
     private readonly IJsonWidgetRepository _widgetRepo;
+    private readonly ILogger<FileBackedWidgetConfigArchiveRepository> _logger;
 
-    public FileBackedWidgetConfigArchiveRepository(IJsonWidgetConfigArchiveRepository repo, IJsonWidgetRepository widgetRepo)
+    public FileBackedWidgetConfigArchiveRepository(
+        IJsonWidgetConfigArchiveRepository repo,
+        IJsonWidgetRepository widgetRepo,
+        ILogger<FileBackedWidgetConfigArchiveRepository> logger)
     {
         _repo = repo;
         _widgetRepo = widgetRepo;
+        _logger = logger;
     }
 
     public async Task<IEnumerable<WidgetConfigArchive>> GetAllAsync()
     {
         var items = await _repo.GetAllAsync();
         foreach (var item in items)
-            item.Widget = await _widgetRepo.GetByIdAsync(item.WidgetId) ?? new Widget { Id = item.WidgetId, Name = $"Widget {item.WidgetId}" };
+        {
+            var widget = await _widgetRepo.GetByIdAsync(item.WidgetId);
+            if (widget == null)
+            {
+                _logger.LogWarning("Missing widget reference for archive {ArchiveId}, widget {WidgetId}", item.Id, item.WidgetId);
+                widget = new Widget { Id = item.WidgetId, Name = $"Widget {item.WidgetId}" };
+            }
+            item.Widget = widget;
+        }
         return items.OrderByDescending(x => x.ArchivedAt).ToList();
     }
 

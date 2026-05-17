@@ -37,11 +37,20 @@ public class WidgetActivityService : IWidgetActivityService
         await _activityRepo.RecordAsync(activity);
 
         // Update LastActivityAt on widget
-        var widget = await _widgetRepo.GetByIdAsync(widgetId);
+        var widget = await _context.Widgets.FindAsync(widgetId);
         if (widget != null)
         {
             widget.LastActivityAt = DateTime.UtcNow;
-            await _widgetRepo.UpdateAsync(widget);
+            await _context.SaveChangesAsync();
+            return;
+        }
+
+        // Fallback for file-backed business storage mode
+        var fileWidget = await _widgetRepo.GetByIdAsync(widgetId);
+        if (fileWidget != null)
+        {
+            fileWidget.LastActivityAt = DateTime.UtcNow;
+            await _widgetRepo.UpdateAsync(fileWidget);
         }
     }
 

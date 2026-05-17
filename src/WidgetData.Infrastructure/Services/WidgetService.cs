@@ -572,9 +572,10 @@ public class WidgetService : IWidgetService
 
     private async Task EnrichGroupIdsAsync(List<WidgetDto> dtos)
     {
-        var members = await _groupMemberRepo.GetAllAsync();
         foreach (var dto in dtos)
-            dto.GroupIds = members.Where(m => m.WidgetId == dto.Id).Select(m => m.WidgetGroupId).ToList();
+            dto.GroupIds = (await _groupMemberRepo.GetByWidgetAsync(dto.Id))
+                .Select(m => m.WidgetGroupId)
+                .ToList();
     }
 
     private static int ToCompositeId(int groupId, int widgetId)

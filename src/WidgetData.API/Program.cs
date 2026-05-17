@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Serilog;
@@ -137,8 +138,20 @@ try
         if (string.Equals(businessDataProvider, "json", StringComparison.OrdinalIgnoreCase))
         {
             var jsonWidgetRepo = scope.ServiceProvider.GetRequiredService<IJsonWidgetRepository>();
-            var jsonWidgets = await jsonWidgetRepo.GetAllAsync();
-            if (jsonWidgets.Count == 0)
+            var shouldMigrate = false;
+            try
+            {
+                var jsonWidgets = await jsonWidgetRepo.GetAllAsync();
+                shouldMigrate = jsonWidgets.Count == 0;
+            }
+            catch (Exception ex)
+            {
+                var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+                logger.LogWarning(ex, "Failed to read JSON widget repository. Will run DB-to-JSON migration.");
+                shouldMigrate = true;
+            }
+
+            if (shouldMigrate)
             {
                 var migrationTool = scope.ServiceProvider.GetRequiredService<DbToJsonMigrationTool>();
                 await migrationTool.MigrateAllAsync();

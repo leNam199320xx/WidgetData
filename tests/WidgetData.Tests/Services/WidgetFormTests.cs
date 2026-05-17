@@ -7,6 +7,7 @@ using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
 using WidgetData.Domain.Interfaces;
 using WidgetData.Infrastructure.Data;
+using WidgetData.Infrastructure.Repositories;
 using WidgetData.Infrastructure.Services;
 using WidgetData.Tests.TestData;
 
@@ -53,7 +54,7 @@ public class WidgetFormTests
         var auditServiceMock = new Mock<IAuditService>();
         var loggerMock = new Mock<ILogger<WidgetService>>();
         var httpClientFactoryMock = new Mock<System.Net.Http.IHttpClientFactory>();
-        _service = new WidgetService(_widgetRepoMock.Object, _executionRepoMock.Object, _context,
+        _service = new WidgetService(_widgetRepoMock.Object, _executionRepoMock.Object, new EfWidgetGroupMemberRepositoryAdapter(_context),
             _archiveRepoMock.Object, _scheduleRepoMock.Object, auditServiceMock.Object, loggerMock.Object, httpClientFactoryMock.Object);
     }
 
