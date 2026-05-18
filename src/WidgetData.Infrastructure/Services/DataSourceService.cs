@@ -42,7 +42,7 @@ public class DataSourceService : IDataSourceService
 
     public async Task<DataSourceDto> CreateAsync(CreateDataSourceDto dto, string userId)
     {
-        EnsureJsonOnlySourceType(dto.SourceType);
+        EnsureSupportedSourceType(dto.SourceType);
 
         var entity = new DataSource
         {
@@ -67,7 +67,7 @@ public class DataSourceService : IDataSourceService
 
     public async Task<DataSourceDto?> UpdateAsync(int id, UpdateDataSourceDto dto)
     {
-        EnsureJsonOnlySourceType(dto.SourceType);
+        EnsureSupportedSourceType(dto.SourceType);
 
         var entity = await _repo.GetByIdAsync(id);
         if (entity == null) return null;
@@ -176,7 +176,7 @@ public class DataSourceService : IDataSourceService
                 DataSourceType.Csv => await TestFileSourceAsync(ds.FileStoragePath ?? ds.ConnectionString, "CSV"),
                 DataSourceType.Excel => await TestFileSourceAsync(ds.FileStoragePath ?? ds.ConnectionString, "Excel"),
                 DataSourceType.Json => await TestJsonFileAsync(ds.FileStoragePath ?? ds.ConnectionString),
-                _ => "Only JSON data source is supported"
+                _ => "Only JSON and CSV data sources are supported"
             };
         }
         catch (Exception ex)
@@ -280,9 +280,9 @@ public class DataSourceService : IDataSourceService
         return ds.TenantId == null || ds.TenantId == _tenantContext.CurrentTenantId;
     }
 
-    private static void EnsureJsonOnlySourceType(DataSourceType sourceType)
+    private static void EnsureSupportedSourceType(DataSourceType sourceType)
     {
-        if (sourceType != DataSourceType.Json)
-            throw new InvalidOperationException("Only JSON data source is supported.");
+        if (sourceType is not (DataSourceType.Json or DataSourceType.Csv))
+            throw new InvalidOperationException("Only JSON and CSV data sources are supported.");
     }
 }

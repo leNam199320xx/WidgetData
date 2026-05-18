@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Serilog;
@@ -10,6 +11,8 @@ using WidgetData.API.Middleware;
 using WidgetData.Domain.Entities;
 using WidgetData.Infrastructure;
 using WidgetData.Infrastructure.Data;
+using WidgetData.Infrastructure.Data.Json.Repositories;
+using WidgetData.Infrastructure.Tools;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -130,6 +133,30 @@ try
     {
         var seeder = scope.ServiceProvider.GetRequiredService<DataSeeder>();
         await seeder.SeedAsync();
+
+        var businessDataProvider = builder.Configuration["Storage:BusinessDataProvider"];
+        if (string.Equals(businessDataProvider, "json", StringComparison.OrdinalIgnoreCase))
+        {
+            var jsonWidgetRepo = scope.ServiceProvider.GetRequiredService<IJsonWidgetRepository>();
+            var shouldMigrate = false;
+            try
+            {
+                var jsonWidgets = await jsonWidgetRepo.GetAllAsync();
+                shouldMigrate = jsonWidgets.Count == 0;
+            }
+            catch (Exception ex)
+            {
+                var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+                logger.LogWarning(ex, "Failed to read JSON widget repository. Will run DB-to-JSON migration.");
+                shouldMigrate = true;
+            }
+
+            if (shouldMigrate)
+            {
+                var migrationTool = scope.ServiceProvider.GetRequiredService<DbToJsonMigrationTool>();
+                await migrationTool.MigrateAllAsync();
+            }
+        }
     }
 
     if (app.Environment.IsDevelopment())

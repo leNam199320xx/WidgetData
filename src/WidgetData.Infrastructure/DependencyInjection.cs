@@ -58,16 +58,32 @@ public static class DependencyInjection
         services.AddScoped<IJsonFormSubmissionRepository, JsonFormSubmissionRepository>();
         services.AddScoped<IJsonWidgetActivityRepository, JsonWidgetActivityRepository>();
 
-        // Keep DB Repositories for now (backward compatibility)
-        services.AddScoped<IWidgetRepository, WidgetRepository>();
-        services.AddScoped<IDataSourceRepository, DataSourceRepository>();
-        services.AddScoped<IScheduleRepository, ScheduleRepository>();
-        services.AddScoped<IExecutionRepository, ExecutionRepository>();
-        services.AddScoped<IWidgetConfigArchiveRepository, WidgetConfigArchiveRepository>();
+        var businessDataProvider = configuration["Storage:BusinessDataProvider"];
+        var useFileBackedBusinessData = string.Equals(businessDataProvider, "json", StringComparison.OrdinalIgnoreCase);
+
+        if (useFileBackedBusinessData)
+        {
+            services.AddScoped<IWidgetRepository, FileBackedWidgetRepository>();
+            services.AddScoped<IDataSourceRepository, FileBackedDataSourceRepository>();
+            services.AddScoped<IScheduleRepository, FileBackedScheduleRepository>();
+            services.AddScoped<IExecutionRepository, FileBackedExecutionRepository>();
+            services.AddScoped<IWidgetConfigArchiveRepository, FileBackedWidgetConfigArchiveRepository>();
+            services.AddScoped<IPageRepository, FileBackedPageRepository>();
+        }
+        else
+        {
+            // Keep DB Repositories for now (backward compatibility)
+            services.AddScoped<IWidgetRepository, WidgetRepository>();
+            services.AddScoped<IDataSourceRepository, DataSourceRepository>();
+            services.AddScoped<IScheduleRepository, ScheduleRepository>();
+            services.AddScoped<IExecutionRepository, ExecutionRepository>();
+            services.AddScoped<IWidgetConfigArchiveRepository, WidgetConfigArchiveRepository>();
+            services.AddScoped<IPageRepository, PageRepository>();
+        }
+
         services.AddScoped<IIdeaBoardRepository, IdeaBoardRepository>();
         services.AddScoped<IWidgetActivityRepository, WidgetActivityRepository>();
         services.AddScoped<ITenantRepository, TenantRepository>();
-        services.AddScoped<IPageRepository, PageRepository>();
 
         services.AddScoped<IWidgetService, WidgetService>();
         services.AddScoped<IDataSourceService, DataSourceService>();

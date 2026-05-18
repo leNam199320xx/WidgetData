@@ -35,6 +35,7 @@ public class JsonWidgetRepository : BaseJsonRepository<Widget>, IJsonWidgetRepos
     public override async Task<List<Widget>> GetByTenantAsync(int? tenantId)
     {
         var all = await GetAllAsync();
+        if (tenantId == null) return all;
         return all.Where(w => w.TenantId == tenantId || w.TenantId == null).ToList();
     }
 }
@@ -66,6 +67,7 @@ public class JsonDataSourceRepository : BaseJsonRepository<DataSource>, IJsonDat
     public override async Task<List<DataSource>> GetByTenantAsync(int? tenantId)
     {
         var all = await GetAllAsync();
+        if (tenantId == null) return all;
         return all.Where(d => d.TenantId == tenantId || d.TenantId == null).ToList();
     }
 }
@@ -76,7 +78,7 @@ public class JsonDataSourceRepository : BaseJsonRepository<DataSource>, IJsonDat
 public class JsonScheduleRepository : BaseJsonRepository<WidgetSchedule>, IJsonScheduleRepository
 {
     public JsonScheduleRepository(JsonDataProvider jsonProvider)
-        : base(jsonProvider, "widgets")
+        : base(jsonProvider, "schedules")
     {
     }
 
@@ -141,7 +143,9 @@ public class JsonPageRepository : BaseJsonRepository<Page>, IJsonPageRepository
     public async Task<Page?> GetBySlugAsync(string slug, int? tenantId)
     {
         var all = await GetAllAsync();
-        return all.FirstOrDefault(p => p.Slug == slug && (p.TenantId == tenantId || p.TenantId == null));
+        return tenantId.HasValue
+            ? all.FirstOrDefault(p => p.Slug == slug && (p.TenantId == tenantId.Value || p.TenantId == 0))
+            : all.FirstOrDefault(p => p.Slug == slug);
     }
 
     public async Task<List<Page>> GetPublishedAsync()
@@ -153,7 +157,8 @@ public class JsonPageRepository : BaseJsonRepository<Page>, IJsonPageRepository
     public override async Task<List<Page>> GetByTenantAsync(int? tenantId)
     {
         var all = await GetAllAsync();
-        return all.Where(p => p.TenantId == tenantId || p.TenantId == null).ToList();
+        if (tenantId == null) return all;
+        return all.Where(p => p.TenantId == tenantId.Value || p.TenantId == 0).ToList();
     }
 }
 
@@ -163,7 +168,7 @@ public class JsonPageRepository : BaseJsonRepository<Page>, IJsonPageRepository
 public class JsonPageVersionRepository : BaseJsonRepository<PageVersion>, IJsonPageVersionRepository
 {
     public JsonPageVersionRepository(JsonDataProvider jsonProvider)
-        : base(jsonProvider, "pages")
+        : base(jsonProvider, "page-versions")
     {
     }
 
@@ -191,7 +196,7 @@ public class JsonPageVersionRepository : BaseJsonRepository<PageVersion>, IJsonP
 public class JsonPageWidgetRepository : BaseJsonRepository<PageWidget>, IJsonPageWidgetRepository
 {
     public JsonPageWidgetRepository(JsonDataProvider jsonProvider)
-        : base(jsonProvider, "pages")
+        : base(jsonProvider, "page-widgets")
     {
     }
 
@@ -232,6 +237,7 @@ public class JsonWidgetGroupRepository : BaseJsonRepository<WidgetGroup>, IJsonW
     public override async Task<List<WidgetGroup>> GetByTenantAsync(int? tenantId)
     {
         var all = await GetAllAsync();
+        if (tenantId == null) return all;
         return all.Where(g => g.TenantId == tenantId || g.TenantId == null).ToList();
     }
 }
@@ -242,11 +248,11 @@ public class JsonWidgetGroupRepository : BaseJsonRepository<WidgetGroup>, IJsonW
 public class JsonWidgetGroupMemberRepository : BaseJsonRepository<WidgetGroupMember>, IJsonWidgetGroupMemberRepository
 {
     public JsonWidgetGroupMemberRepository(JsonDataProvider jsonProvider)
-        : base(jsonProvider, "groups")
+        : base(jsonProvider, "group-members")
     {
     }
 
-    protected override int GetEntityId(WidgetGroupMember entity) => entity.WidgetGroupId;
+    protected override int GetEntityId(WidgetGroupMember entity) => ToCompositeId(entity.WidgetGroupId, entity.WidgetId);
 
     public async Task<List<WidgetGroupMember>> GetByGroupAsync(int groupId)
     {
@@ -259,6 +265,9 @@ public class JsonWidgetGroupMemberRepository : BaseJsonRepository<WidgetGroupMem
         var all = await GetAllAsync();
         return all.Where(m => m.WidgetId == widgetId).ToList();
     }
+
+    private static int ToCompositeId(int groupId, int widgetId)
+        => unchecked((groupId * 1_000_000) + widgetId);
 }
 
 /// <summary>
@@ -267,7 +276,7 @@ public class JsonWidgetGroupMemberRepository : BaseJsonRepository<WidgetGroupMem
 public class JsonWidgetConfigArchiveRepository : BaseJsonRepository<WidgetConfigArchive>, IJsonWidgetConfigArchiveRepository
 {
     public JsonWidgetConfigArchiveRepository(JsonDataProvider jsonProvider)
-        : base(jsonProvider, "widgets")
+        : base(jsonProvider, "widget-archives")
     {
     }
 

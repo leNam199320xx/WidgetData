@@ -1,12 +1,11 @@
 using ClosedXML.Excel;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using WidgetData.Application.DTOs;
 using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
 using WidgetData.Domain.Interfaces;
-using WidgetData.Infrastructure.Data;
+using WidgetData.Infrastructure.Data.Json.Repositories;
 
 namespace WidgetData.Infrastructure.Services;
 
@@ -14,7 +13,7 @@ public class WidgetService : IWidgetService
 {
     private readonly IWidgetRepository _widgetRepo;
     private readonly IExecutionRepository _executionRepo;
-    private readonly ApplicationDbContext _context;
+    private readonly IJsonWidgetGroupMemberRepository _groupMemberRepo;
     private readonly IWidgetConfigArchiveRepository _archiveRepo;
     private readonly IScheduleRepository _scheduleRepo;
     private readonly IAuditService _auditService;
@@ -23,13 +22,13 @@ public class WidgetService : IWidgetService
     private readonly ITenantContext? _tenantContext;
 
     public WidgetService(IWidgetRepository widgetRepo, IExecutionRepository executionRepo,
-        ApplicationDbContext context, IWidgetConfigArchiveRepository archiveRepo,
+        IJsonWidgetGroupMemberRepository groupMemberRepo, IWidgetConfigArchiveRepository archiveRepo,
         IScheduleRepository scheduleRepo, IAuditService auditService, ILogger<WidgetService> logger,
         IHttpClientFactory httpClientFactory, ITenantContext? tenantContext = null)
     {
         _widgetRepo = widgetRepo;
         _executionRepo = executionRepo;
-        _context = context;
+        _groupMemberRepo = groupMemberRepo;
         _archiveRepo = archiveRepo;
         _scheduleRepo = scheduleRepo;
         _auditService = auditService;
@@ -79,8 +78,7 @@ public class WidgetService : IWidgetService
 
         var distinctGroupIds = dto.GroupIds.Distinct().ToList();
         foreach (var groupId in distinctGroupIds)
-            _context.WidgetGroupMembers.Add(new WidgetGroupMember { WidgetGroupId = groupId, WidgetId = created.Id });
-        if (distinctGroupIds.Any()) await _context.SaveChangesAsync();
+            await _groupMemberRepo.CreateAsync(new WidgetGroupMember { WidgetGroupId = groupId, WidgetId = created.Id });
 
         _logger.LogInformation("Widget {WidgetId} '{Name}' created by user {UserId}", created.Id, created.Name, userId);
         await _auditService.LogAsync("CreateWidget", "Widget", created.Id.ToString(), newValues: new { created.Name, created.DataSourceId }, userId: userId);
@@ -129,15 +127,14 @@ public class WidgetService : IWidgetService
         widget.UpdatedAt = DateTime.UtcNow;
         var updated = await _widgetRepo.UpdateAsync(widget);
 
-        // Sync group members via context
-        var existing = await _context.WidgetGroupMembers.Where(m => m.WidgetId == id).ToListAsync();
+        // Sync group members
+        var existing = await _groupMemberRepo.GetByWidgetAsync(id);
         var existingIds = existing.Select(m => m.WidgetGroupId).ToHashSet();
         var desired = dto.GroupIds.ToHashSet();
-        foreach (var toRemove in existing.Where(m => !desired.Contains(m.WidgetGroupId)))
-            _context.WidgetGroupMembers.Remove(toRemove);
+        foreach (var toRemove in existing.Where(m => !desired.Contains(m.WidgetGroupId)).ToList())
+            await _groupMemberRepo.DeleteAsync(ToCompositeId(toRemove.WidgetGroupId, toRemove.WidgetId));
         foreach (var toAdd in desired.Except(existingIds))
-            _context.WidgetGroupMembers.Add(new WidgetGroupMember { WidgetGroupId = toAdd, WidgetId = id });
-        await _context.SaveChangesAsync();
+            await _groupMemberRepo.CreateAsync(new WidgetGroupMember { WidgetGroupId = toAdd, WidgetId = id });
 
         var resultDto = MapToDto(updated);
         await EnrichGroupIdsAsync(new List<WidgetDto> { resultDto });
@@ -575,13 +572,14 @@ public class WidgetService : IWidgetService
 
     private async Task EnrichGroupIdsAsync(List<WidgetDto> dtos)
     {
-        var ids = dtos.Select(d => d.Id).ToList();
-        var members = await _context.WidgetGroupMembers
-            .Where(m => ids.Contains(m.WidgetId))
-            .ToListAsync();
         foreach (var dto in dtos)
-            dto.GroupIds = members.Where(m => m.WidgetId == dto.Id).Select(m => m.WidgetGroupId).ToList();
+            dto.GroupIds = (await _groupMemberRepo.GetByWidgetAsync(dto.Id))
+                .Select(m => m.WidgetGroupId)
+                .ToList();
     }
+
+    private static int ToCompositeId(int groupId, int widgetId)
+        => unchecked((groupId * 1_000_000) + widgetId);
 
     private static WidgetExecutionDto MapExecutionToDto(WidgetExecution e) => new()
     {

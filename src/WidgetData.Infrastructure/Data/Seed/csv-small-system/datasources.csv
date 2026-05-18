@@ -1,0 +1,4 @@
+data_source_key,name,source_type,file_path,description,is_active
+orders_csv,Small Orders CSV,Csv,data/orders.csv,Đơn hàng của hệ thống nhỏ,true
+customers_csv,Small Customers CSV,Csv,data/customers.csv,Khách hàng của hệ thống nhỏ,true
+payments_csv,Small Payments CSV,Csv,data/payments.csv,Thanh toán của hệ thống nhỏ,true
