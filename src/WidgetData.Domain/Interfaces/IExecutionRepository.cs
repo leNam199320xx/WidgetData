@@ -4,6 +4,8 @@ namespace WidgetData.Domain.Interfaces;
 
 public interface IExecutionRepository
 {
+    Task<IEnumerable<WidgetExecution>> GetAllAsync();
+    Task<IEnumerable<WidgetExecution>> GetRecentAsync(int days, int limit);
     Task<IEnumerable<WidgetExecution>> GetByWidgetIdAsync(int widgetId);
     Task<WidgetExecution?> GetByIdAsync(int id);
     Task<WidgetExecution> CreateAsync(WidgetExecution execution);

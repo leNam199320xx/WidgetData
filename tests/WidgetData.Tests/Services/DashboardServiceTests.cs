@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
 using WidgetData.Infrastructure.Data;
+using WidgetData.Infrastructure.Repositories;
 using WidgetData.Infrastructure.Services;
 using WidgetData.Tests.TestData;
 
@@ -19,7 +20,11 @@ public class DashboardServiceTests : IDisposable
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         _context = new ApplicationDbContext(options);
-        _service = new DashboardService(_context);
+        _service = new DashboardService(
+            new WidgetRepository(_context),
+            new DataSourceRepository(_context),
+            new ScheduleRepository(_context),
+            new ExecutionRepository(_context));
     }
 
     public void Dispose()

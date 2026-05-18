@@ -14,6 +14,20 @@ public class ExecutionRepository : IExecutionRepository
         _context = context;
     }
 
+    public async Task<IEnumerable<WidgetExecution>> GetAllAsync()
+        => await _context.WidgetExecutions.AsNoTracking().ToListAsync();
+
+    public async Task<IEnumerable<WidgetExecution>> GetRecentAsync(int days, int limit)
+    {
+        var since = DateTime.UtcNow.AddDays(-days);
+        return await _context.WidgetExecutions
+            .Include(e => e.Widget)
+            .Where(e => e.StartedAt >= since)
+            .OrderByDescending(e => e.StartedAt)
+            .Take(limit)
+            .ToListAsync();
+    }
+
     public async Task<IEnumerable<WidgetExecution>> GetByWidgetIdAsync(int widgetId)
         => await _context.WidgetExecutions.Where(e => e.WidgetId == widgetId)
             .OrderByDescending(e => e.StartedAt).Take(100).ToListAsync();
