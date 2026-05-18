@@ -68,13 +68,13 @@
     {
         <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
     }
-    else if (!ActiveFrontendPages.Any())
+    else if (!_activeFrontendPages.Any())
     {
         <MudAlert Severity="Severity.Info">Chưa có trang Frontend nào đang Active.</MudAlert>
     }
     else
     {
-        <MudTable Items="ActiveFrontendPages" Dense="true" Hover="true" Striped="true">
+        <MudTable Items="_activeFrontendPages" Dense="true" Hover="true" Striped="true">
             <HeaderContent>
                 <MudTh>Tiêu đề</MudTh>
                 <MudTh>Slug</MudTh>
@@ -264,15 +264,11 @@ else
 
 @code {
     List<PageDto>? _pages;
+    List<PageDto> _activeFrontendPages = new();
     bool _showForm;
     int? _editingId;
     CreatePageDto _form = new();
     UpdatePageDto _formUpdate = new() { IsActive = true };
-    IEnumerable<PageDto> ActiveFrontendPages => _pages?
-        .Where(p => p.IsActive && p.ScreenType == ScreenType.Frontend)
-        .OrderBy(p => p.TenantId)
-        .ThenBy(p => p.Title)
-        ?? Enumerable.Empty<PageDto>();
 
     PageDto? _managingPage;
     PageDto? _versioningPage;
@@ -290,6 +286,12 @@ else
     async Task LoadPages()
     {
         _pages = (await ApiService.GetPagesAsync())?.ToList();
+        _activeFrontendPages = _pages?
+            .Where(p => p.IsActive && p.ScreenType == ScreenType.Frontend)
+            .OrderBy(p => p.TenantId)
+            .ThenBy(p => p.Title)
+            .ToList()
+            ?? new List<PageDto>();
     }
 
     void ShowAddForm()
