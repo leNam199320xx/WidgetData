@@ -69,7 +69,8 @@ public static class DependencyInjection
             services.AddScoped<IExecutionRepository, FileBackedExecutionRepository>();
             services.AddScoped<IWidgetConfigArchiveRepository, FileBackedWidgetConfigArchiveRepository>();
             services.AddScoped<IPageRepository, FileBackedPageRepository>();
-            // JSON repos are already registered above and will be used by WidgetGroupService
+            // In json mode JSON group repos (registered above) are used directly;
+            // no override needed here
         }
         else
         {

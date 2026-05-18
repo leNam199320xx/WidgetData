@@ -68,16 +68,13 @@ public class WidgetGroupService : IWidgetGroupService
         group.UpdatedAt = DateTime.UtcNow;
         await _groupRepo.UpdateAsync(group);
 
-        // Sync members  — composite key: groupId * 1_000_000 + widgetId
+        // Sync members
         var existing = (await _memberRepo.GetByGroupAsync(id)).ToList();
         var existingWidgetIds = existing.Select(m => m.WidgetId).ToHashSet();
         var desired = dto.WidgetIds.ToHashSet();
 
         foreach (var toRemove in existing.Where(m => !desired.Contains(m.WidgetId)))
-        {
-            var compositeId = unchecked(toRemove.WidgetGroupId * 1_000_000 + toRemove.WidgetId);
-            await _memberRepo.DeleteAsync(compositeId);
-        }
+            await _memberRepo.DeleteAsync(CompositeId(toRemove.WidgetGroupId, toRemove.WidgetId));
 
         foreach (var toAdd in desired.Except(existingWidgetIds))
         {
@@ -95,12 +92,13 @@ public class WidgetGroupService : IWidgetGroupService
     {
         var members = await _memberRepo.GetByGroupAsync(id);
         foreach (var m in members)
-        {
-            var compositeId = unchecked(m.WidgetGroupId * 1_000_000 + m.WidgetId);
-            await _memberRepo.DeleteAsync(compositeId);
-        }
+            await _memberRepo.DeleteAsync(CompositeId(m.WidgetGroupId, m.WidgetId));
+
         return await _groupRepo.DeleteAsync(id);
     }
+
+    private static int CompositeId(int groupId, int widgetId) =>
+        unchecked(groupId * 1_000_000 + widgetId);
 
     private static WidgetGroupDto MapToDto(WidgetGroup g) => new()
     {

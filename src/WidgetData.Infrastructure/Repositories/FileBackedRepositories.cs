@@ -111,7 +111,8 @@ public class FileBackedExecutionRepository : IExecutionRepository
     public async Task<IEnumerable<WidgetExecution>> GetRecentAsync(int days, int limit)
     {
         var since = DateTime.UtcNow.AddDays(-days);
-        return await _repo.GetByDateRangeAsync(since, DateTime.UtcNow.AddDays(1));
+        return (await _repo.GetByDateRangeAsync(since, DateTime.UtcNow.AddDays(1)))
+            .Take(limit);
     }
 
     public async Task<IEnumerable<WidgetExecution>> GetByWidgetIdAsync(int widgetId)
