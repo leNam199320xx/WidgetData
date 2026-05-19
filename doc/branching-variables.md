@@ -1,10 +1,10 @@
-# Branching & Variables
+# Rẽ nhánh & Biến
 
-## Branching & Conditional Logic (Rẽ nhánh)
+## Rẽ nhánh & Logic Điều kiện (Rẽ nhánh)
 
 Pipeline hỗ trợ conditional branching, cho phép thực thi các nhánh khác nhau dựa trên điều kiện.
 
-### 1. If-Else Branching
+### 1. Rẽ nhánh If-Else
 
 ```json
 {
@@ -70,7 +70,7 @@ Pipeline hỗ trợ conditional branching, cho phép thực thi các nhánh khá
 }
 ```
 
-### 2. Switch-Case Branching (Multiple Conditions)
+### 2. Rẽ nhánh Switch-Case (Nhiều điều kiện)
 
 ```json
 {
@@ -178,7 +178,7 @@ Pipeline hỗ trợ conditional branching, cho phép thực thi các nhánh khá
 }
 ```
 
-### Branching Visualization
+### Minh hoạ Rẽ nhánh
 
 ```
                   Start
@@ -216,13 +216,13 @@ Pipeline hỗ trợ conditional branching, cho phép thực thi các nhánh khá
                   [End]
 ```
 
-## Variables & Parameters (Biến)
+## Biến & Tham số (Biến)
 
 Pipeline hỗ trợ biến để lưu trữ và truyền dữ liệu giữa các steps.
 
-### 1. Variable Types
+### 1. Các Loại Biến
 
-#### Global Variables (Widget-level)
+#### Biến Toàn cục (Phạm vi Widget)
 ```json
 {
   "widget_name": "SalesReportWithVariables",
@@ -237,7 +237,7 @@ Pipeline hỗ trợ biến để lưu trữ và truyền dữ liệu giữa các
 }
 ```
 
-#### Step Variables (Local to step)
+#### Biến Bước (Cục bộ trong bước)
 ```json
 {
   "step_id": 5,
@@ -262,7 +262,7 @@ Pipeline hỗ trợ biến để lưu trữ và truyền dữ liệu giữa các
 }
 ```
 
-#### Runtime Variables (Computed during execution)
+#### Biến Runtime (Tính toán trong lúc thực thi)
 ```json
 {
   "step_id": 3,
@@ -288,7 +288,7 @@ Pipeline hỗ trợ biến để lưu trữ và truyền dữ liệu giữa các
 }
 ```
 
-### 2. Variable Usage Examples
+### 2. Ví dụ Sử dụng Biến
 
 #### Sử dụng biến trong SQL Query
 ```json
@@ -344,7 +344,7 @@ Pipeline hỗ trợ biến để lưu trữ và truyền dữ liệu giữa các
 }
 ```
 
-### 3. Parameter Input (Widget Parameters)
+### 3. Nhập Tham số (Widget Parameters)
 
 ```json
 {
@@ -395,25 +395,25 @@ Pipeline hỗ trợ biến để lưu trữ và truyền dữ liệu giữa các
 }
 ```
 
-### 4. Variable Scopes
+### 4. Phạm vi Biến
 
 ```csharp
-// Variable resolution order
-1. Step Variables (highest priority)
+// Thứ tự phân giải biến
+1. Step Variables (ưu tiên cao nhất)
 2. Runtime Variables
 3. Global Widget Variables
 4. User Input Parameters
-5. System Variables (lowest priority)
+5. System Variables (ưu tiên thấp nhất)
 
-// Example:
-${step_var}         // From current step
-${global_var}       // From widget variables
-${param:start_date} // From user parameters
-${sys:current_user} // System variable
-${prev:output}      // Output from previous step
+// Ví dụ:
+${step_var}         // Từ bước hiện tại
+${global_var}       // Từ biến widget toàn cục
+${param:start_date} // Từ tham số người dùng nhập
+${sys:current_user} // Biến hệ thống
+${prev:output}      // Output từ bước trước
 ```
 
-### 5. Built-in System Variables
+### 5. Biến Hệ thống Tích hợp sẵn
 
 ```json
 {
@@ -427,9 +427,9 @@ ${prev:output}      // Output from previous step
 }
 ```
 
-### 6. Variable Operations
+### 6. Thao tác với Biến
 
-#### Set Variable
+#### Đặt Biến
 ```json
 {
   "step_id": 2,
@@ -448,7 +448,7 @@ ${prev:output}      // Output from previous step
 }
 ```
 
-#### Update Variable (Modify existing)
+#### Cập nhật Biến (Sửa biến hiện có)
 ```json
 {
   "step_id": 5,
@@ -468,7 +468,7 @@ ${prev:output}      // Output from previous step
 }
 ```
 
-## Complex Example: Branching + Variables
+## Ví dụ Phức tạp: Rẽ nhánh + Biến
 
 ```json
 {
@@ -639,7 +639,7 @@ ${prev:output}      // Output from previous step
 }
 ```
 
-## Execution Engine Implementation
+## Triển khai Engine Thực thi
 
 ```csharp
 public class PipelineExecutionEngine {
@@ -647,7 +647,7 @@ public class PipelineExecutionEngine {
     private Dictionary<string, object> _stepOutputs = new();
     
     public async Task<WidgetResult> ExecuteAsync(Widget widget, Dictionary<string, object> parameters) {
-        // Initialize variables
+        // Khởi tạo biến
         InitializeVariables(widget.Variables, parameters);
         
         var currentStepId = widget.Steps.First().StepId;
@@ -656,10 +656,10 @@ public class PipelineExecutionEngine {
             var step = widget.Steps.FirstOrDefault(s => s.StepId == currentStepId);
             if (step == null) break;
             
-            // Resolve variables in step config
+            // Phân giải biến trong cấu hình bước
             ResolveVariables(step);
             
-            // Execute based on step type
+            // Thực thi theo loại bước
             switch (step.StepType) {
                 case "branch_condition":
                     currentStepId = await ExecuteBranchConditionAsync(step);
@@ -695,7 +695,7 @@ public class PipelineExecutionEngine {
     }
     
     private void ResolveVariables(Step step) {
-        // Replace ${variable_name} with actual values
+        // Thay thế ${variable_name} bằng giá trị thực tế
         var json = JsonSerializer.Serialize(step);
         foreach (var variable in _variables) {
             json = json.Replace($"${{{variable.Key}}}", variable.Value.ToString());
@@ -712,7 +712,7 @@ public class PipelineExecutionEngine {
 }
 ```
 
-## Benefits of Branching & Variables
+## Lợi ích của Rẽ nhánh & Biến
 
 ✅ **Dynamic Pipelines**: Pipeline behavior thay đổi dựa trên dữ liệu  
 ✅ **Code Reusability**: Dùng biến thay vì hardcode values  

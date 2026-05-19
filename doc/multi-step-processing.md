@@ -1,4 +1,4 @@
-# Multi-Step Data Processing
+# Xử lý Dữ liệu Đa bước
 
 ## Tổng quan
 Widget hỗ trợ xử lý dữ liệu qua nhiều bước (steps), cho phép xây dựng data pipeline phức tạp mà không cần code. Mỗi step nhận đầu vào từ step trước, xử lý và chuyển kết quả cho step tiếp theo.
@@ -56,9 +56,9 @@ Step 1: Extract          Step 2: Transform       Step 3: Aggregate       Step 4:
 - Send to webhook
 - Save to database
 
-## Use Cases
+## Các Trường hợp Sử dụng
 
-### Use Case 1: Sales Report với nhiều nguồn
+### Trường hợp 1: Báo cáo Doanh thu với nhiều nguồn
 ```
 Step 1: Đọc orders từ SQL Server
 Step 2: Đọc product info từ CSV file
@@ -68,7 +68,7 @@ Step 5: Filter top 10 products
 Step 6: Format và cache kết quả
 ```
 
-### Use Case 2: Data Enrichment
+### Trường hợp 2: Data Enrichment
 ```
 Step 1: Đọc customer list từ database
 Step 2: Gọi API để lấy thêm demographic data
@@ -77,7 +77,7 @@ Step 4: Calculate customer lifetime value
 Step 5: Segment customers
 ```
 
-### Use Case 3: ETL Pipeline
+### Trường hợp 3: ETL Pipeline
 ```
 Step 1: Extract từ legacy database
 Step 2: Clean & validate data
@@ -88,7 +88,7 @@ Step 5: Load vào data warehouse
 
 ## Ví dụ cấu hình Multi-Step Widget
 
-### Complex Example: 6-Step Revenue Analysis
+### Ví dụ Phức tạp: Phân tích Doanh thu 6 Bước
 
 ```json
 {
@@ -189,7 +189,7 @@ Step 5: Load vào data warehouse
 }
 ```
 
-### Simple Example: 3-Step Widget
+### Ví dụ Đơn giản: Widget 3 Bước
 
 ```json
 {
@@ -235,7 +235,7 @@ Step 5: Load vào data warehouse
 }
 ```
 
-## Step Execution Flow
+## Luồng Thực thi Bước
 
 ```csharp
 // Pseudo code cho step execution
@@ -290,7 +290,7 @@ public async Task<WidgetResult> ExecuteWidgetAsync(Widget widget) {
 ✅ **Maintainability**: Logic rõ ràng, dễ hiểu hơn một query phức tạp  
 ✅ **No-code**: Business users có thể tạo pipeline mà không cần viết code  
 
-## Step Dependencies & Parallel Execution
+## Phụ thuộc Bước & Thực thi Song song
 
 ```json
 {
@@ -317,7 +317,7 @@ Parallel Execution:
          Step 4
 ```
 
-## Frontend: Step Builder UI
+## Frontend: Giao diện Xây dựng Bước
 
 ```razor
 @* Blazor component cho visual step builder *@
