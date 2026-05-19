@@ -1,4 +1,4 @@
-# Mobile & Responsive Design
+# Mobile & Thiết kế Responsive
 
 ## 📋 Tổng quan
 
@@ -11,7 +11,7 @@ Widget Data hỗ trợ **mobile-first** approach:
 
 ---
 
-## 📱 1. Responsive Layout
+## 📱 1. Bố cục Đáp ứng
 
 ### MudBlazor Breakpoints
 
@@ -19,7 +19,7 @@ Widget Data hỗ trợ **mobile-first** approach:
 @using MudBlazor
 
 <MudGrid>
-    <!-- Desktop: 4 columns, Tablet: 2 columns, Mobile: 1 column -->
+    <!-- Desktop: 4 cột, Tablet: 2 cột, Mobile: 1 cột -->
     @foreach (var widget in widgets)
     {
         <MudItem xs="12" sm="6" md="4" lg="3">
@@ -29,22 +29,22 @@ Widget Data hỗ trợ **mobile-first** approach:
 </MudGrid>
 ```
 
-### Breakpoint Reference
+### Bảng tham khảo Breakpoint
 
-| Breakpoint | Size | Usage |
+| Ngưỡng | Kích thước | Dùng cho |
 |------------|------|-------|
-| `xs` | < 600px | Mobile phones |
-| `sm` | 600-960px | Tablets (portrait) |
-| `md` | 960-1280px | Tablets (landscape), small laptops |
-| `lg` | 1280-1920px | Desktops |
-| `xl` | > 1920px | Large desktops |
+| `xs` | < 600px | Điện thoại di động |
+| `sm` | 600-960px | Máy tính bảng (dọc) |
+| `md` | 960-1280px | Máy tính bảng (ngang), laptop nhỏ |
+| `lg` | 1280-1920px | Máy tính để bàn |
+| `xl` | > 1920px | Màn hình lớn |
 
-### Responsive Navigation
+### Điều hướng Đáp ứng
 
 ```razor
 <!-- AppBar.razor -->
 <MudAppBar Elevation="1">
-    <!-- Mobile: Hamburger menu -->
+    <!-- Mobile: Menu hamburger -->
     <MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="true">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" 
                        Color="Color.Inherit" 
@@ -56,7 +56,7 @@ Widget Data hỗ trợ **mobile-first** approach:
     
     <MudSpacer />
     
-    <!-- Desktop: Full menu -->
+    <!-- Desktop: Menu đầy đủ -->
     <MudHidden Breakpoint="Breakpoint.MdAndUp" Invert="true">
         <MudButton Href="/dashboard" Color="Color.Inherit">Dashboard</MudButton>
         <MudButton Href="/widgets" Color="Color.Inherit">Widgets</MudButton>
@@ -66,7 +66,7 @@ Widget Data hỗ trợ **mobile-first** approach:
     <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" />
 </MudAppBar>
 
-<!-- Drawer for mobile -->
+<!-- Drawer cho mobile -->
 <MudDrawer @bind-Open="@_drawerOpen" Elevation="1">
     <MudNavMenu>
         <MudNavLink Href="/dashboard" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
@@ -85,7 +85,7 @@ Widget Data hỗ trợ **mobile-first** approach:
 }
 ```
 
-### Responsive Table
+### Bảng Đáp ứng
 
 ```razor
 <MudTable Items="@widgets" 
@@ -116,15 +116,15 @@ Widget Data hỗ trợ **mobile-first** approach:
 </MudTable>
 
 @code {
-    private bool _isMobile => false; // Detect from browser
+    private bool _isMobile => false; // Phát hiện từ trình duyệt
 }
 ```
 
 ---
 
-## 🔌 2. Progressive Web App (PWA)
+## 🔌 2. Ứng dụng Web Tiến bộ (PWA)
 
-### Enable PWA in Blazor
+### Bật PWA trong Blazor
 
 ```csharp
 // Program.cs
@@ -184,7 +184,7 @@ const urlsToCache = [
   '/_framework/blazor.webassembly.js'
 ];
 
-// Install
+// Cài đặt
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -192,25 +192,25 @@ self.addEventListener('install', event => {
   );
 });
 
-// Fetch (Network First, then Cache)
+// Fetch (Network trước, rồi Cache)
 self.addEventListener('fetch', event => {
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        // Clone response and cache it
+        // Sao chép response và lưu vào cache
         const responseClone = response.clone();
         caches.open(CACHE_NAME)
           .then(cache => cache.put(event.request, responseClone));
         return response;
       })
       .catch(() => {
-        // Network failed, try cache
+        // Mạng thất bại, thử cache
         return caches.match(event.request);
       })
   );
 });
 
-// Activate
+// Kích hoạt
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
@@ -226,7 +226,7 @@ self.addEventListener('activate', event => {
 });
 ```
 
-### Register Service Worker
+### Đăng ký Service Worker
 
 ```html
 <!-- index.html -->
@@ -243,7 +243,7 @@ if ('serviceWorker' in navigator) {
 </script>
 ```
 
-### Offline Indicator
+### Chỉ báo Ngoại tuyến
 
 ```razor
 @inject IJSRuntime JS
@@ -294,9 +294,9 @@ window.addOnlineOfflineListeners = (dotNetHelper) => {
 
 ---
 
-## 📊 3. Mobile-Optimized Components
+## 📊 3. Thành phần Tối ưu cho Mobile
 
-### Touch-Friendly Buttons
+### Nút thân thiện với cảm ứng
 
 ```razor
 <MudFab Color="Color.Primary" 
@@ -315,7 +315,7 @@ window.addOnlineOfflineListeners = (dotNetHelper) => {
 </style>
 ```
 
-### Swipe Gestures
+### Cử chỉ Vuốt
 
 ```razor
 @inject IJSRuntime JS
@@ -340,14 +340,14 @@ window.addOnlineOfflineListeners = (dotNetHelper) => {
     [JSInvokable]
     public void OnSwipeLeft()
     {
-        // Navigate to next widget
+        // Điều hướng đến widget tiếp theo
         NavigateNext();
     }
     
     [JSInvokable]
     public void OnSwipeRight()
     {
-        // Navigate to previous widget
+        // Điều hướng đến widget trước
         NavigatePrevious();
     }
 }
@@ -379,7 +379,7 @@ window.initSwipe = (element, dotNetHelper) => {
 };
 ```
 
-### Pull to Refresh
+### Kéo để làm mới
 
 ```razor
 <div class="pull-to-refresh" @ref="_refreshContainer">
@@ -426,9 +426,9 @@ window.initSwipe = (element, dotNetHelper) => {
 
 ---
 
-## 🎨 4. Mobile UI Patterns
+## 🎨 4. Mẫu UI Mobile
 
-### Bottom Sheet
+### Tấm đáy (Bottom Sheet)
 
 ```razor
 <MudDrawer @bind-Open="@_bottomSheetOpen" 
@@ -466,7 +466,7 @@ window.initSwipe = (element, dotNetHelper) => {
 }
 ```
 
-### Card Stack Layout
+### Bố cục Thẻ xếp chồng
 
 ```razor
 <MudContainer MaxWidth="MaxWidth.Small">
@@ -503,9 +503,9 @@ window.initSwipe = (element, dotNetHelper) => {
 
 ---
 
-## 📈 5. Performance Optimization
+## 📈 5. Tối ưu hóa Hiệu năng
 
-### Virtual Scrolling
+### Cuộn ảo
 
 ```razor
 @using Microsoft.AspNetCore.Components.Web.Virtualization
@@ -520,7 +520,7 @@ window.initSwipe = (element, dotNetHelper) => {
 </Virtualize>
 ```
 
-### Lazy Load Images
+### Tải ảnh Lazy
 
 ```razor
 <img src="@widget.ThumbnailUrl" 
@@ -529,10 +529,10 @@ window.initSwipe = (element, dotNetHelper) => {
      class="widget-thumbnail" />
 ```
 
-### Image Optimization
+### Tối ưu hóa Ảnh
 
 ```csharp
-// Resize images for mobile
+// Thay đổi kích thước ảnh cho mobile
 public async Task<byte[]> ResizeImageAsync(byte[] imageBytes, int maxWidth, int maxHeight)
 {
     using var image = Image.Load(imageBytes);
@@ -552,9 +552,9 @@ public async Task<byte[]> ResizeImageAsync(byte[] imageBytes, int maxWidth, int 
 
 ---
 
-## 📱 6. Device-Specific Features
+## 📱 6. Tính năng Thiết bị cụ thể
 
-### Camera Access
+### Truy cập Camera
 
 ```razor
 <InputFile OnChange="@HandleFileSelected" accept="image/*" capture="camera" />
@@ -566,13 +566,13 @@ public async Task<byte[]> ResizeImageAsync(byte[] imageBytes, int maxWidth, int 
         var buffer = new byte[file.Size];
         await file.OpenReadStream().ReadAsync(buffer);
         
-        // Process image
+        // Xử lý ảnh
         await ProcessImageAsync(buffer);
     }
 }
 ```
 
-### Geolocation
+### Định vị
 
 ```javascript
 // wwwroot/js/geolocation.js
@@ -621,16 +621,16 @@ window.getCurrentPosition = () => {
 }
 ```
 
-### Push Notifications
+### Thông báo Đẩy
 
 ```javascript
-// Request permission
+// Yêu cầu quyền
 async function requestNotificationPermission() {
   const permission = await Notification.requestPermission();
   return permission === 'granted';
 }
 
-// Show notification
+// Hiển thị thông báo
 function showNotification(title, body) {
   if (Notification.permission === 'granted') {
     new Notification(title, {
@@ -644,9 +644,9 @@ function showNotification(title, body) {
 
 ---
 
-## 📊 7. Mobile Analytics
+## 📊 7. Phân tích Mobile
 
-### Track Mobile Usage
+### Theo dõi Sử dụng Mobile
 
 ```csharp
 public class MobileAnalyticsService
@@ -666,51 +666,51 @@ public class MobileAnalyticsService
     
     private string GetScreenSize()
     {
-        // Detect from User-Agent or JS
-        return "mobile"; // or "tablet"
+        // Phát hiện từ User-Agent hoặc JS
+        return "mobile"; // hoặc "tablet"
     }
     
     private string GetOrientation()
     {
-        return "portrait"; // or "landscape"
+        return "portrait"; // hoặc "landscape"
     }
 }
 ```
 
 ---
 
-## ✅ Mobile Checklist
+## ✅ Danh sách kiểm tra Mobile
 
-### Design
-- [ ] Responsive layout for all screen sizes
-- [ ] Touch-friendly UI (min 44x44px tap targets)
-- [ ] Readable font sizes (min 16px)
-- [ ] Proper spacing between interactive elements
+### Thiết kế
+- [ ] Layout responsive cho tất cả kích thước màn hình
+- [ ] UI thân thiện với cảm ứng (vùng chạm tối thiểu 44x44px)
+- [ ] Cỡ chữ dễ đọc (tối thiểu 16px)
+- [ ] Khoảng cách phù hợp giữa các phần tử tương tác
 
-### Performance
-- [ ] Lazy loading for images
-- [ ] Virtual scrolling for long lists
-- [ ] Minified & compressed assets
+### Hiệu năng
+- [ ] Lazy loading cho ảnh
+- [ ] Virtual scrolling cho danh sách dài
+- [ ] Minified & nén assets
 - [ ] Service worker caching
 
 ### PWA
-- [ ] manifest.json configured
-- [ ] Service worker registered
-- [ ] Offline support
-- [ ] Install prompt
+- [ ] manifest.json đã cấu hình
+- [ ] Service worker đã đăng ký
+- [ ] Hỗ trợ offline
+- [ ] Prompt cài đặt
 
-### Features
+### Tính năng
 - [ ] Pull to refresh
 - [ ] Swipe gestures
-- [ ] Bottom sheets for options
-- [ ] Camera/file upload
+- [ ] Bottom sheets cho tuỳ chọn
+- [ ] Camera/tải file
 
-### Testing
-- [ ] Test on iOS Safari
-- [ ] Test on Android Chrome
-- [ ] Test on tablets
-- [ ] Test offline mode
-- [ ] Test PWA installation
+### Kiểm thử
+- [ ] Test trên iOS Safari
+- [ ] Test trên Android Chrome
+- [ ] Test trên máy tính bảng
+- [ ] Test chế độ offline
+- [ ] Test cài đặt PWA
 
 ---
 

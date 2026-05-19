@@ -1,4 +1,4 @@
-# Integration & Extensibility
+# Tích hợp & Khả năng Mở rộng
 
 ## 📋 Tổng quan
 
@@ -14,7 +14,7 @@ Widget Data được thiết kế để **dễ dàng tích hợp** với:
 
 ## 🔔 1. Webhooks
 
-### Webhook Configuration
+### Cấu hình Webhook
 
 ```csharp
 public class Webhook
@@ -28,18 +28,18 @@ public class Webhook
 }
 ```
 
-### Webhook Events
+### Sự kiện Webhook
 
-| Event | Trigger | Payload |
+| Sự kiện | Kích hoạt | Dữ liệu kèm |
 |-------|---------|---------|
-| `widget.created` | Widget created | Widget object |
-| `widget.updated` | Widget configuration changed | Widget + changes |
-| `widget.deleted` | Widget deleted | Widget ID |
-| `widget.executed` | Widget execution completed | Widget ID + result |
-| `widget.failed` | Widget execution failed | Widget ID + error |
-| `schedule.triggered` | Scheduled job started | Schedule ID + timestamp |
+| `widget.created` | Widget được tạo | Đối tượng Widget |
+| `widget.updated` | Cấu hình Widget thay đổi | Widget + các thay đổi |
+| `widget.deleted` | Widget bị xoá | Widget ID |
+| `widget.executed` | Thực thi Widget hoàn tất | Widget ID + kết quả |
+| `widget.failed` | Thực thi Widget thất bại | Widget ID + lỗi |
+| `schedule.triggered` | Job theo lịch bắt đầu | Schedule ID + thời điểm |
 
-### Send Webhook
+### Gửi Webhook
 
 ```csharp
 public class WebhookService
@@ -65,7 +65,7 @@ public class WebhookService
         
         var json = JsonSerializer.Serialize(webhookPayload);
         
-        // Create signature
+        // Tạo chữ ký
         var signature = CreateHmacSignature(json, webhook.Secret);
         
         var request = new HttpRequestMessage(HttpMethod.Post, webhook.Url)
@@ -99,15 +99,15 @@ public class WebhookService
 }
 ```
 
-### Usage Example
+### Ví dụ sử dụng
 
 ```csharp
-// In WidgetService after execution
+// Trong WidgetService sau khi thực thi
 public async Task<WidgetData> ExecuteAsync(int widgetId)
 {
     var data = await FetchAndProcessDataAsync(widgetId);
     
-    // Trigger webhook
+    // Kích hoạt webhook
     var webhooks = await _webhookRepository.GetByWidgetIdAsync(widgetId);
     foreach (var webhook in webhooks)
     {
@@ -123,17 +123,17 @@ public async Task<WidgetData> ExecuteAsync(int widgetId)
 }
 ```
 
-### Verify Webhook Signature (Receiver Side)
+### Xác minh Chữ ký Webhook (Bên nhận)
 
 ```csharp
-// In your webhook receiver API
+// Trong API nhận webhook của bạn
 [HttpPost("webhook")]
 public async Task<IActionResult> ReceiveWebhook([FromBody] object payload)
 {
     var signature = Request.Headers["X-Webhook-Signature"].FirstOrDefault();
     var eventType = Request.Headers["X-Webhook-Event"].FirstOrDefault();
     
-    // Verify signature
+    // Xác minh chữ ký
     var body = await new StreamReader(Request.Body).ReadToEndAsync();
     var expectedSignature = CreateHmacSignature(body, "your-secret");
     
@@ -142,7 +142,7 @@ public async Task<IActionResult> ReceiveWebhook([FromBody] object payload)
         return Unauthorized("Invalid signature");
     }
     
-    // Process event
+    // Xử lý sự kiện
     switch (eventType)
     {
         case "widget.executed":
@@ -159,7 +159,7 @@ public async Task<IActionResult> ReceiveWebhook([FromBody] object payload)
 
 ---
 
-## 🔌 2. Plugin System
+## 🔌 2. Hệ thống Plugin
 
 ### IStepExecutor Interface
 
@@ -171,10 +171,10 @@ public interface IStepExecutor
 }
 ```
 
-### Custom Plugin Example
+### Ví dụ Plugin Tùy chỉnh
 
 ```csharp
-// Custom ML prediction step
+// Bước ML dự đoán tùy chỉnh
 public class MachineLearningStepExecutor : IStepExecutor
 {
     public string StepType => "ml_predict";
@@ -188,17 +188,17 @@ public class MachineLearningStepExecutor : IStepExecutor
     
     public async Task<StepResult> ExecuteAsync(StepConfig config, ExecutionContext context)
     {
-        // Get input data from context
+        // Lấy dữ liệu đầu vào từ context
         var inputData = context.GetVariable(config.InputVariable) as DataTable;
         
-        // Get ML model path
+        // Lấy đường dẫn ML model
         var modelPath = config.GetParameter<string>("model_path");
         var inputColumns = config.GetParameter<string[]>("input_columns");
         
-        // Make predictions
+        // Thực hiện dự đoán
         var predictions = await _mlService.PredictAsync(modelPath, inputData, inputColumns);
         
-        // Return result
+        // Trả về kết quả
         return new StepResult
         {
             Success = true,
@@ -209,23 +209,23 @@ public class MachineLearningStepExecutor : IStepExecutor
 }
 ```
 
-### Register Plugin
+### Đăng ký Plugin
 
 ```csharp
 // Program.cs
 public void ConfigureServices(IServiceCollection services)
 {
-    // Register built-in executors
+    // Đăng ký các executor tích hợp sẵn
     services.AddScoped<IStepExecutor, ExtractStepExecutor>();
     services.AddScoped<IStepExecutor, TransformStepExecutor>();
     services.AddScoped<IStepExecutor, AggregateStepExecutor>();
     
-    // Register custom plugin
+    // Đăng ký plugin tùy chỉnh
     services.AddScoped<IStepExecutor, MachineLearningStepExecutor>();
 }
 ```
 
-### Use Custom Step in Widget
+### Dùng Step Tùy chỉnh trong Widget
 
 ```json
 {
@@ -253,9 +253,9 @@ public void ConfigureServices(IServiceCollection services)
 
 ---
 
-## 📊 3. Power BI Integration
+## 📊 3. Tích hợp Power BI
 
-### Export to Power BI Dataset
+### Xuất sang Power BI Dataset
 
 ```csharp
 public class PowerBIService
@@ -323,9 +323,9 @@ public class PowerBIService
 
 ---
 
-## 📧 4. Email Integration
+## 📧 4. Tích hợp Email
 
-### Send Widget Results via Email
+### Gửi Kết quả Widget qua Email
 
 ```csharp
 public class EmailService
@@ -346,7 +346,7 @@ public class EmailService
             message.To.Add(recipient);
         }
         
-        // Generate HTML table
+        // Tạo bảng HTML
         var htmlTable = GenerateHtmlTable(data);
         
         message.Body = $@"
@@ -357,7 +357,7 @@ public class EmailService
             {htmlTable}
         ";
         
-        // Attach CSV
+        // Đính kèm CSV
         var csv = GenerateCsv(data);
         var attachment = new Attachment(
             new MemoryStream(Encoding.UTF8.GetBytes(csv)),
@@ -382,7 +382,7 @@ public class EmailService
         }
         sb.Append("</tr></thead>");
         
-        // Rows (limit to first 100)
+        // Rows (giới hạn 100 dòng đầu)
         sb.Append("<tbody>");
         foreach (DataRow row in data.Rows.Cast<DataRow>().Take(100))
         {
@@ -400,10 +400,10 @@ public class EmailService
 }
 ```
 
-### Schedule Email Reports
+### Lên lịch Gửi Báo cáo Email
 
 ```csharp
-// Configure in Widget
+// Cấu hình trong Widget
 {
   "widget_id": 123,
   "schedule": {
@@ -422,16 +422,16 @@ public class EmailService
 
 ---
 
-## 🔗 5. REST API for External Systems
+## 🔗 5. REST API cho Hệ thống Ngoài
 
-### API Endpoints
+### Các Endpoint API
 
 ```csharp
 [ApiController]
 [Route("api/integration")]
 public class IntegrationController : ControllerBase
 {
-    // Execute widget and return results
+    // Thực thi widget và trả về kết quả
     [HttpPost("widgets/{id}/execute")]
     public async Task<IActionResult> ExecuteWidget(int id, [FromBody] Dictionary<string, object> parameters)
     {
@@ -439,7 +439,7 @@ public class IntegrationController : ControllerBase
         return Ok(result);
     }
     
-    // Get widget results in various formats
+    // Lấy kết quả widget ở các định dạng khác nhau
     [HttpGet("widgets/{id}/export")]
     public async Task<IActionResult> ExportWidget(int id, [FromQuery] string format = "json")
     {
@@ -454,7 +454,7 @@ public class IntegrationController : ControllerBase
         };
     }
     
-    // OData endpoint for flexible querying
+    // OData endpoint cho query linh hoạt
     [HttpGet("odata/widgets")]
     [EnableQuery]
     public IQueryable<Widget> GetWidgets()
@@ -464,7 +464,7 @@ public class IntegrationController : ControllerBase
 }
 ```
 
-### Client SDK Example (C#)
+### Ví dụ Client SDK (C#)
 
 ```csharp
 public class WidgetDataClient
@@ -498,7 +498,7 @@ public class WidgetDataClient
     }
 }
 
-// Usage
+// Cách dùng
 var client = new WidgetDataClient("https://api.widgetdata.com", "your-api-key");
 var data = await client.ExecuteWidgetAsync(123);
 var csvBytes = await client.ExportWidgetAsync(123, "csv");
@@ -509,7 +509,7 @@ var csvBytes = await client.ExportWidgetAsync(123, "csv");
 ## 🐍 6. Python SDK
 
 ```python
-# widgetdata_client.py
+# widgetdata_client.py (module client Python)
 import requests
 import pandas as pd
 from io import StringIO
@@ -539,7 +539,7 @@ class WidgetDataClient:
         response.raise_for_status()
         return response.json()
 
-# Usage
+# Cách dùng
 client = WidgetDataClient("https://api.widgetdata.com", "your-api-key")
 data = client.execute_widget(123, {"start_date": "2026-01-01"})
 df = client.export_widget_csv(123)
@@ -548,9 +548,9 @@ print(df.head())
 
 ---
 
-## 📱 7. Mobile App Integration
+## 📱 7. Tích hợp Ứng dụng Mobile
 
-### Expose Mobile-Friendly API
+### Xuất API thân thiện với Mobile
 
 ```csharp
 [ApiController]
@@ -582,12 +582,12 @@ public class MobileApiController : ControllerBase
     {
         var data = await _widgetService.GetDataAsync(id);
         
-        // Return summary for mobile (not full data)
+        // Trả về bản tóm tắt cho mobile (không phải toàn bộ dữ liệu)
         return Ok(new
         {
             rowCount = data.Rows.Count,
             lastUpdated = DateTime.UtcNow,
-            preview = data.Rows.Take(10) // First 10 rows only
+            preview = data.Rows.Take(10) // Chỉ 10 dòng đầu
         });
     }
 }
@@ -595,29 +595,29 @@ public class MobileApiController : ControllerBase
 
 ---
 
-## ✅ Integration Checklist
+## ✅ Danh sách kiểm tra Tích hợp
 
 ### Webhooks
-- [ ] Webhook endpoints configured
-- [ ] HMAC signature verification implemented
-- [ ] Retry logic for failed webhooks
-- [ ] Webhook logs for debugging
+- [ ] Đã cấu hình endpoint webhook
+- [ ] Đã triển khai xác minh chữ ký HMAC
+- [ ] Logic thử lại cho webhook thất bại
+- [ ] Log webhook để debug
 
 ### API
-- [ ] REST API documented (Swagger/OpenAPI)
-- [ ] API key authentication
-- [ ] Rate limiting configured
-- [ ] CORS policy set
+- [ ] REST API có tài liệu (Swagger/OpenAPI)
+- [ ] Xác thực API key
+- [ ] Rate limiting đã cấu hình
+- [ ] Đã thiết lập chính sách CORS
 
 ### Plugins
-- [ ] Plugin interface documented
-- [ ] Sample plugin provided
-- [ ] Plugin registration tested
+- [ ] Đã có tài liệu interface plugin
+- [ ] Plugin mẫu được cung cấp
+- [ ] Đã test đăng ký plugin
 
-### External Systems
-- [ ] Power BI integration tested
-- [ ] Email templates configured
-- [ ] Export formats working (CSV, Excel, JSON)
+### Hệ thống Bên ngoài
+- [ ] Đã test tích hợp Power BI
+- [ ] Đã cấu hình mẫu email
+- [ ] Các định dạng xuất hoạt động tốt (CSV, Excel, JSON)
 
 ---
 

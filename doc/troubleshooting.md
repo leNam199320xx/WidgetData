@@ -1,28 +1,28 @@
-# Troubleshooting & FAQ
+# Xử lý sự cố & Câu hỏi thường gặp
 
-## 📋 Common Issues
+## 📋 Các vấn đề thường gặp
 
-### 🔴 Database Connection Errors
+### 🔴 Lỗi kết nối Database
 
-**Error:** `Cannot open database "WidgetData" requested by the login`
+**Lỗi:** `Cannot open database "WidgetData" requested by the login`
 
-**Causes:**
-- Database doesn't exist
-- Connection string incorrect
-- SQL Server not running
+**Nguyên nhân:**
+- Database chưa tồn tại
+- Connection string không đúng
+- SQL Server chưa chạy
 
-**Solutions:**
+**Giải pháp:**
 ```bash
-# 1. Verify SQL Server is running
+# 1. Kiểm tra SQL Server đang chạy
 Get-Service MSSQLSERVER
 
-# 2. Test connection
+# 2. Kiểm tra kết nối
 sqlcmd -S localhost -E -Q "SELECT @@VERSION"
 
-# 3. Create database if missing
+# 3. Tạo database nếu chưa tồn tại
 dotnet ef database update --project src/WidgetData.Infrastructure
 
-# 4. Check connection string
+# 4. Kiểm tra connection string
 {
   "ConnectionStrings": {
     "DefaultConnection": "Server=localhost;Database=WidgetData;Trusted_Connection=True;TrustServerCertificate=True;"
@@ -32,11 +32,11 @@ dotnet ef database update --project src/WidgetData.Infrastructure
 
 ---
 
-**Error:** `Login failed for user 'IIS APPPOOL\WidgetDataAppPool'`
+**Lỗi:** `Login failed for user 'IIS APPPOOL\WidgetDataAppPool'`
 
-**Solution:**
+**Giải pháp:**
 ```sql
--- Grant access to IIS AppPool user
+-- Cấp quyền cho user IIS AppPool
 USE WidgetData;
 CREATE USER [IIS APPPOOL\WidgetDataAppPool] FOR LOGIN [IIS APPPOOL\WidgetDataAppPool];
 ALTER ROLE db_datareader ADD MEMBER [IIS APPPOOL\WidgetDataAppPool];
@@ -45,13 +45,13 @@ ALTER ROLE db_datawriter ADD MEMBER [IIS APPPOOL\WidgetDataAppPool];
 
 ---
 
-### 🔴 EF Core Migration Issues
+### 🔴 Sự cố EF Core Migration
 
-**Error:** `Unable to create an object of type 'ApplicationDbContext'`
+**Lỗi:** `Unable to create an object of type 'ApplicationDbContext'`
 
-**Solution:**
+**Giải pháp:**
 ```bash
-# Specify startup project
+# Chỉ định startup project
 dotnet ef migrations add InitialCreate \
   --project src/WidgetData.Infrastructure \
   --startup-project src/WidgetData.Web
@@ -63,27 +63,27 @@ dotnet ef database update \
 
 ---
 
-**Error:** `The migration '20260410_Initial' has already been applied`
+**Lỗi:** `The migration '20260410_Initial' has already been applied`
 
-**Solution:**
+**Giải pháp:**
 ```bash
-# Remove last migration
+# Xóa migration cuối cùng
 dotnet ef migrations remove --project src/WidgetData.Infrastructure
 
-# Or force reapply
+# Hoặc áp dụng lại bắt buộc
 dotnet ef database update 0 --project src/WidgetData.Infrastructure
 dotnet ef database update --project src/WidgetData.Infrastructure
 ```
 
 ---
 
-### 🔴 Hangfire Issues
+### 🔴 Sự cố Hangfire
 
-**Error:** `Hangfire dashboard returns 404`
+**Lỗi:** `Hangfire dashboard returns 404`
 
-**Solution:**
+**Giải pháp:**
 ```csharp
-// Ensure middleware is registered in correct order
+// Đảm bảo middleware được đăng ký đúng thứ tự
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -98,21 +98,21 @@ app.MapControllers();
 
 ---
 
-**Error:** `BackgroundJob is not processed`
+**Lỗi:** `BackgroundJob is not processed`
 
-**Solutions:**
+**Giải pháp:**
 ```csharp
-// 1. Check Hangfire Server is running
+// 1. Kiểm tra Hangfire Server đang chạy
 services.AddHangfireServer(options =>
 {
     options.WorkerCount = Environment.ProcessorCount * 5;
 });
 
-// 2. Check job is enqueued
+// 2. Kiểm tra job đã được đưa vào hàng đợi
 var jobId = BackgroundJob.Enqueue<MyService>(x => x.DoWork());
-Console.WriteLine($"Job ID: {jobId}"); // Should not be null
+Console.WriteLine($"Job ID: {jobId}"); // Không được null
 
-// 3. Check Hangfire logs
+// 3. Kiểm tra logs Hangfire
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Override("Hangfire", LogEventLevel.Debug)
     .WriteTo.Console()
@@ -121,17 +121,17 @@ Log.Logger = new LoggerConfiguration()
 
 ---
 
-### 🔴 Redis Connection Issues
+### 🔴 Sự cố kết nối Redis
 
-**Error:** `It was not possible to connect to the redis server(s)`
+**Lỗi:** `It was not possible to connect to the redis server(s)`
 
-**Solutions:**
+**Giải pháp:**
 ```bash
-# 1. Check Redis is running
+# 1. Kiểm tra Redis đang chạy
 redis-cli ping
-# Expected: PONG
+# Kết quả mong đợi: PONG
 
-# 2. Check connection string
+# 2. Kiểm tra connection string
 {
   "Redis": {
     "Configuration": "localhost:6379",
@@ -139,45 +139,45 @@ redis-cli ping
   }
 }
 
-# 3. Allow remote connections (if needed)
-# Edit redis.conf
+# 3. Cho phép kết nối từ xa (nếu cần)
+# Chỉnh sửa redis.conf
 bind 0.0.0.0
 protected-mode no
 
-# Restart Redis
+# Khởi động lại Redis
 redis-server --service-stop
 redis-server --service-start
 ```
 
 ---
 
-### 🔴 Blazor Issues
+### 🔴 Sự cố Blazor
 
-**Error:** `Blazor app shows blank page`
+**Lỗi:** `Blazor app shows blank page`
 
-**Solutions:**
+**Giải pháp:**
 ```bash
-# 1. Check browser console for errors
-# 2. Verify _framework/blazor.webassembly.js is loaded
-# 3. Clear browser cache
-# 4. Rebuild with clean
+# 1. Kiểm tra console trình duyệt để xem lỗi
+# 2. Xác minh _framework/blazor.webassembly.js đã được tải
+# 3. Xóa cache trình duyệt
+# 4. Build lại từ đầu
 dotnet clean
 dotnet build
 ```
 
 ---
 
-**Error:** `SignalR connection failed`
+**Lỗi:** `SignalR connection failed`
 
-**Solution:**
+**Giải pháp:**
 ```csharp
-// Enable detailed SignalR logging
+// Bật log chi tiết cho SignalR
 services.AddSignalR(options =>
 {
     options.EnableDetailedErrors = true;
 });
 
-// Client-side (Blazor)
+// Phía client (Blazor)
 _hubConnection = new HubConnectionBuilder()
     .WithUrl(Navigation.ToAbsoluteUri("/widgetHub"))
     .ConfigureLogging(logging =>
@@ -189,13 +189,13 @@ _hubConnection = new HubConnectionBuilder()
 
 ---
 
-### 🔴 Performance Issues
+### 🔴 Sự cố hiệu năng
 
-**Issue:** Slow widget execution (> 5 seconds)
+**Sự cố:** Thực thi widget chậm (> 5 giây)
 
-**Diagnostics:**
+**Chẩn đoán:**
 ```csharp
-// Add timing logs
+// Thêm log đo thời gian
 var stopwatch = Stopwatch.StartNew();
 
 _logger.LogInformation("Step 1: Extract started");
@@ -208,17 +208,17 @@ var transformed = await TransformDataAsync(data);
 _logger.LogInformation("Step 2 completed in {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
 ```
 
-**Solutions:**
+**Giải pháp:**
 ```csharp
-// 1. Add indexes
+// 1. Thêm indexes
 CREATE NONCLUSTERED INDEX IX_Orders_Date ON Orders(OrderDate);
 
-// 2. Use pagination
+// 2. Sử dụng phân trang
 var query = _context.Orders
     .Where(o => o.OrderDate >= startDate)
-    .Take(1000); // Limit rows
+    .Take(1000); // Giới hạn số dòng
 
-// 3. Enable caching
+// 3. Bật caching
 var cacheKey = $"widget_{widgetId}";
 var data = await _cache.GetOrCreateAsync(cacheKey, async entry =>
 {
@@ -226,29 +226,29 @@ var data = await _cache.GetOrCreateAsync(cacheKey, async entry =>
     return await FetchDataAsync();
 });
 
-// 4. Use async properly
-// ❌ BAD
-var result = _service.GetDataAsync().Result; // Blocks!
+// 4. Sử dụng async đúng cách
+// ❌ SAI
+var result = _service.GetDataAsync().Result; // Chặn luồng!
 
-// ✅ GOOD
+// ✅ ĐÚNG
 var result = await _service.GetDataAsync();
 ```
 
 ---
 
-### 🔴 File Upload Issues
+### 🔴 Sự cố tải file lên
 
-**Error:** `Request body too large`
+**Lỗi:** `Request body too large`
 
-**Solution:**
+**Giải pháp:**
 ```csharp
-// Increase max request size
+// Tăng kích thước request tối đa
 services.Configure<FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = 100_000_000; // 100 MB
 });
 
-// In Controller
+// Trong Controller
 [RequestSizeLimit(100_000_000)]
 [HttpPost("upload")]
 public async Task<IActionResult> Upload(IFormFile file)
@@ -268,31 +268,31 @@ public async Task<IActionResult> Upload(IFormFile file)
 
 ---
 
-## ❓ Frequently Asked Questions
+## ❓ Câu hỏi thường gặp
 
-### Q: How do I reset admin password?
+### Hỏi: Làm thế nào để đặt lại mật khẩu admin?
 
-**A:** Run this SQL script:
+**Trả lời:** Chạy script SQL sau:
 ```sql
--- Find user
+-- Tìm người dùng
 SELECT * FROM AspNetUsers WHERE Email = 'admin@widgetdata.com';
 
--- Update password (hash for "Admin@123")
+-- Cập nhật mật khẩu (hash cho "Admin@123")
 UPDATE AspNetUsers
-SET PasswordHash = 'AQAAAAIAAYagAAAAEL...' -- Use proper hash
+SET PasswordHash = 'AQAAAAIAAYagAAAAEL...' -- Sử dụng hash đúng
 WHERE Email = 'admin@widgetdata.com';
 ```
 
-Or use CLI tool:
+Hoặc dùng công cụ CLI:
 ```bash
 dotnet run --project src/WidgetData.Web -- reset-password admin@widgetdata.com
 ```
 
 ---
 
-### Q: How to enable debug logging?
+### Hỏi: Làm thế nào để bật debug logging?
 
-**A:** Update `appsettings.Development.json`:
+**Trả lời:** Cập nhật `appsettings.Development.json`:
 ```json
 {
   "Logging": {
@@ -312,45 +312,45 @@ dotnet run --project src/WidgetData.Web -- reset-password admin@widgetdata.com
 
 ---
 
-### Q: How to clear cache manually?
+### Hỏi: Làm thế nào để xóa cache thủ công?
 
-**A:**
+**Trả lời:**
 ```bash
 # Redis
 redis-cli FLUSHDB
 
-# In-memory cache (restart app)
+# Cache trong bộ nhớ (khởi động lại app)
 iisreset
 
-# Or via API
+# Hoặc qua API
 curl -X POST https://localhost:7001/api/cache/clear -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ---
 
-### Q: Widget shows "No data" but query returns rows?
+### Hỏi: Widget hiển thị "Không có dữ liệu" nhưng query trả về dữ liệu?
 
-**A:** Check:
+**Trả lời:** Kiểm tra:
 ```csharp
-// 1. Verify query actually returns data
+// 1. Xác minh query thực sự trả về dữ liệu
 var testResult = await _db.ExecuteQueryAsync("SELECT * FROM Orders");
 _logger.LogInformation("Query returned {Count} rows", testResult.Rows.Count);
 
-// 2. Check output variable mapping
+// 2. Kiểm tra ánh xạ biến đầu ra
 {
   "step_id": 1,
-  "output": "orders" // ✅ Make sure this matches next step's input
+  "output": "orders" // ✅ Đảm bảo điều này khớp với đầu vào của bước tiếp theo
 }
 
-// 3. Check data type mapping
-// If column is DECIMAL, make sure it's not being truncated
+// 3. Kiểm tra ánh xạ kiểu dữ liệu
+// Nếu cột là DECIMAL, đảm bảo không bị cắt bớt
 ```
 
 ---
 
-### Q: How to schedule widget to run every 5 minutes?
+### Hỏi: Làm thế nào để lên lịch widget chạy mỗi 5 phút?
 
-**A:**
+**Trả lời:**
 ```json
 {
   "widget_id": 123,
@@ -361,19 +361,19 @@ _logger.LogInformation("Query returned {Count} rows", testResult.Rows.Count);
 }
 ```
 
-Cron format: `minute hour day month weekday`
+Định dạng Cron: `phút giờ ngày tháng ngày-trong-tuần`
 
-Examples:
-- Every 5 min: `*/5 * * * *`
-- Every hour: `0 * * * *`
-- Daily at 2 AM: `0 2 * * *`
-- Mondays at 9 AM: `0 9 * * 1`
+Ví dụ:
+- Mỗi 5 phút: `*/5 * * * *`
+- Mỗi giờ: `0 * * * *`
+- Hàng ngày lúc 2 giờ sáng: `0 2 * * *`
+- Thứ Hai lúc 9 giờ sáng: `0 9 * * 1`
 
 ---
 
-### Q: How to export widget data to Excel?
+### Hỏi: Làm thế nào để xuất dữ liệu widget ra Excel?
 
-**A:**
+**Trả lời:**
 ```csharp
 [HttpGet("widgets/{id}/export/excel")]
 public async Task<IActionResult> ExportExcel(int id)
@@ -383,10 +383,10 @@ public async Task<IActionResult> ExportExcel(int id)
     using var package = new ExcelPackage();
     var worksheet = package.Workbook.Worksheets.Add("Widget Data");
     
-    // Load data
+    // Nạp dữ liệu
     worksheet.Cells["A1"].LoadFromDataTable(data, true);
     
-    // Auto-fit columns
+    // Tự động điều chỉnh cột
     worksheet.Cells.AutoFitColumns();
     
     var bytes = await package.GetAsByteArrayAsync();
@@ -397,11 +397,11 @@ public async Task<IActionResult> ExportExcel(int id)
 
 ---
 
-### Q: How to add a new data source type?
+### Hỏi: Làm thế nào để thêm loại data source mới?
 
-**A:**
+**Trả lời:**
 ```csharp
-// 1. Create connector
+// 1. Tạo connector
 public class CustomApiConnector : IDataSourceConnector
 {
     public async Task<DataTable> ExecuteQueryAsync(string endpoint, Dictionary<string, object> parameters)
@@ -409,16 +409,16 @@ public class CustomApiConnector : IDataSourceConnector
         var response = await _httpClient.GetAsync(endpoint);
         var json = await response.Content.ReadAsStringAsync();
         
-        // Parse JSON to DataTable
+        // Phân tích JSON thành DataTable
         var data = JsonConvert.DeserializeObject<DataTable>(json);
         return data;
     }
 }
 
-// 2. Register
+// 2. Đăng ký
 services.AddScoped<IDataSourceConnector, CustomApiConnector>();
 
-// 3. Use in widget
+// 3. Sử dụng trong widget
 {
   "source": {
     "type": "custom_api",
@@ -429,19 +429,19 @@ services.AddScoped<IDataSourceConnector, CustomApiConnector>();
 
 ---
 
-### Q: Memory usage keeps increasing
+### Hỏi: Mức sử dụng bộ nhớ liên tục tăng
 
-**A:** Common causes:
+**Trả lời:** Các nguyên nhân thường gặp:
 
 ```csharp
-// 1. Not disposing DbContext
-// ❌ BAD
+// 1. Không dispose DbContext
+// ❌ SAI
 public class MyService
 {
-    private readonly ApplicationDbContext _context; // Singleton lifetime!
+    private readonly ApplicationDbContext _context; // Vòng đời Singleton!
 }
 
-// ✅ GOOD
+// ✅ ĐÚNG
 public class MyService
 {
     private readonly IDbContextFactory<ApplicationDbContext> _factory;
@@ -449,49 +449,49 @@ public class MyService
     public async Task DoWorkAsync()
     {
         using var context = await _factory.CreateDbContextAsync();
-        // Use context
+        // Sử dụng context
     }
 }
 
-// 2. Caching too much data
-// Set expiration
+// 2. Cache quá nhiều dữ liệu
+// Đặt thời gian hết hạn
 _cache.Set(key, data, new MemoryCacheEntryOptions
 {
     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
     SlidingExpiration = TimeSpan.FromMinutes(2)
 });
 
-// 3. Not disposing HttpClient
-// Use IHttpClientFactory
+// 3. Không dispose HttpClient
+// Sử dụng IHttpClientFactory
 services.AddHttpClient();
 ```
 
 ---
 
-### Q: How to migrate from development to production?
+### Hỏi: Làm thế nào để chuyển đổi từ môi trường phát triển sang sản xuất?
 
-**A:**
+**Trả lời:**
 ```bash
-# 1. Backup production database
+# 1. Sao lưu database sản xuất
 sqlcmd -S prod-server -E -Q "BACKUP DATABASE WidgetData TO DISK='C:\Backups\WidgetData_Pre_Migration.bak'"
 
-# 2. Generate migration script
+# 2. Tạo script migration
 dotnet ef migrations script --project src/WidgetData.Infrastructure --output migration.sql
 
-# 3. Review script, then apply
+# 3. Xem xét script, sau đó áp dụng
 sqlcmd -S prod-server -E -i migration.sql
 
-# 4. Deploy application
+# 4. Triển khai ứng dụng
 dotnet publish -c Release -o C:\Deploy\WidgetData
 
-# 5. Update appsettings.Production.json
-# 6. Restart IIS
+# 5. Cập nhật appsettings.Production.json
+# 6. Khởi động lại IIS
 iisreset
 ```
 
 ---
 
-## 🛠️ Diagnostic Tools
+## 🛠️ Công cụ Chẩn đoán
 
 ### 1. Health Check Endpoint
 
@@ -499,7 +499,7 @@ iisreset
 curl https://localhost:5001/health
 ```
 
-Expected response:
+Phản hồi mong đợi:
 ```json
 {
   "status": "Healthy",
@@ -513,7 +513,7 @@ Expected response:
 
 ---
 
-### 2. Database Connection Test
+### 2. Kiểm tra Kết nối Database
 
 ```csharp
 public async Task<bool> TestDatabaseConnectionAsync()
@@ -531,7 +531,7 @@ public async Task<bool> TestDatabaseConnectionAsync()
     }
     catch (Exception ex)
     {
-        _logger.LogError(ex, "Database connection test failed");
+        _logger.LogError(ex, "Kiểm tra kết nối database thất bại");
         return false;
     }
 }
@@ -539,10 +539,10 @@ public async Task<bool> TestDatabaseConnectionAsync()
 
 ---
 
-### 3. Check Running Jobs
+### 3. Kiểm tra Jobs Đang Chạy
 
 ```sql
--- Active Hangfire jobs
+-- Các job Hangfire đang hoạt động
 SELECT 
     Id, 
     StateName, 
@@ -555,10 +555,10 @@ ORDER BY CreatedAt DESC;
 
 ---
 
-### 4. View Recent Errors
+### 4. Xem Lỗi Gần Đây
 
 ```sql
--- Application logs (if using Serilog.Sinks.MSSqlServer)
+-- Log ứng dụng (nếu dùng Serilog.Sinks.MSSqlServer)
 SELECT TOP 100
     TimeStamp,
     Level,
@@ -571,26 +571,26 @@ ORDER BY TimeStamp DESC;
 
 ---
 
-## 📞 Getting Help
+## 📞 Hỗ trợ
 
-### Before Asking for Help
+### Trước khi Đặt câu hỏi
 
-1. ✅ Check logs: `logs/log-{date}.txt`
-2. ✅ Check health endpoint: `/health`
-3. ✅ Verify database connection
-4. ✅ Search this troubleshooting guide
-5. ✅ Check GitHub issues
+1. ✅ Kiểm tra log: `logs/log-{date}.txt`
+2. ✅ Kiểm tra health endpoint: `/health`
+3. ✅ Xác minh kết nối database
+4. ✅ Tìm kiếm trong hướng dẫn xử lý sự cố này
+5. ✅ Kiểm tra GitHub issues
 
-### When Reporting Issues
+### Khi Báo cáo Sự cố
 
-Include:
-- Error message (full stack trace)
-- Steps to reproduce
-- Environment (OS, .NET version, SQL Server version)
-- Relevant configuration (redact secrets!)
-- Logs (last 50-100 lines)
+Cung cấp:
+- Thông báo lỗi (stack trace đầy đủ)
+- Các bước tái hiện lỗi
+- Môi trường (OS, phiên bản .NET, phiên bản SQL Server)
+- Cấu hình liên quan (ẩn thông tin bí mật!)
+- Log (50–100 dòng cuối)
 
-### Support Channels
+### Kênh Hỗ trợ
 
 - **GitHub Issues**: https://github.com/your-org/widget-data/issues
 - **Discussions**: https://github.com/your-org/widget-data/discussions

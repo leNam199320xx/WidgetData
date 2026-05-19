@@ -1,46 +1,46 @@
-# Backup & High Availability
+# Sao lưu & Tính khả dụng cao
 
 ## 📋 Tổng quan
 
 Widget Data đảm bảo **99.9% uptime** thông qua:
 
-1. **Database Backup** - Automated backup & restore
-2. **High Availability** - Load balancing, failover
-3. **Disaster Recovery** - RPO < 15 min, RTO < 1 hour
-4. **Data Redundancy** - Multiple replicas
+1. **Database Backup** - Sao lưu & khôi phục tự động
+2. **High Availability** - Cân bằng tải, dự phòng
+3. **Disaster Recovery** - RPO < 15 phút, RTO < 1 giờ
+4. **Data Redundancy** - Nhiều bản sao dữ liệu
 
 ---
 
-## 💾 1. Database Backup Strategy
+## 💾 1. Chiến lược Sao lưu Database
 
-### Backup Types
+### Loại sao lưu
 
-| Type | Frequency | Retention | Purpose |
+| Loại | Tần suất | Lưu trữ | Mục đích |
 |------|-----------|-----------|---------|
-| **Full Backup** | Daily (2 AM) | 30 days | Complete database |
-| **Differential** | Every 6 hours | 7 days | Changes since last full |
-| **Transaction Log** | Every 15 min | 24 hours | Point-in-time recovery |
+| **Sao lưu đầy đủ** | Hàng ngày (2 giờ sáng) | 30 ngày | Toàn bộ database |
+| **Sao lưu vi sai** | Mỗi 6 giờ | 7 ngày | Thay đổi từ lần full backup cuối |
+| **Nhật ký giao dịch** | Mỗi 15 phút | 24 giờ | Khôi phục theo thời điểm |
 
 ### SQL Server Backup
 
 ```sql
--- Full Backup
+-- Sao lưu toàn bộ (Full Backup)
 BACKUP DATABASE WidgetData
 TO DISK = 'C:\Backups\WidgetData_Full_{date}.bak'
 WITH COMPRESSION, CHECKSUM, STATS = 10;
 
--- Differential Backup
+-- Sao lưu vi sai (Differential Backup)
 BACKUP DATABASE WidgetData
 TO DISK = 'C:\Backups\WidgetData_Diff_{date}.bak'
 WITH DIFFERENTIAL, COMPRESSION, CHECKSUM;
 
--- Transaction Log Backup
+-- Sao lưu Transaction Log
 BACKUP LOG WidgetData
 TO DISK = 'C:\Backups\WidgetData_Log_{date}.trn'
 WITH COMPRESSION, CHECKSUM;
 ```
 
-### Automated Backup Script (PowerShell)
+### Script Sao lưu Tự động (PowerShell)
 
 ```powershell
 # BackupDatabase.ps1
@@ -53,12 +53,12 @@ param(
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $backupFile = "$BackupPath\${Database}_Full_$timestamp.bak"
 
-# Create backup directory if not exists
+# Tạo thư mục backup nếu chưa tồn tại
 if (-not (Test-Path $BackupPath)) {
     New-Item -ItemType Directory -Path $BackupPath
 }
 
-# Execute backup
+# Thực thi backup
 $query = @"
 BACKUP DATABASE [$Database]
 TO DISK = N'$backupFile'
@@ -67,18 +67,18 @@ WITH COMPRESSION, CHECKSUM, STATS = 10, INIT
 
 Invoke-Sqlcmd -ServerInstance $ServerInstance -Query $query
 
-# Delete backups older than 30 days
+# Xóa các bản backup cũ hơn 30 ngày
 Get-ChildItem $BackupPath -Filter "${Database}_Full_*.bak" |
     Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-30) } |
     Remove-Item -Force
 
-Write-Host "Backup completed: $backupFile"
+Write-Host "Backup hoàn thành: $backupFile"
 ```
 
-### Schedule Backup (Windows Task Scheduler)
+### Lên lịch Sao lưu (Windows Task Scheduler)
 
 ```powershell
-# Create scheduled task
+# Tạo scheduled task
 $action = New-ScheduledTaskAction -Execute "PowerShell.exe" `
     -Argument "-File C:\Scripts\BackupDatabase.ps1"
 
@@ -94,13 +94,13 @@ Register-ScheduledTask -TaskName "WidgetData-DailyBackup" `
 ### Azure SQL Backup (Automated)
 
 ```bash
-# Enable automated backups (default on Azure SQL)
+# Bật automated backup (mặc định trên Azure SQL)
 az sql db show --name WidgetData \
     --resource-group WidgetDataRG \
     --server widgetdata-sql \
     --query "earliestRestoreDate"
 
-# Configure retention
+# Cấu hình retention
 az sql db ltr-policy set \
     --resource-group WidgetDataRG \
     --server widgetdata-sql \
@@ -113,33 +113,33 @@ az sql db ltr-policy set \
 
 ---
 
-## 🔄 2. Restore Procedures
+## 🔄 2. Quy trình Khôi phục
 
-### Full Restore (SQL Server)
+### Khôi phục Đầy đủ (SQL Server)
 
 ```sql
--- Stop application first!
+-- Dừng ứng dụng trước!
 
--- Restore full backup
+-- Khôi phục full backup
 RESTORE DATABASE WidgetData
 FROM DISK = 'C:\Backups\WidgetData_Full_20260410.bak'
 WITH REPLACE, NORECOVERY, STATS = 10;
 
--- Restore differential (if any)
+-- Khôi phục differential (nếu có)
 RESTORE DATABASE WidgetData
 FROM DISK = 'C:\Backups\WidgetData_Diff_20260410.bak'
 WITH NORECOVERY, STATS = 10;
 
--- Restore transaction log
+-- Khôi phục transaction log
 RESTORE LOG WidgetData
 FROM DISK = 'C:\Backups\WidgetData_Log_20260410_1400.trn'
 WITH RECOVERY, STATS = 10;
 
--- Verify database
+-- Kiểm tra database
 DBCC CHECKDB(WidgetData);
 ```
 
-### Point-in-Time Restore
+### Khôi phục Theo Thời điểm
 
 ```sql
 RESTORE DATABASE WidgetData
@@ -154,7 +154,7 @@ WITH RECOVERY, STOPAT = '2026-04-10 14:30:00';
 ### Azure SQL Restore
 
 ```bash
-# Point-in-time restore
+# Khôi phục theo thời điểm (point-in-time restore)
 az sql db restore \
     --resource-group WidgetDataRG \
     --server widgetdata-sql \
@@ -162,7 +162,7 @@ az sql db restore \
     --dest-name WidgetData-Restored \
     --time "2026-04-10T14:30:00Z"
 
-# From long-term retention backup
+# Khôi phục từ bản backup lưu trữ dài hạn
 az sql db ltr-backup restore \
     --location southeastasia \
     --resource-group WidgetDataRG \
@@ -174,9 +174,9 @@ az sql db ltr-backup restore \
 
 ---
 
-## 🔁 3. High Availability Architecture
+## 🔁 3. Kiến trúc Tính khả dụng cao
 
-### Load Balanced Setup
+### Thiết lập Cân bằng tải
 
 ```
                     ┌─────────────┐
@@ -202,7 +202,7 @@ az sql db ltr-backup restore \
 ### SQL Server Always On Availability Group
 
 ```sql
--- Create Availability Group
+-- Tạo Availability Group
 CREATE AVAILABILITY GROUP [WidgetData_AG]
 FOR DATABASE [WidgetData]
 REPLICA ON 
@@ -219,7 +219,7 @@ REPLICA ON
         SECONDARY_ROLE (ALLOW_CONNECTIONS = READ_ONLY)
     );
 
--- Create Listener
+-- Tạo Listener
 ALTER AVAILABILITY GROUP [WidgetData_AG]
 ADD LISTENER 'WidgetData-Listener' (
     WITH IP ((N'10.0.0.100', N'255.255.255.0')),
@@ -227,7 +227,7 @@ ADD LISTENER 'WidgetData-Listener' (
 );
 ```
 
-### Connection String for HA
+### Chuỗi kết nối cho HA
 
 ```json
 {
@@ -240,7 +240,7 @@ ADD LISTENER 'WidgetData-Listener' (
 ### Azure SQL with Geo-Replication
 
 ```bash
-# Create secondary database (geo-replica)
+# Tạo database phụ (geo-replica)
 az sql db replica create \
     --resource-group WidgetDataRG \
     --server widgetdata-sql \
@@ -249,7 +249,7 @@ az sql db replica create \
     --partner-server widgetdata-sql-dr \
     --partner-database WidgetData-DR
 
-# Failover to secondary
+# Chuyển đổi dự phòng sang secondary
 az sql db replica set-primary \
     --resource-group WidgetDataRG-DR \
     --server widgetdata-sql-dr \
@@ -260,45 +260,45 @@ az sql db replica set-primary \
 
 ## 🚨 4. Disaster Recovery Plan
 
-### Recovery Objectives
+### Mục tiêu Khôi phục
 
-| Metric | Target | Definition |
+| Chỉ số | Mục tiêu | Định nghĩa |
 |--------|--------|------------|
-| **RPO** (Recovery Point Objective) | < 15 minutes | Maximum acceptable data loss |
-| **RTO** (Recovery Time Objective) | < 1 hour | Maximum acceptable downtime |
-| **MTTR** (Mean Time To Repair) | < 30 minutes | Average repair time |
+| **RPO** (Recovery Point Objective) | < 15 phút | Mức mất dữ liệu tối đa có thể chấp nhận |
+| **RTO** (Recovery Time Objective) | < 1 giờ | Thời gian ngừng hoạt động tối đa có thể chấp nhận |
+| **MTTR** (Mean Time To Repair) | < 30 phút | Thời gian sửa chữa trung bình |
 
-### DR Checklist
+### Danh sách kiểm tra DR
 
-#### Phase 1: Detection (0-5 min)
-- [ ] Monitoring alerts triggered
-- [ ] Incident logged in ticketing system
-- [ ] On-call engineer notified
-- [ ] Assess severity & scope
+#### Giai đoạn 1: Phát hiện (0–5 phút)
+- [ ] Cảnh báo giám sát được kích hoạt
+- [ ] Sự cố được ghi vào hệ thống quản lý ticket
+- [ ] Kỹ sư trực được thông báo
+- [ ] Đánh giá mức độ nghiêm trọng & phạm vi ảnh hưởng
 
-#### Phase 2: Containment (5-15 min)
-- [ ] Isolate affected components
-- [ ] Switch to read-only mode if needed
-- [ ] Notify stakeholders
-- [ ] Begin root cause analysis
+#### Giai đoạn 2: Cô lập (5–15 phút)
+- [ ] Cô lập các thành phần bị ảnh hưởng
+- [ ] Chuyển sang chế độ chỉ đọc nếu cần
+- [ ] Thông báo cho các bên liên quan
+- [ ] Bắt đầu phân tích nguyên nhân gốc rễ
 
-#### Phase 3: Recovery (15-45 min)
-- [ ] Execute failover to DR site
-- [ ] Restore from backup (if needed)
-- [ ] Verify data integrity
-- [ ] Test critical workflows
+#### Giai đoạn 3: Khôi phục (15–45 phút)
+- [ ] Thực hiện chuyển đổi dự phòng sang site DR
+- [ ] Khôi phục từ backup (nếu cần)
+- [ ] Xác minh tính toàn vẹn dữ liệu
+- [ ] Kiểm thử các quy trình quan trọng
 
-#### Phase 4: Verification (45-60 min)
-- [ ] Run smoke tests
-- [ ] Verify all services operational
-- [ ] Monitor for anomalies
-- [ ] Update status page
+#### Giai đoạn 4: Xác minh (45–60 phút)
+- [ ] Chạy smoke test
+- [ ] Xác minh tất cả dịch vụ hoạt động bình thường
+- [ ] Theo dõi các bất thường
+- [ ] Cập nhật trang trạng thái
 
-#### Phase 5: Post-Incident (After recovery)
-- [ ] Document incident timeline
-- [ ] Conduct post-mortem
-- [ ] Implement preventive measures
-- [ ] Update runbooks
+#### Giai đoạn 5: Sau sự cố (Sau khi khôi phục)
+- [ ] Ghi lại timeline sự cố
+- [ ] Tiến hành post-mortem
+- [ ] Triển khai các biện pháp phòng ngừa
+- [ ] Cập nhật runbook
 
 ### DR Runbook
 
@@ -310,65 +310,65 @@ param(
     [string]$IncidentType
 )
 
-Write-Host "=== DISASTER RECOVERY INITIATED ===" -ForegroundColor Red
-Write-Host "Incident Type: $IncidentType"
-Write-Host "Timestamp: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+Write-Host "=== KHỞI ĐỘNG KHÔI PHỤC THẢM HỌA ===" -ForegroundColor Red
+Write-Host "Loại sự cố: $IncidentType"
+Write-Host "Thời gian: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 
 switch ($IncidentType) {
     "DatabaseFailure" {
-        Write-Host "`n1. Checking database status..."
-        # Check primary database
+        Write-Host "`n1. Kiểm tra trạng thái database..."
+        # Kiểm tra database chính
         $dbStatus = Invoke-Sqlcmd -ServerInstance "sql-primary" -Query "SELECT @@SERVERNAME, DATABASEPROPERTYEX('WidgetData', 'Status')"
         
         if ($dbStatus.Column1 -ne "ONLINE") {
-            Write-Host "2. Primary DB offline. Initiating failover..."
+            Write-Host "2. DB chính offline. Đang khởi động failover..."
             
-            # Failover to secondary
+            # Chuyển đổi dự phòng sang secondary
             Invoke-Sqlcmd -ServerInstance "sql-secondary" -Query "ALTER AVAILABILITY GROUP [WidgetData_AG] FAILOVER;"
             
-            Write-Host "3. Updating app config..."
-            # Update connection string to point to secondary
+            Write-Host "3. Cập nhật cấu hình ứng dụng..."
+            # Cập nhật connection string trỏ sang secondary
             
-            Write-Host "4. Verifying failover..."
+            Write-Host "4. Xác minh failover..."
             Start-Sleep -Seconds 10
             
-            # Test connection
+            # Kiểm tra kết nối
             $newStatus = Invoke-Sqlcmd -ServerInstance "sql-secondary" -Query "SELECT DB_NAME(), @@VERSION"
-            Write-Host "Failover complete. New primary: $($newStatus.Column1)"
+            Write-Host "Failover hoàn thành. Primary mới: $($newStatus.Column1)"
         }
     }
     
     "ApplicationFailure" {
-        Write-Host "`n1. Restarting application pools..."
+        Write-Host "`n1. Khởi động lại application pools..."
         Restart-WebAppPool -Name "WidgetDataAppPool"
         
-        Write-Host "2. Checking health endpoint..."
+        Write-Host "2. Kiểm tra health endpoint..."
         $health = Invoke-RestMethod -Uri "https://localhost:5001/health"
         
         if ($health.status -eq "Healthy") {
-            Write-Host "Application recovered successfully"
+            Write-Host "Ứng dụng đã khôi phục thành công"
         } else {
-            Write-Host "Application still unhealthy. Escalating..."
+            Write-Host "Ứng dụng vẫn không khỏe mạnh. Đang leo thang..."
         }
     }
     
     "NetworkOutage" {
-        Write-Host "`n1. Checking network connectivity..."
+        Write-Host "`n1. Kiểm tra kết nối mạng..."
         Test-NetConnection -ComputerName "sql-primary" -Port 1433
         
-        Write-Host "2. Activating DR site..."
-        # Logic to activate DR datacenter
+        Write-Host "2. Kích hoạt site DR..."
+        # Logic kích hoạt datacenter DR
     }
 }
 
-Write-Host "`n=== DR PROCEDURE COMPLETED ===" -ForegroundColor Green
+Write-Host "`n=== QUY TRÌNH DR HOÀN TẤT ===" -ForegroundColor Green
 ```
 
 ---
 
-## 📂 5. File & Configuration Backup
+## 📂 5. Sao lưu File & Cấu hình
 
-### Application Files Backup
+### Sao lưu File ứng dụng
 
 ```powershell
 # BackupAppFiles.ps1
@@ -376,43 +376,43 @@ $backupPath = "\\backup-server\WidgetData\AppFiles"
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $destination = "$backupPath\Backup_$timestamp"
 
-# Backup application files
+# Sao lưu file ứng dụng
 Copy-Item "C:\inetpub\wwwroot\WidgetData" -Destination $destination -Recurse
 
-# Backup configuration
+# Sao lưu cấu hình
 Copy-Item "C:\WidgetData\appsettings.Production.json" -Destination "$destination\Config"
 
-# Create archive
+# Tạo archive
 Compress-Archive -Path $destination -DestinationPath "$destination.zip"
 
 Write-Host "Application files backed up to: $destination.zip"
 ```
 
-### Redis Data Backup
+### Sao lưu Dữ liệu Redis
 
 ```bash
-# Redis snapshot (automatic)
+# Snapshot Redis (tự động)
 redis-cli BGSAVE
 
-# Copy RDB file
+# Sao chép file RDB
 cp /var/lib/redis/dump.rdb /backups/redis/dump_$(date +%Y%m%d_%H%M%S).rdb
 
-# Schedule with cron
+# Lên lịch với cron
 0 2 * * * redis-cli BGSAVE && cp /var/lib/redis/dump.rdb /backups/redis/dump_$(date +\%Y\%m\%d).rdb
 ```
 
 ---
 
-## 🔐 6. Backup Security
+## 🔐 6. Bảo mật Backup
 
-### Encryption at Rest
+### Mã hóa Dữ liệu lưu trữ
 
 ```sql
--- Create certificate
+-- Tạo chứng chỉ
 CREATE CERTIFICATE BackupCertificate
 WITH SUBJECT = 'Widget Data Backup Certificate';
 
--- Backup with encryption
+-- Sao lưu có mã hóa
 BACKUP DATABASE WidgetData
 TO DISK = 'C:\Backups\WidgetData_Encrypted.bak'
 WITH COMPRESSION,
@@ -422,13 +422,13 @@ WITH COMPRESSION,
      );
 ```
 
-### Upload to Cloud Storage (Azure)
+### Tải lên Cloud Storage (Azure)
 
 ```powershell
-# Install Azure PowerShell
+# Cài đặt Azure PowerShell
 Install-Module -Name Az -AllowClobber
 
-# Upload backup to Azure Blob Storage
+# Tải backup lên Azure Blob Storage
 $storageAccount = "widgetdatabackups"
 $containerName = "database-backups"
 $backupFile = "C:\Backups\WidgetData_Full_20260410.bak"
@@ -443,12 +443,12 @@ Set-AzStorageBlobContent -File $backupFile `
 
 ---
 
-## 📊 7. Backup Monitoring
+## 📊 7. Giám sát Backup
 
-### Verify Backup Success
+### Xác minh Backup thành công
 
 ```sql
--- Check last backup
+-- Kiểm tra backup gần nhất
 SELECT 
     database_name,
     backup_start_date,
@@ -466,7 +466,7 @@ WHERE database_name = 'WidgetData'
 ORDER BY backup_start_date DESC;
 ```
 
-### Backup Validation Job
+### Job Xác thực Backup
 
 ```csharp
 public class BackupValidationJob
@@ -479,25 +479,25 @@ public class BackupValidationJob
         var backupPath = @"C:\Backups";
         var today = DateTime.Today;
         
-        // Check if today's full backup exists
+        // Kiểm tra xem backup hôm nay có tồn tại không
         var todayBackup = Directory.GetFiles(backupPath, $"*Full_{today:yyyyMMdd}*.bak");
         
         if (todayBackup.Length == 0)
         {
-            _logger.LogError("Daily backup missing for {Date}", today);
+            _logger.LogError("Thiếu backup hàng ngày cho {Date}", today);
             
             await _emailService.SendAlertAsync(
                 "admin@widgetdata.com",
-                "ALERT: Daily Backup Missing",
-                $"No backup found for {today:yyyy-MM-dd}"
+                "CẢNH BÁO: Thiếu Backup Hàng ngày",
+                $"Không tìm thấy backup cho {today:yyyy-MM-dd}"
             );
         }
         else
         {
-            _logger.LogInformation("Backup validated: {BackupFile}", todayBackup[0]);
+            _logger.LogInformation("Backup đã xác minh: {BackupFile}", todayBackup[0]);
         }
         
-        // Check backup age
+        // Kiểm tra độ tuổi backup
         var latestBackup = new DirectoryInfo(backupPath)
             .GetFiles("*Full*.bak")
             .OrderByDescending(f => f.LastWriteTime)
@@ -514,30 +514,30 @@ public class BackupValidationJob
 
 ---
 
-## ✅ Backup & DR Checklist
+## ✅ Danh sách kiểm tra Backup & DR
 
-### Daily
-- [ ] Verify automated backups completed
-- [ ] Check backup file sizes (expected range)
-- [ ] Monitor disk space on backup storage
-- [ ] Review backup logs for errors
+### Hàng ngày
+- [ ] Xác minh backup tự động đã hoàn thành
+- [ ] Kiểm tra kích thước file backup (trong phạm vi mong đợi)
+- [ ] Theo dõi dung lượng đĩa trên storage backup
+- [ ] Xem xét log backup để phát hiện lỗi
 
-### Weekly
-- [ ] Test restore procedure (non-production)
-- [ ] Verify backup retention policy
-- [ ] Check offsite backup synchronization
+### Hàng tuần
+- [ ] Kiểm thử quy trình khôi phục (môi trường không phải sản xuất)
+- [ ] Xác minh chính sách giữ backup
+- [ ] Kiểm tra đồng bộ backup offsite
 
-### Monthly
-- [ ] Full DR drill (simulate outage)
-- [ ] Update DR documentation
-- [ ] Review backup retention costs
-- [ ] Audit backup access logs
+### Hàng tháng
+- [ ] DR drill toàn diện (mô phỏng sự cố ngừng hoạt động)
+- [ ] Cập nhật tài liệu DR
+- [ ] Xem xét chi phí giữ backup
+- [ ] Kiểm toán log truy cập backup
 
-### Quarterly
-- [ ] DR plan review & update
-- [ ] Backup strategy optimization
-- [ ] Team DR training
-- [ ] Compliance audit
+### Hàng quý
+- [ ] Xem xét & cập nhật kế hoạch DR
+- [ ] Tối ưu hóa chiến lược backup
+- [ ] Đào tạo DR cho đội nhóm
+- [ ] Kiểm toán tuân thủ
 
 ---
 

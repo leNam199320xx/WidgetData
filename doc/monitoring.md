@@ -1,4 +1,4 @@
-# Monitoring & Logging
+# Giám sát & Ghi log
 
 ## 📋 Tổng quan
 
@@ -12,9 +12,9 @@ Widget Data sử dụng monitoring & logging stack:
 
 ---
 
-## 📝 1. Serilog Structured Logging
+## 📝 1. Ghi log Có cấu trúc với Serilog
 
-### Configuration
+### Cấu hình
 
 ```csharp
 // Program.cs
@@ -42,7 +42,7 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 ```
 
-### appsettings.json Configuration
+### Cấu hình appsettings.json
 
 ```json
 {
@@ -84,7 +84,7 @@ builder.Host.UseSerilog();
 }
 ```
 
-### Usage in Code
+### Sử dụng trong Code
 
 ```csharp
 public class WidgetService
@@ -146,25 +146,25 @@ public class WidgetService
 }
 ```
 
-### Log Levels
+### Các mức Log
 
 ```csharp
-// Trace: Very detailed, typically for debugging
+// Trace: Rất chi tiết, dùng để debug
 _logger.LogTrace("Processing step {StepId} with config {Config}", stepId, config);
 
-// Debug: Diagnostic information
+// Debug: Thông tin chẩn đoán
 _logger.LogDebug("Cache hit for key {CacheKey}", key);
 
-// Information: Normal flow, milestones
+// Information: Luồng bình thường, các mốc quan trọng
 _logger.LogInformation("Widget {WidgetId} executed successfully", widgetId);
 
-// Warning: Unexpected but handled
+// Warning: Bất thường nhưng đã được xử lý
 _logger.LogWarning("Cache miss for key {CacheKey}, fetching from database", key);
 
-// Error: Errors and exceptions
+// Error: Lỗi và ngoại lệ
 _logger.LogError(ex, "Failed to execute widget {WidgetId}", widgetId);
 
-// Critical: Fatal errors
+// Critical: Lỗi nghiêm trọng
 _logger.LogCritical("Database connection lost!");
 ```
 
@@ -172,7 +172,7 @@ _logger.LogCritical("Database connection lost!");
 
 ## 📊 2. Application Insights (Azure)
 
-### Setup
+### Cài đặt
 
 ```bash
 dotnet add package Microsoft.ApplicationInsights.AspNetCore
@@ -193,7 +193,7 @@ builder.Services.AddApplicationInsightsTelemetry(options =>
 }
 ```
 
-### Track Custom Events
+### Theo dõi Sự kiện tùy chỉnh
 
 ```csharp
 public class WidgetService
@@ -235,7 +235,7 @@ public class WidgetService
 }
 ```
 
-### Track Dependencies
+### Theo dõi Dependencies
 
 ```csharp
 public async Task<string> CallExternalApiAsync(string url)
@@ -275,7 +275,7 @@ public async Task<string> CallExternalApiAsync(string url)
 }
 ```
 
-### Custom Telemetry Initializer
+### Khởi tạo Telemetry tùy chỉnh
 
 ```csharp
 public class CustomTelemetryInitializer : ITelemetryInitializer
@@ -300,15 +300,15 @@ public class CustomTelemetryInitializer : ITelemetryInitializer
     }
 }
 
-// Register
+// Đăng ký
 builder.Services.AddSingleton<ITelemetryInitializer, CustomTelemetryInitializer>();
 ```
 
 ---
 
-## 🔍 3. Seq (Log Server)
+## 🔍 3. Seq (Máy chủ Log)
 
-### Setup Seq
+### Cài đặt Seq
 
 ```bash
 # Docker
@@ -320,26 +320,26 @@ docker run -d \
   datalust/seq:latest
 ```
 
-### Access Seq UI
+### Truy cập giao diện Seq
 
 http://localhost:5341
 
-### Query Examples
+### Ví dụ truy vấn
 
 ```sql
--- Find errors in last hour
+-- Tìm lỗi trong 1 giờ gần nhất
 select *
 from stream
 where @Level = 'Error'
   and @Timestamp > Now() - 1h
 
--- Count widgets created per hour
+-- Đếm widget được tạo mỗi giờ
 select count(*) as WidgetCount
 from stream
 where @MessageTemplate = 'Widget {WidgetId} created successfully'
 group by time(1h)
 
--- Find slow queries
+-- Tìm query chậm
 select *
 from stream
 where @MessageTemplate like '%ElapsedMs%'
@@ -348,9 +348,9 @@ where @MessageTemplate like '%ElapsedMs%'
 
 ---
 
-## ❤️ 4. Health Checks
+## ❤️ 4. Kiểm tra Sức khỏe
 
-### Configure Health Checks
+### Cấu hình Health Checks
 
 ```csharp
 // Program.cs
@@ -385,7 +385,7 @@ app.MapHealthChecks("/health/live", new HealthCheckOptions
 });
 ```
 
-### Custom Health Check
+### Health Check tùy chỉnh
 
 ```csharp
 public class DiskSpaceHealthCheck : IHealthCheck
@@ -421,7 +421,7 @@ public class DiskSpaceHealthCheck : IHealthCheck
 }
 ```
 
-### Health Check UI (Optional)
+### Giao diện Health Check (Tùy chọn)
 
 ```bash
 dotnet add package AspNetCore.HealthChecks.UI
@@ -444,9 +444,9 @@ Access UI: `https://localhost:5001/healthchecks-ui`
 
 ---
 
-## 📈 5. Prometheus & Grafana (Optional)
+## 📈 5. Prometheus & Grafana (Tùy chọn)
 
-### Setup Prometheus Metrics
+### Cài đặt Prometheus Metrics
 
 ```bash
 dotnet add package prometheus-net.AspNetCore
@@ -456,12 +456,12 @@ dotnet add package prometheus-net.AspNetCore
 // Program.cs
 using Prometheus;
 
-// Add metrics endpoint
+// Thêm metrics endpoint
 app.UseMetricServer(); // /metrics
-app.UseHttpMetrics();  // Track HTTP metrics
+app.UseHttpMetrics();  // Theo dõi HTTP metrics
 ```
 
-### Custom Metrics
+### Metrics tùy chỉnh
 
 ```csharp
 public class MetricsService
@@ -492,7 +492,7 @@ public class MetricsService
 }
 ```
 
-### Prometheus Configuration
+### Cấu hình Prometheus
 
 ```yaml
 # prometheus.yml
@@ -505,7 +505,7 @@ scrape_configs:
       - targets: ['localhost:7001']
 ```
 
-### Run Prometheus
+### Chạy Prometheus
 
 ```bash
 docker run -d \
@@ -515,7 +515,7 @@ docker run -d \
   prom/prometheus
 ```
 
-### Grafana Dashboard
+### Bảng điều khiển Grafana
 
 ```bash
 docker run -d \
@@ -528,9 +528,9 @@ Access: http://localhost:3000 (admin/admin)
 
 ---
 
-## 🚨 6. Error Tracking
+## 🚨 6. Theo dõi Lỗi
 
-### Global Exception Handler
+### Xử lý Ngoại lệ Toàn cục
 
 ```csharp
 // Middleware
@@ -575,7 +575,7 @@ public class ExceptionHandlerMiddleware
     }
 }
 
-// Register
+// Đăng ký
 app.UseMiddleware<ExceptionHandlerMiddleware>();
 ```
 
@@ -604,35 +604,35 @@ app.UseExceptionHandler(errorApp =>
 
 ---
 
-## 📊 7. Monitoring Dashboard
+## 📊 7. Bảng điều khiển Giám sát
 
-### Sample Grafana Queries
+### Ví dụ Truy vấn Grafana
 
-**Request Rate:**
+**Tốc độ yêu cầu:**
 ```promql
 rate(http_requests_received_total[5m])
 ```
 
-**Error Rate:**
+**Tỷ lệ lỗi:**
 ```promql
 rate(http_requests_received_total{code=~"5.."}[5m])
 ```
 
-**Request Duration (p95):**
+**Thời gian phản hồi (p95):**
 ```promql
 histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
 ```
 
-**Active Widgets:**
+**Widget đang hoạt động:**
 ```promql
 active_widgets
 ```
 
 ---
 
-## 🔔 8. Alerting
+## 🔔 8. Cảnh báo
 
-### Email Alerts (Seq)
+### Cảnh báo Email (Seq)
 
 ```json
 {
@@ -659,7 +659,7 @@ active_widgets
 }
 ```
 
-### Slack Notifications
+### Thông báo Slack
 
 ```csharp
 public class SlackNotificationService
@@ -693,23 +693,23 @@ public class SlackNotificationService
 
 ---
 
-## 📋 Monitoring Checklist
+## 📋 Danh sách kiểm tra Monitoring
 
-### Development
-- [ ] Serilog configured with console & file sinks
-- [ ] Structured logging in all services
-- [ ] Log levels appropriate
-- [ ] Exception logging with context
-- [ ] Seq running locally
+### Phát triển
+- [ ] Serilog đã cấu hình với console & file sinks
+- [ ] Structured logging trong tất cả services
+- [ ] Log levels phù hợp
+- [ ] Ghi log exception kèm context
+- [ ] Seq đang chạy cục bộ
 
-### Production
-- [ ] Application Insights enabled
-- [ ] Health checks configured
-- [ ] Prometheus metrics exposed
-- [ ] Grafana dashboards created
-- [ ] Alerts configured (email/Slack)
-- [ ] Log retention policy set
-- [ ] Performance counters tracked
+### Sản xuất
+- [ ] Application Insights đã bật
+- [ ] Health checks đã cấu hình
+- [ ] Prometheus metrics đã expose
+- [ ] Grafana dashboards đã tạo
+- [ ] Cảnh báo đã cấu hình (email/Slack)
+- [ ] Chính sách lưu trữ log đã thiết lập
+- [ ] Performance counters được theo dõi
 
 ---
 

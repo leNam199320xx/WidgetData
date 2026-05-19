@@ -1,4 +1,4 @@
-# Performance & Optimization
+# Hiệu năng & Tối ưu hóa
 
 ## 📋 Tổng quan
 
@@ -14,9 +14,9 @@ Widget Data được thiết kế để xử lý **hàng triệu rows** với đ
 
 ---
 
-## 🚀 1. Caching Strategy
+## 🚀 1. Chiến lược Cache
 
-### 3-Level Caching Architecture
+### Kiến trúc Cache 3 cấp
 
 ```
 ┌─────────────────────────────────────────┐
@@ -37,7 +37,7 @@ Widget Data được thiết kế để xử lý **hàng triệu rows** với đ
 └─────────────────────────────────────────┘
 ```
 
-### Implementation
+### Triển khai
 
 ```csharp
 public class CacheService
@@ -53,28 +53,28 @@ public class CacheService
     {
         options ??= CacheOptions.Default;
         
-        // Level 1: In-Memory
+        // Tầng 1: In-Memory
         if (_memoryCache.TryGetValue(key, out T cachedValue))
         {
             return cachedValue;
         }
         
-        // Level 2: Redis
+        // Tầng 2: Redis
         var redisValue = await _redisCache.GetStringAsync(key);
         if (!string.IsNullOrEmpty(redisValue))
         {
             var value = JsonSerializer.Deserialize<T>(redisValue);
             
-            // Store in L1
+            // Lưu vào L1
             _memoryCache.Set(key, value, TimeSpan.FromMinutes(options.L1TtlMinutes));
             
             return value;
         }
         
-        // Level 3: Database
+        // Tầng 3: Database
         var freshValue = await factory();
         
-        // Store in L2 (Redis)
+        // Lưu vào L2 (Redis)
         await _redisCache.SetStringAsync(
             key,
             JsonSerializer.Serialize(freshValue),
@@ -84,14 +84,14 @@ public class CacheService
             }
         );
         
-        // Store in L1
+        // Lưu vào L1
         _memoryCache.Set(freshValue, key, TimeSpan.FromMinutes(options.L1TtlMinutes));
         
         return freshValue;
     }
 }
 
-// Usage
+// Cách dùng
 public async Task<WidgetData> GetWidgetDataAsync(int widgetId)
 {
     var cacheKey = $"widget_data_{widgetId}";
@@ -101,24 +101,24 @@ public async Task<WidgetData> GetWidgetDataAsync(int widgetId)
         async () => await _widgetService.FetchDataAsync(widgetId),
         new CacheOptions
         {
-            L1TtlMinutes = 5,  // In-memory: 5 min
-            L2TtlMinutes = 30  // Redis: 30 min
+            L1TtlMinutes = 5,  // In-memory: 5 phút
+            L2TtlMinutes = 30  // Redis: 30 phút
         }
     );
 }
 ```
 
-### Cache Invalidation
+### Hủy Cache
 
 ```csharp
 public class WidgetService
 {
     public async Task UpdateWidgetAsync(int widgetId, WidgetDto dto)
     {
-        // Update database
+        // Cập nhật database
         var widget = await _repository.UpdateAsync(widgetId, dto);
         
-        // Invalidate cache
+        // Xóa cache
         await InvalidateCacheAsync(widgetId);
         
         return widget;
@@ -142,24 +142,24 @@ public class WidgetService
 }
 ```
 
-### Cache-Aside Pattern
+### Mẫu Cache-Aside
 
 ```csharp
 public async Task<List<Product>> GetProductsAsync()
 {
     var cacheKey = "products_all";
     
-    // Try cache first
+    // Thử cache trước
     var cached = await _redisCache.GetStringAsync(cacheKey);
     if (cached != null)
     {
         return JsonSerializer.Deserialize<List<Product>>(cached);
     }
     
-    // Cache miss - fetch from DB
+    // Cache miss - lấy từ DB
     var products = await _db.Products.ToListAsync();
     
-    // Update cache
+    // Cập nhật cache
     await _redisCache.SetStringAsync(
         cacheKey,
         JsonSerializer.Serialize(products),
@@ -175,9 +175,9 @@ public async Task<List<Product>> GetProductsAsync()
 
 ---
 
-## 🗄️ 2. Database Optimization
+## 🗄️ 2. Tối ưu hóa Database
 
-### Indexing Strategy
+### Chiến lược Index
 
 ```sql
 -- Widget table indexes
@@ -202,21 +202,21 @@ ON WidgetSchedules(IsActive, NextRunAt)
 WHERE IsActive = 1;
 ```
 
-### Query Optimization
+### Tối ưu hóa Truy vấn
 
-**❌ BAD: N+1 Query Problem**
+**❌ SAI: Vấn đề N+1 Query**
 ```csharp
-// Loads widgets first
+// Tải widgets trước
 var widgets = await _db.Widgets.ToListAsync();
 
-// Then loads data source for each widget (N queries!)
+// Rồi tải data source cho từng widget (N query!)
 foreach (var widget in widgets)
 {
     widget.DataSource = await _db.DataSources.FindAsync(widget.DataSourceId);
 }
 ```
 
-**✅ GOOD: Eager Loading**
+**✅ ĐÚNG: Eager Loading**
 ```csharp
 var widgets = await _db.Widgets
     .Include(w => w.DataSource)
@@ -225,7 +225,7 @@ var widgets = await _db.Widgets
     .ToListAsync();
 ```
 
-**✅ BETTER: Projection (Select only needed fields)**
+**✅ TỐT HƠN: Projection (chỉ lấy các trường cần thiết)**
 ```csharp
 var widgets = await _db.Widgets
     .Where(w => w.IsActive)
@@ -240,7 +240,7 @@ var widgets = await _db.Widgets
     .ToListAsync();
 ```
 
-### Pagination
+### Phân trang
 
 ```csharp
 public async Task<PagedResult<Widget>> GetWidgetsPagedAsync(int page, int pageSize)
@@ -266,7 +266,7 @@ public async Task<PagedResult<Widget>> GetWidgetsPagedAsync(int page, int pageSi
 }
 ```
 
-### Compiled Queries
+### Truy vấn đã biên dịch
 
 ```csharp
 private static readonly Func<ApplicationDbContext, int, Task<Widget>> _getWidgetByIdCompiled =
@@ -282,22 +282,22 @@ public async Task<Widget> GetWidgetByIdAsync(int id)
 }
 ```
 
-### Bulk Operations
+### Thao tác hàng loạt
 
 ```csharp
-// Instead of multiple INSERTs
-// ❌ BAD
+// Thay vì nhiều lần INSERT
+// ❌ SAI
 foreach (var item in items)
 {
     _db.Items.Add(item);
-    await _db.SaveChangesAsync(); // Multiple DB calls
+    await _db.SaveChangesAsync(); // Nhiều lần gọi DB
 }
 
-// ✅ GOOD: Batch insert
+// ✅ ĐÚNG: Batch insert
 _db.Items.AddRange(items);
-await _db.SaveChangesAsync(); // Single DB call
+await _db.SaveChangesAsync(); // Một lần gọi DB
 
-// ✅ BETTER: Use EF Core Plus for bulk operations
+// ✅ TỐT HƠN: Dùng EF Core Plus cho bulk operations
 using EFCore.BulkExtensions;
 
 await _db.BulkInsertAsync(items);
@@ -307,19 +307,19 @@ await _db.BulkDeleteAsync(items);
 
 ---
 
-## ⚡ 3. Async Programming
+## ⚡ 3. Lập trình Bất đồng bộ
 
-### Always Use Async
+### Luôn dùng Async
 
 ```csharp
-// ❌ BAD: Blocking call
+// ❌ SAI: Gọi chặn luồng
 public WidgetData GetWidgetData(int id)
 {
-    var data = _repository.GetById(id).Result; // Blocks thread!
+    var data = _repository.GetById(id).Result; // Chặn luồng!
     return data;
 }
 
-// ✅ GOOD: Async all the way
+// ✅ ĐÚNG: Async toàn bộ
 public async Task<WidgetData> GetWidgetDataAsync(int id)
 {
     var data = await _repository.GetByIdAsync(id);
@@ -327,12 +327,12 @@ public async Task<WidgetData> GetWidgetDataAsync(int id)
 }
 ```
 
-### Parallel Execution
+### Thực thi Song song
 
 ```csharp
 public async Task<DashboardDto> GetDashboardAsync(int userId)
 {
-    // Execute multiple queries in parallel
+    // Thực thi nhiều query song song
     var widgetsTask = _db.Widgets.Where(w => w.UserId == userId).ToListAsync();
     var sourcesTask = _db.DataSources.Where(s => s.UserId == userId).ToListAsync();
     var schedulesTask = _db.WidgetSchedules.Where(s => s.UserId == userId).ToListAsync();
@@ -348,16 +348,16 @@ public async Task<DashboardDto> GetDashboardAsync(int userId)
 }
 ```
 
-### Avoid Async Void
+### Tránh Async Void
 
 ```csharp
-// ❌ BAD: Can't catch exceptions
+// ❌ SAI: Không thể bắt exception
 private async void ProcessDataAsync()
 {
     await _service.ProcessAsync();
 }
 
-// ✅ GOOD: Return Task
+// ✅ ĐÚNG: Trả về Task
 private async Task ProcessDataAsync()
 {
     await _service.ProcessAsync();
@@ -368,7 +368,7 @@ private async Task ProcessDataAsync()
 
 ## 🔌 4. Connection Pooling
 
-### SQL Server Connection Pooling
+### Connection Pooling với SQL Server
 
 ```json
 {
@@ -381,7 +381,7 @@ private async Task ProcessDataAsync()
 ### HTTP Client Factory
 
 ```csharp
-// ❌ BAD: Creates new HttpClient for each request
+// ❌ SAI: Tạo HttpClient mới cho mỗi request
 public class DataSourceService
 {
     public async Task<string> FetchDataAsync(string url)
@@ -391,7 +391,7 @@ public class DataSourceService
     }
 }
 
-// ✅ GOOD: Use IHttpClientFactory
+// ✅ ĐÚNG: Dùng IHttpClientFactory
 public class DataSourceService
 {
     private readonly IHttpClientFactory _httpClientFactory;
@@ -408,25 +408,25 @@ public class DataSourceService
     }
 }
 
-// Register in Program.cs
+// Đăng ký trong Program.cs
 builder.Services.AddHttpClient();
 ```
 
 ---
 
-## 📊 5. Data Processing Optimization
+## 📊 5. Tối ưu hóa Xử lý Dữ liệu
 
-### Stream Processing for Large Files
+### Xử lý Luồng cho File lớn
 
 ```csharp
-// ❌ BAD: Load entire file into memory
+// ❌ SAI: Tải toàn bộ file vào bộ nhớ
 public async Task<List<Record>> ReadCsvAsync(string path)
 {
-    var lines = await File.ReadAllLinesAsync(path); // Could be GB!
+    var lines = await File.ReadAllLinesAsync(path); // Có thể vài GB!
     return lines.Select(line => ParseRecord(line)).ToList();
 }
 
-// ✅ GOOD: Stream processing
+// ✅ ĐÚNG: Xử lý theo luồng
 public async IAsyncEnumerable<Record> ReadCsvStreamAsync(string path)
 {
     using var reader = new StreamReader(path);
@@ -438,14 +438,14 @@ public async IAsyncEnumerable<Record> ReadCsvStreamAsync(string path)
     }
 }
 
-// Usage
+// Cách dùng
 await foreach (var record in ReadCsvStreamAsync("large-file.csv"))
 {
-    await ProcessRecordAsync(record); // Process one at a time
+    await ProcessRecordAsync(record); // Xử lý từng bản ghi một
 }
 ```
 
-### Batch Processing
+### Xử lý Theo lô
 
 ```csharp
 public async Task ProcessLargeDatasetAsync(List<Record> records)
@@ -458,7 +458,7 @@ public async Task ProcessLargeDatasetAsync(List<Record> records)
         
         await _db.BulkInsertAsync(batch);
         
-        // Optional: Progress reporting
+        // Tùy chọn: Báo cáo tiến độ
         var progress = (i + batchSize) / (double)records.Count * 100;
         await _hubContext.Clients.All.SendAsync("ProgressUpdate", progress);
     }
@@ -467,9 +467,9 @@ public async Task ProcessLargeDatasetAsync(List<Record> records)
 
 ---
 
-## 🎯 6. Blazor Performance
+## 🎯 6. Hiệu năng Blazor
 
-### Virtualization for Large Lists
+### Ảo hóa cho Danh sách lớn
 
 ```razor
 @using Microsoft.AspNetCore.Components.Web.Virtualization
@@ -488,7 +488,7 @@ public async Task ProcessLargeDatasetAsync(List<Record> records)
 }
 ```
 
-### Lazy Loading
+### Tải Lazy
 
 ```razor
 @page "/widgets/{id:int}"
@@ -517,7 +517,7 @@ public async Task ProcessLargeDatasetAsync(List<Record> records)
     
     protected override async Task OnInitializedAsync()
     {
-        // Load widget metadata first (fast)
+        // Tải metadata widget trước (nhanh)
         widget = await WidgetService.GetByIdAsync(Id);
     }
     
@@ -525,7 +525,7 @@ public async Task ProcessLargeDatasetAsync(List<Record> records)
     {
         if (firstRender)
         {
-            // Load data after render (lazy)
+            // Tải dữ liệu sau khi render (lazy)
             widgetData = await WidgetService.GetDataAsync(Id);
             StateHasChanged();
         }
@@ -533,10 +533,10 @@ public async Task ProcessLargeDatasetAsync(List<Record> records)
 }
 ```
 
-### SignalR Optimization
+### Tối ưu hóa SignalR
 
 ```csharp
-// ✅ Send to specific group instead of all clients
+// ✅ Gửi đến nhóm cụ thể thay vì tất cả client
 public class WidgetHub : Hub
 {
     public async Task JoinWidgetGroup(int widgetId)
@@ -555,9 +555,9 @@ public class WidgetHub : Hub
 
 ---
 
-## 📈 7. Monitoring Performance
+## 📈 7. Giám sát Hiệu năng
 
-### Application Insights Metrics
+### Metrics Application Insights
 
 ```csharp
 public class WidgetService
@@ -572,7 +572,7 @@ public class WidgetService
         {
             var data = await FetchDataAsync(widgetId);
             
-            // Track success
+            // Ghi nhận thành công
             _telemetry.TrackMetric("WidgetDataFetch.Duration", stopwatch.ElapsedMilliseconds);
             _telemetry.TrackMetric("WidgetDataFetch.RowCount", data.Rows.Count);
             
@@ -587,7 +587,7 @@ public class WidgetService
 }
 ```
 
-### Custom Performance Counters
+### Bộ đếm Hiệu năng tùy chỉnh
 
 ```csharp
 public class PerformanceMonitor
@@ -612,39 +612,39 @@ public class PerformanceMonitor
 
 ---
 
-## 🎯 Performance Targets
+## 🎯 Mục tiêu Hiệu năng
 
-| Metric | Target | Current |
+| Chỉ số | Mục tiêu | Hiện tại |
 |--------|--------|---------|
-| **API Response Time** | < 200ms (p95) | 150ms |
-| **Widget Refresh** | < 1s | 800ms |
-| **Dashboard Load** | < 2s | 1.5s |
-| **Concurrent Users** | 1000+ | Tested 500 |
-| **Database Query** | < 100ms | 80ms |
-| **Cache Hit Rate** | > 80% | 85% |
-| **Memory Usage** | < 2GB | 1.2GB |
+| **Thời gian phản hồi API** | < 200ms (p95) | 150ms |
+| **Làm mới Widget** | < 1s | 800ms |
+| **Tải Dashboard** | < 2s | 1.5s |
+| **Người dùng đồng thời** | 1000+ | Đã test 500 |
+| **Query Database** | < 100ms | 80ms |
+| **Tỷ lệ Cache Hit** | > 80% | 85% |
+| **Dung lượng bộ nhớ** | < 2GB | 1.2GB |
 
 ---
 
-## 🔍 Performance Checklist
+## 🔍 Danh sách kiểm tra Hiệu năng
 
-### Code Review
-- [ ] All database queries use async
-- [ ] No N+1 query problems
-- [ ] Proper indexing on queried columns
-- [ ] Pagination for large datasets
-- [ ] Cache frequently accessed data
-- [ ] Use projections (Select) instead of full entities
-- [ ] Dispose resources properly (IDisposable)
+### Rà soát Code
+- [ ] Tất cả query database dùng async
+- [ ] Không có vấn đề N+1 query
+- [ ] Index đúng trên các cột được truy vấn
+- [ ] Phân trang cho tập dữ liệu lớn
+- [ ] Cache dữ liệu thường xuyên truy cập
+- [ ] Dùng projection (Select) thay vì entity đầy đủ
+- [ ] Giải phóng tài nguyên đúng cách (IDisposable)
 
-### Production
-- [ ] Connection pooling enabled
-- [ ] Redis distributed cache configured
-- [ ] CDN for static assets (Blazor WASM)
-- [ ] Compression enabled (gzip/brotli)
-- [ ] Health checks monitoring
-- [ ] Application Insights enabled
-- [ ] Regular performance testing
+### Sản xuất
+- [ ] Connection pooling được bật
+- [ ] Redis distributed cache đã cấu hình
+- [ ] CDN cho static assets (Blazor WASM)
+- [ ] Nén dữ liệu được bật (gzip/brotli)
+- [ ] Giám sát health checks
+- [ ] Application Insights được bật
+- [ ] Kiểm tra hiệu năng định kỳ
 
 ---
 
