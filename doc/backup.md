@@ -258,7 +258,7 @@ az sql db replica set-primary \
 
 ---
 
-## 🚨 4. Disaster Recovery Plan
+## 🚨 4. Kế hoạch Phục hồi sau Sự cố
 
 ### Mục tiêu Khôi phục
 
@@ -300,7 +300,7 @@ az sql db replica set-primary \
 - [ ] Triển khai các biện pháp phòng ngừa
 - [ ] Cập nhật runbook
 
-### DR Runbook
+### Sổ tay Phục hồi DR
 
 ```powershell
 # DR-Runbook.ps1

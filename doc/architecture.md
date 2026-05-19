@@ -45,9 +45,9 @@
 └───────────────────────────────────────────────────────────────────┘
 ```
 
-## Luồng dữ liệu (Data Flow)
+## Luồng dữ liệu
 
-### 1. Widget Execution Flow
+### 1. Luồng thực thi Widget
 ```
 User Request → API Controller → WidgetService
                                       ↓
@@ -66,7 +66,7 @@ User Request → API Controller → WidgetService
                             Return to Client
 ```
 
-### 2. Scheduled Widget Flow
+### 2. Luồng Widget theo lịch
 ```
 WidgetData.Worker — SchedulerWorkerService (BackgroundService)
          ↓ poll every 30s
@@ -86,7 +86,7 @@ WidgetData.Worker — SchedulerWorkerService (BackgroundService)
   SignalR Broadcast (to live subscribers)
 ```
 
-## Layered Architecture
+## Kiến trúc phân lớp
 
 ```
 ┌───────────────────────────────────────────────────────────┐
@@ -117,7 +117,7 @@ WidgetData.Worker — SchedulerWorkerService (BackgroundService)
 └───────────────────────────────────────────────────────────┘
 ```
 
-## Component Design Patterns
+## Mẫu Thiết kế Component
 
 ### 1. Repository Pattern
 ```csharp
@@ -152,7 +152,7 @@ public interface IWidgetExecutorFactory {
 }
 ```
 
-## Technology Stack
+## Công nghệ sử dụng
 
 ### Backend (.NET Core)
 - **Framework**: ASP.NET Core 10.0
@@ -176,7 +176,7 @@ public interface IWidgetExecutorFactory {
 - **Real-time**: SignalR (native integration)
 - **Code Editor**: BlazorMonaco (SQL/JSON editing)
 
-### Storage & Infrastructure
+### Lưu trữ & Hạ tầng
 - **Database**: SQLite (EF Core)
 - **Logging**: Serilog → Console / File
 - **Orchestration**: .NET Aspire AppHost
@@ -233,7 +233,7 @@ Microsoft.Extensions.ServiceDiscovery
 ✅ **Debugging tốt**: F5 debug cả backend lẫn frontend trong Visual Studio  
 ✅ **Ecosystem thống nhất**: NuGet packages, tooling, deployment  
 
-## API Endpoints
+## Các API Endpoint
 
 ### Widget API
 
