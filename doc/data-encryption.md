@@ -1,4 +1,4 @@
-# Data Encryption & Protection
+# Mã hóa & Bảo vệ Dữ liệu
 
 ## 🔐 Tổng quan Mã hóa Dữ liệu
 
@@ -42,7 +42,7 @@ Widget Data xử lý nhiều loại dữ liệu nhạy cảm:
 
 ---
 
-## 1️⃣ Encryption at Rest (Database Level)
+## 1️⃣ Mã hóa lúc Lưu trữ (Cấp độ Database)
 
 ### SQL Server Transparent Data Encryption (TDE)
 
@@ -113,9 +113,9 @@ FROM sys.dm_database_encryption_keys;
 
 ---
 
-## 2️⃣ Field-Level Encryption (Application Level)
+## 2️⃣ Mã hóa Cấp trường (Cấp độ Ứng dụng)
 
-### Encryption Service
+### Dịch vụ Mã hóa
 
 ```csharp
 public interface IEncryptionService
@@ -192,7 +192,7 @@ public class AesEncryptionService : IEncryptionService
 }
 ```
 
-### Enhanced Version với GCM (Authenticated Encryption)
+### Phiên bản Nâng cao với GCM (Mã hóa Xác thực)
 
 ```csharp
 public class AesGcmEncryptionService : IEncryptionService
@@ -217,16 +217,16 @@ public class AesGcmEncryptionService : IEncryptionService
         
         var plainBytes = Encoding.UTF8.GetBytes(plainText);
         
-        // Generate random nonce
+        // Tạo nonce ngẫu nhiên
         var nonce = new byte[NonceSize];
         RandomNumberGenerator.Fill(nonce);
         
-        // Allocate buffer: nonce + ciphertext + tag
+        // Cấp phát buffer: nonce + ciphertext + tag
         var cipherBytes = new byte[NonceSize + plainBytes.Length + TagSize];
         
         using var aesGcm = new AesGcm(_key);
         
-        // Encrypt
+        // Mã hóa
         aesGcm.Encrypt(
             nonce,
             plainBytes,
@@ -234,7 +234,7 @@ public class AesGcmEncryptionService : IEncryptionService
             cipherBytes.AsSpan(NonceSize + plainBytes.Length, TagSize)
         );
         
-        // Copy nonce to beginning
+        // Sao chép nonce vào đầu buffer
         nonce.CopyTo(cipherBytes, 0);
         
         return Convert.ToBase64String(cipherBytes);
@@ -247,17 +247,17 @@ public class AesGcmEncryptionService : IEncryptionService
         
         var cipherBytes = Convert.FromBase64String(cipherText);
         
-        // Extract nonce
+        // Trích xuất nonce
         var nonce = cipherBytes.AsSpan(0, NonceSize);
         
-        // Extract ciphertext
+        // Trích xuất ciphertext
         var cipherLen = cipherBytes.Length - NonceSize - TagSize;
         var cipher = cipherBytes.AsSpan(NonceSize, cipherLen);
         
-        // Extract tag
+        // Trích xuất tag
         var tag = cipherBytes.AsSpan(NonceSize + cipherLen, TagSize);
         
-        // Decrypt
+        // Giải mã
         var plainBytes = new byte[cipherLen];
         
         using var aesGcm = new AesGcm(_key);
@@ -281,9 +281,9 @@ public class AesGcmEncryptionService : IEncryptionService
 
 ---
 
-## 3️⃣ Entity-Level Encryption
+## 3️⃣ Mã hóa Cấp Entity
 
-### DataSource Entity với Encrypted Fields
+### Entity DataSource với Trường Được Mã hóa
 
 ```csharp
 public class DataSource : TenantEntity
@@ -317,7 +317,7 @@ public class DataSource : TenantEntity
 }
 ```
 
-### EF Core Value Converter
+### Value Converter của EF Core
 
 ```csharp
 public class EncryptedStringConverter : ValueConverter<string, string>
@@ -331,7 +331,7 @@ public class EncryptedStringConverter : ValueConverter<string, string>
     }
 }
 
-// DbContext configuration
+// Cấu hình DbContext
 protected override void OnModelCreating(ModelBuilder modelBuilder)
 {
     var encryptionService = new AesGcmEncryptionService(_configuration);
@@ -349,7 +349,7 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 }
 ```
 
-### Repository với Automatic Encryption
+### Repository với Mã hóa Tự động
 
 ```csharp
 public class DataSourceRepository : IDataSourceRepository
@@ -359,7 +359,7 @@ public class DataSourceRepository : IDataSourceRepository
     
     public async Task<DataSource> AddAsync(DataSource dataSource)
     {
-        // Encrypt before saving
+        // Mã hóa trước khi lưu
         if (!string.IsNullOrEmpty(dataSource.ConnectionString))
         {
             dataSource.ConnectionStringEncrypted = 
@@ -385,7 +385,7 @@ public class DataSourceRepository : IDataSourceRepository
         if (dataSource == null)
             return null;
         
-        // Decrypt after loading
+        // Giải mã sau khi tải
         if (!string.IsNullOrEmpty(dataSource.ConnectionStringEncrypted))
         {
             dataSource.ConnectionString = 
@@ -405,7 +405,7 @@ public class DataSourceRepository : IDataSourceRepository
 
 ---
 
-## 4️⃣ Key Management (Local Deployment)
+## 4️⃣ Quản lý Khóa (Triển khai Cục bộ)
 
 ### ⚠️ NGUY HIỂM: KHÔNG LÀM NHƯ NÀY!
 
@@ -642,7 +642,7 @@ builder.Services.AddSingleton<IEncryptionService, AesGcmEncryptionService>();
 
 ---
 
-## 5️⃣ Password Hashing (NOT Encryption!)
+## 5️⃣ Băm Mật khẩu (KHÔNG phải Mã hóa!)
 
 **⚠️ QUAN TRỌNG:** Passwords không được mã hóa, phải **hash**!
 
@@ -654,7 +654,7 @@ var encryptedPassword = _encryptionService.Encrypt(password);
 var hashedPassword = _passwordHasher.HashPassword(user, password);
 ```
 
-### ASP.NET Core Identity Password Hasher
+### Bộ Băm Mật khẩu ASP.NET Core Identity
 
 ```csharp
 public class AuthService
@@ -699,9 +699,9 @@ SELECT Id, UserName, PasswordHash FROM AspNetUsers;
 
 ---
 
-## 6️⃣ Encryption in Transit (TLS/HTTPS)
+## 6️⃣ Mã hóa khi Truyền tải (TLS/HTTPS)
 
-### Force HTTPS
+### Bắt buộc HTTPS
 
 ```csharp
 // Program.cs
@@ -733,7 +733,7 @@ app.UseHttpsRedirection();
 app.Run();
 ```
 
-### TLS 1.2+ Only
+### Chỉ TLS 1.2+
 
 ```csharp
 // Disable weak protocols
@@ -755,9 +755,9 @@ System.Net.ServicePointManager.SecurityProtocol =
 
 ---
 
-## 7️⃣ Data Masking (Display Protection)
+## 7️⃣ Che giấu Dữ liệu (Bảo vệ Hiển thị)
 
-### Sensitive Data Masking
+### Che giấu Dữ liệu Nhạy cảm
 
 ```csharp
 public static class DataMaskingExtensions
@@ -805,7 +805,7 @@ public static class DataMaskingExtensions
 }
 ```
 
-### Logging Masking
+### Che giấu trong Logging
 
 ```csharp
 public class SensitiveDataLoggerMiddleware
@@ -832,7 +832,7 @@ public class SensitiveDataLoggerMiddleware
 
 ---
 
-## 8️⃣ Compliance & Regulations
+## 8️⃣ Tuân thủ & Quy định
 
 ### GDPR - Right to be Forgotten
 
@@ -882,7 +882,7 @@ public class GdprService
 }
 ```
 
-### Data Residency (Multi-Region)
+### Lưu trú Dữ liệu (Đa vùng)
 
 ```csharp
 public class RegionBasedConnectionStringProvider
@@ -905,9 +905,9 @@ public class RegionBasedConnectionStringProvider
 
 ---
 
-## 9️⃣ Key Rotation Strategy
+## 9️⃣ Chiến lược Xoay vòng Khóa
 
-### Automatic Key Rotation
+### Xoay vòng Khóa Tự động
 
 ```csharp
 public class KeyRotationService : BackgroundService
@@ -971,9 +971,9 @@ public class KeyRotationService : BackgroundService
 
 ---
 
-## 🔟 Security Checklist
+## 🔟 Danh sách Kiểm tra Bảo mật
 
-### Pre-Production Checklist
+### Danh sách Kiểm tra Trước khi Phát hành
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -1025,9 +1025,9 @@ public class KeyRotationService : BackgroundService
 
 ---
 
-## 📊 Performance Impact
+## 📊 Tác động Hiệu năng
 
-### Benchmark Results
+### Kết quả Benchmark
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -1045,33 +1045,33 @@ public class KeyRotationService : BackgroundService
 
 ---
 
-## 🚀 Implementation Roadmap
+## 🚀 Lộ trình Triển khai
 
-### Phase 1: Foundation (Week 1-2)
+### Giai đoạn 1: Nền tảng (Tuần 1-2)
 - [ ] Setup key storage (User Secrets cho dev, DPAPI cho production)
 - [ ] Implement AesGcmEncryptionService
 - [ ] Add field-level encryption to DataSource entity
 - [ ] Update repositories với encrypt/decrypt
 
-### Phase 2: Database Encryption (Week 3)
+### Giai đoạn 2: Mã hóa Database (Tuần 3)
 - [ ] Enable SQL Server TDE
 - [ ] Backup TDE certificate
 - [ ] Verify encryption status
 - [ ] Test backup/restore
 
-### Phase 3: Transport Security (Week 4)
+### Giai đoạn 3: Bảo mật Truyền tải (Tuần 4)
 - [ ] Force HTTPS redirect
 - [ ] Enable HSTS
 - [ ] Configure TLS 1.2+ only
 - [ ] SQL connection encryption
 
-### Phase 4: Compliance (Week 5-6)
+### Giai đoạn 4: Tuân thủ (Tuần 5-6)
 - [ ] Implement data masking
 - [ ] GDPR right to be forgotten
 - [ ] Audit logging for encryption operations
 - [ ] Key rotation automation
 
-### Phase 5: Testing (Week 7)
+### Giai đoạn 5: Kiểm thử (Tuần 7)
 - [ ] Security testing
 - [ ] Performance benchmarking
 - [ ] Penetration testing
@@ -1079,7 +1079,7 @@ public class KeyRotationService : BackgroundService
 
 ---
 
-## 📚 References
+## 📚 Tài liệu Tham khảo
 
 - [NIST Encryption Standards](https://csrc.nist.gov/projects/cryptographic-standards-and-guidelines)
 - [OWASP Cryptographic Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html)

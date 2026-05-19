@@ -20,6 +20,7 @@ Widget Data là platform cho phép bạn:
 - 📝 **Form Widget** — thu thập dữ liệu với schema tùy chỉnh, lưu submission vào DB
 - 📡 **Activity Monitoring** — theo dõi mọi lần gọi API widget, tự vô hiệu hoá khi không hoạt động
 - 🌐 **Standalone Frontend** — public-facing pages từ WidgetEngine, tách hoàn toàn khỏi Blazor
+- 🗄️ **Hybrid Persistence** — chuyển đổi giữa EF/SQLite và JSON file-backed repositories bằng một config flag
 - 🔐 **Bảo mật** với authentication, authorization, encryption
 
 **Không cần code!** Business users có thể tạo data pipelines qua visual builder.
@@ -32,9 +33,11 @@ Widget Data là platform cho phép bạn:
 - **Form Widget**: Admin định nghĩa schema field (text, email, textarea, select…); `/api/form/{id}/schema` trả schema public; submission lưu DB qua `POST /api/form/{id}`; admin xem qua `GET /api/form/{id}/submissions`
 - **HTML Widget Designer**: Thiết kế template HTML tùy chỉnh với biến `{{column}}` và vòng lặp `{{#each rows}}`
 - **Dashboard Page Builder**: Kéo-thả widget thành trang dashboard, xem trước trực tiếp
+- **Site Pages Admin**: Trang `/site-pages` hiển thị danh sách trang Frontend đang active với nút **View** xem preview trực tiếp; hỗ trợ export Multi-page ZIP và Single Page App (SPA)
 - **Reports & Preview**: Trang báo cáo doanh thu/bán hàng từ dữ liệu thực tế
 - **Widget Activity Monitoring**: Tự động ghi lại mọi lần gọi API widget (endpoint, user, thời gian phản hồi, status code); background service phát hiện widget không hoạt động → tự vô hiệu hoá + ghi alert log
 - **Admin UX Improvements**: Widgets/DataSources/Schedules có search & filter; trang Widgets có phân trang
+- **Hybrid Persistence**: Cấu hình `Storage:BusinessDataProvider=json` để dùng JSON file-backed repositories thay vì EF/SQLite; Identity vẫn dùng SQLite. Bao gồm `DbToJsonMigrationTool` để migrate dữ liệu từ EF sang JSON
 - **Scheduling**: Cron job tự động qua **WidgetData.Worker** (BackgroundService + Cronos), hỗ trợ retry, NextRunAt, timezone
 - **Caching**: In-memory, Redis, file-based cache với TTL và invalidation
 - **Live Data**: Real-time dashboard qua SignalR, auto-refresh
@@ -122,6 +125,17 @@ Truy cập:
 - **API Swagger**: `https://localhost:7001/swagger`
 - **.NET Aspire Dashboard**: `https://localhost:15888`
 
+### Demo Credentials (seeded tự động)
+
+| Email | Password | Role |
+|---|---|---|
+| `admin@widgetdata.com` | `Admin@123!` | SuperAdmin |
+| `viewer@widgetdata.com` | `Viewer@123!` | Viewer |
+| `editor@widgetdata.com` | `Editor@123!` | ContentEditor |
+| `staff@demo.tenant` | `TenantUser@123!` | TenantUser (demo tenant) |
+
+> Tài khoản seed từ `src/WidgetData.Infrastructure/Data/Seed/admin/users.json` — tổng ~23 users, 12 roles, 8 tenants, 50 audit logs mẫu.
+
 ### SQL test datasets (demo + tenant test)
 
 ```bash
@@ -146,12 +160,20 @@ sqlite3 retail.db < scripts/sql/retail-test.sql
 │  WidgetData.Web (Blazor)                                │
 │    Admin platform: widget builder, HTML designer        │
 │    Dashboard page builder, reports, data pipeline       │
+│    Site Pages: active Frontend pages + preview/export   │
 │                                                         │
 │  WidgetData.API (ASP.NET Core)                          │
 │    Execute widget | schedule | cache | auth | reports   │
 │                         ↓                               │
 │  WidgetData.Worker (BackgroundService)                  │
 │    Cron job executor | NextRunAt | retry | timezone     │
+│    Startup: IdentityDbContext.EnsureCreatedAsync()      │
+│                         ↓                               │
+│  PERSISTENCE LAYER (Hybrid)                             │
+│    IdentityDbContext (SQLite) — User/Auth/Tenant        │
+│    ApplicationDbContext (SQLite) — legacy EF repos      │
+│    JSON Repositories — file-backed business data        │
+│      (switch via Storage:BusinessDataProvider=json)     │
 │                         ↓                               │
 │  EF Core + SQLite | Cronos | Redis | SignalR             │
 └─────────────────────────┬───────────────────────────────┘
@@ -171,10 +193,11 @@ sqlite3 retail.db < scripts/sql/retail-test.sql
 ## 💻 Technology Stack
 
 **Backend**: ASP.NET Core 10.0, EF Core, Cronos, SignalR, QuestPDF, ClosedXML  
-**Worker**: .NET Worker Service, Cronos 0.8.4, BackgroundService (SchedulerWorkerService)  
+**Worker**: .NET Worker Service, Cronos 0.8.4, BackgroundService (SchedulerWorkerService + InactivityMonitorService)  
 **Frontend (Blazor)**: Blazor Server, MudBlazor, ChartJs, BlazorMonaco  
 **Frontend (Standalone)**: Vanilla HTML/CSS/JS, WidgetEngine library (zero-dep)  
-**Infrastructure**: .NET Aspire, YARP Gateway, SQLite, Docker, Serilog  
+**Infrastructure**: .NET Aspire, YARP Gateway, SQLite (Identity + EF), JSON file-backed repos, Docker, Serilog  
+**Data Seed**: JSON files in `Data/Seed/admin/` (roles, tenants, users, audit-logs, widgets, pages, …)  
 
 👉 [Chi tiết Technology](doc/architecture.md#technology-stack)
 
@@ -195,6 +218,20 @@ sqlite3 retail.db < scripts/sql/retail-test.sql
 | **Activity** | `GET /api/widget-activity/alerts` | Admin | Tất cả `InactivityAlert` trong AuditLog |
 
 ## ⚙️ Cấu hình
+
+### Hybrid Persistence (`appsettings.json`)
+
+```json
+"Storage": {
+  "BusinessDataProvider": "json"
+}
+```
+
+Khi đặt `BusinessDataProvider=json`, tất cả business repositories (Widgets, DataSources, Schedules, Pages, …) dùng JSON file-backed adapters lưu tại `data/` thư mục bên cạnh binary. Identity (users/roles/tenants) vẫn dùng SQLite qua `IdentityDbContext`. Bỏ qua hoặc đặt giá trị khác để quay về EF/SQLite.
+
+> **Dev mặc định**: `appsettings.Development.json` đã bật `json` provider. Chạy `src/WidgetData.AppHost` sẽ tự động dùng JSON repos.
+
+Để migrate dữ liệu từ EF sang JSON, dùng `DbToJsonMigrationTool` (đã registered trong DI).
 
 ### SchedulerWorker (`appsettings.json`)
 
@@ -218,6 +255,8 @@ sqlite3 retail.db < scripts/sql/retail-test.sql
 Background service chạy theo `CheckIntervalMinutes`. Widget nào có `InactivityAutoDisableEnabled = true` và không được gọi trong `InactivityThresholdDays` ngày sẽ bị đặt `IsActive = false` tự động.
 
 ### Data Source — Multi-Source Config
+
+> **Lưu ý**: Hiện tại giao diện admin và API chỉ cho phép tạo/cập nhật DataSource loại **JSON** (`DataSourceType.Json`). Các loại CSV/Excel/SQLite vẫn đọc được qua Widget execution nhưng không thể tạo mới qua UI.
 
 | Loại nguồn | Config cần thiết |
 |---|---|
@@ -327,7 +366,7 @@ Lưu config này vào `Widget.Configuration`. Trang `/form.html` (wwwroot) tự 
 
 ## 🚦 Roadmap
 
-- ✅ **v1.0** (Q2 2026) - MVP: Core widgets, scheduling với **WidgetData.Worker** (cron job project riêng, NextRunAt, retry, timezone), Blazor UI, .NET Aspire, HTML Designer, Dashboard Pages, Reports, Store module, Demo Shop (standalone + blazor-web), **Multi-source data** (CSV/JSON/Excel/API), **Form widget** (custom schema + submissions), **Activity Monitoring** (auto-disable + alert log)
+- ✅ **v1.0** (Q2 2026) - MVP: Core widgets, scheduling với **WidgetData.Worker** (cron job project riêng, NextRunAt, retry, timezone), Blazor UI, .NET Aspire, HTML Designer, Dashboard Pages, Reports, Store module, Demo Shop (standalone + blazor-web), **Multi-source data** (CSV/JSON/Excel/API), **Form widget** (custom schema + submissions), **Activity Monitoring** (auto-disable + alert log), **Hybrid Persistence** (EF + JSON file-backed, `DbToJsonMigrationTool`), **Rich seed data** (23 users / 12 roles / 8 tenants / 50 audit logs từ JSON files), **Site Pages** (active Frontend list + preview/export ZIP/SPA)
 - 🔄 **v1.5** (Q3 2026) - Advanced charts, templates
 - 📅 **v2.0** (Q4 2026) - AI features, Power BI integration
 - 📅 **v2.5** (Q1 2027) - Visual ETL, multi-tenancy

@@ -1,12 +1,12 @@
-# Testing Strategy
+# Chiến lược Kiểm thử
 
 ## 📋 Tổng quan
 
 Widget Data sử dụng 3-tier testing strategy:
 
-1. **Unit Tests** - Test individual components (70% coverage target)
-2. **Integration Tests** - Test component interactions
-3. **E2E Tests** - Test complete workflows (Playwright/Selenium)
+1. **Unit Tests** - Kiểm thử từng component riêng lẻ (mục tiêu 70% coverage)
+2. **Integration Tests** - Kiểm thử tương tác giữa các component
+3. **E2E Tests** - Kiểm thử toàn bộ quy trình (Playwright/Selenium)
 
 **Test Stack:**
 - xUnit - Test framework
@@ -19,20 +19,20 @@ Widget Data sử dụng 3-tier testing strategy:
 
 ## 🧪 1. Unit Tests
 
-### Project Setup
+### Thiết lập Dự án
 
 ```bash
-# Create test project
+# Tạo dự án test
 dotnet new xunit -n WidgetData.UnitTests
 cd WidgetData.UnitTests
 
-# Add packages
+# Thêm các package
 dotnet add package Moq
 dotnet add package FluentAssertions
 dotnet add package Bogus
 dotnet add package Microsoft.EntityFrameworkCore.InMemory
 
-# Add reference to main project
+# Thêm tham chiếu đến dự án chính
 dotnet add reference ../src/WidgetData.Application/WidgetData.Application.csproj
 ```
 
@@ -48,7 +48,7 @@ public class WidgetServiceTests
     private readonly Mock<IWidgetRepository> _repositoryMock;
     private readonly Mock<ILogger<WidgetService>> _loggerMock;
     private readonly Mock<ICacheService> _cacheMock;
-    private readonly WidgetService _sut; // System Under Test
+    private readonly WidgetService _sut; // Đối tượng Đang Kiểm thử
     
     public WidgetServiceTests()
     {
@@ -66,7 +66,7 @@ public class WidgetServiceTests
     [Fact]
     public async Task GetByIdAsync_WhenWidgetExists_ReturnsWidget()
     {
-        // Arrange
+        // Sắp xếp
         var widgetId = 123;
         var expectedWidget = new Widget
         {
@@ -79,10 +79,10 @@ public class WidgetServiceTests
             .Setup(x => x.GetByIdAsync(widgetId))
             .ReturnsAsync(expectedWidget);
         
-        // Act
+        // Thực thi
         var result = await _sut.GetByIdAsync(widgetId);
         
-        // Assert
+        // Kiểm tra
         result.Should().NotBeNull();
         result.Id.Should().Be(widgetId);
         result.Name.Should().Be("Test Widget");
@@ -93,16 +93,16 @@ public class WidgetServiceTests
     [Fact]
     public async Task GetByIdAsync_WhenWidgetNotFound_ThrowsNotFoundException()
     {
-        // Arrange
+        // Sắp xếp
         var widgetId = 999;
         _repositoryMock
             .Setup(x => x.GetByIdAsync(widgetId))
             .ReturnsAsync((Widget)null);
         
-        // Act
+        // Thực thi
         Func<Task> act = async () => await _sut.GetByIdAsync(widgetId);
         
-        // Assert
+        // Kiểm tra
         await act.Should().ThrowAsync<NotFoundException>()
             .WithMessage($"Widget with ID {widgetId} not found");
     }
@@ -113,20 +113,20 @@ public class WidgetServiceTests
     [InlineData("   ")]
     public async Task CreateAsync_WithInvalidName_ThrowsValidationException(string invalidName)
     {
-        // Arrange
+        // Sắp xếp
         var dto = new WidgetDto { Name = invalidName, WidgetType = "chart" };
         
-        // Act
+        // Thực thi
         Func<Task> act = async () => await _sut.CreateAsync(dto);
         
-        // Assert
+        // Kiểm tra
         await act.Should().ThrowAsync<ValidationException>();
     }
     
     [Fact]
     public async Task CreateAsync_WithValidData_CreatesWidget()
     {
-        // Arrange
+        // Sắp xếp
         var dto = new WidgetDto
         {
             Name = "New Widget",
@@ -145,10 +145,10 @@ public class WidgetServiceTests
             .Setup(x => x.AddAsync(It.IsAny<Widget>()))
             .ReturnsAsync(createdWidget);
         
-        // Act
+        // Thực thi
         var result = await _sut.CreateAsync(dto);
         
-        // Assert
+        // Kiểm tra
         result.Should().NotBeNull();
         result.Name.Should().Be(dto.Name);
         
@@ -156,13 +156,13 @@ public class WidgetServiceTests
             w.Name == dto.Name && w.WidgetType == dto.WidgetType
         )), Times.Once);
         
-        // Verify cache invalidation
+        // Xác minh cache bị xóa
         _cacheMock.Verify(x => x.RemoveAsync(It.IsAny<string>()), Times.Once);
     }
 }
 ```
 
-### Repository Unit Test (In-Memory DB)
+### Unit Test Repository (DB trong Bộ nhớ)
 
 ```csharp
 public class WidgetRepositoryTests : IDisposable
@@ -179,7 +179,7 @@ public class WidgetRepositoryTests : IDisposable
         _context = new ApplicationDbContext(options);
         _repository = new WidgetRepository(_context);
         
-        // Seed data
+        // Nạp dữ liệu ban đầu
         SeedData();
     }
     
@@ -196,20 +196,20 @@ public class WidgetRepositoryTests : IDisposable
     [Fact]
     public async Task GetAllAsync_ReturnsAllWidgets()
     {
-        // Act
+        // Thực thi
         var widgets = await _repository.GetAllAsync();
         
-        // Assert
+        // Kiểm tra
         widgets.Should().HaveCount(3);
     }
     
     [Fact]
     public async Task GetByIdAsync_WithValidId_ReturnsWidget()
     {
-        // Act
+        // Thực thi
         var widget = await _repository.GetByIdAsync(1);
         
-        // Assert
+        // Kiểm tra
         widget.Should().NotBeNull();
         widget.Name.Should().Be("Widget 1");
     }
@@ -217,17 +217,17 @@ public class WidgetRepositoryTests : IDisposable
     [Fact]
     public async Task AddAsync_AddsWidgetToDatabase()
     {
-        // Arrange
+        // Sắp xếp
         var newWidget = new Widget
         {
             Name = "Widget 4",
             WidgetType = "chart"
         };
         
-        // Act
+        // Thực thi
         var result = await _repository.AddAsync(newWidget);
         
-        // Assert
+        // Kiểm tra
         result.Should().NotBeNull();
         result.Id.Should().BeGreaterThan(0);
         
@@ -243,7 +243,7 @@ public class WidgetRepositoryTests : IDisposable
 }
 ```
 
-### Test Data with Bogus
+### Dữ liệu Test với Bogus
 
 ```csharp
 using Bogus;
@@ -268,11 +268,11 @@ public class WidgetFaker
     public List<Widget> Generate(int count) => _faker.Generate(count);
 }
 
-// Usage
+// Cách dùng
 [Fact]
 public async Task ProcessMultipleWidgets_Test()
 {
-    // Arrange
+    // Sắp xếp
     var faker = new WidgetFaker();
     var widgets = faker.Generate(100);
     
@@ -285,7 +285,7 @@ public async Task ProcessMultipleWidgets_Test()
 
 ## 🔗 2. Integration Tests
 
-### Setup with Testcontainers
+### Thiết lập với Testcontainers
 
 ```bash
 dotnet new xunit -n WidgetData.IntegrationTests
@@ -304,7 +304,7 @@ public class IntegrationTestBase : IAsyncLifetime
     
     public async Task InitializeAsync()
     {
-        // Start SQL Server container
+        // Khởi động container SQL Server
         _sqlContainer = new MsSqlBuilder()
             .WithPassword("YourStrong@Passw0rd")
             .Build();
@@ -313,7 +313,7 @@ public class IntegrationTestBase : IAsyncLifetime
         
         ConnectionString = _sqlContainer.GetConnectionString();
         
-        // Run migrations
+        // Chạy migrations
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseSqlServer(ConnectionString)
             .Options;
@@ -329,7 +329,7 @@ public class IntegrationTestBase : IAsyncLifetime
 }
 ```
 
-### API Integration Test
+### Integration Test API
 
 ```csharp
 public class WidgetApiTests : IClassFixture<WebApplicationFactory<Program>>
@@ -343,7 +343,7 @@ public class WidgetApiTests : IClassFixture<WebApplicationFactory<Program>>
         {
             builder.ConfigureServices(services =>
             {
-                // Replace real DB with in-memory
+                // Thay DB thực bằng in-memory
                 var descriptor = services.SingleOrDefault(
                     d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
                 
@@ -365,10 +365,10 @@ public class WidgetApiTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task GetWidgets_ReturnsSuccessAndCorrectContentType()
     {
-        // Act
+        // Thực thi
         var response = await _client.GetAsync("/api/widgets");
         
-        // Assert
+        // Kiểm tra
         response.EnsureSuccessStatusCode();
         response.Content.Headers.ContentType.ToString()
             .Should().Be("application/json; charset=utf-8");
@@ -377,7 +377,7 @@ public class WidgetApiTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task CreateWidget_WithValidData_ReturnsCreated()
     {
-        // Arrange
+        // Sắp xếp
         var dto = new WidgetDto
         {
             Name = "Test Widget",
@@ -385,10 +385,10 @@ public class WidgetApiTests : IClassFixture<WebApplicationFactory<Program>>
             DataSourceId = 1
         };
         
-        // Act
+        // Thực thi
         var response = await _client.PostAsJsonAsync("/api/widgets", dto);
         
-        // Assert
+        // Kiểm tra
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         
         var widget = await response.Content.ReadFromJsonAsync<Widget>();
@@ -399,16 +399,16 @@ public class WidgetApiTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task GetWidget_WithInvalidId_ReturnsNotFound()
     {
-        // Act
+        // Thực thi
         var response = await _client.GetAsync("/api/widgets/9999");
         
-        // Assert
+        // Kiểm tra
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 }
 ```
 
-### Database Integration Test
+### Integration Test Database
 
 ```csharp
 public class WidgetRepositoryIntegrationTests : IntegrationTestBase
@@ -416,7 +416,7 @@ public class WidgetRepositoryIntegrationTests : IntegrationTestBase
     [Fact]
     public async Task AddWidget_PersistsToDatabase()
     {
-        // Arrange
+        // Sắp xếp
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseSqlServer(ConnectionString)
             .Options;
@@ -427,14 +427,14 @@ public class WidgetRepositoryIntegrationTests : IntegrationTestBase
             WidgetType = "chart"
         };
         
-        // Act
+        // Thực thi
         using (var context = new ApplicationDbContext(options))
         {
             var repository = new WidgetRepository(context);
             await repository.AddAsync(widget);
         }
         
-        // Assert
+        // Kiểm tra
         using (var context = new ApplicationDbContext(options))
         {
             var savedWidget = await context.Widgets
@@ -451,7 +451,7 @@ public class WidgetRepositoryIntegrationTests : IntegrationTestBase
 
 ## 🎭 3. End-to-End Tests (Playwright)
 
-### Setup
+### Thiết lập
 
 ```bash
 dotnet new xunit -n WidgetData.E2ETests
@@ -484,10 +484,10 @@ public class DashboardE2ETests : IAsyncLifetime
     [Fact]
     public async Task Dashboard_LoadsSuccessfully()
     {
-        // Arrange & Act
+        // Sắp xếp & Thực thi
         await _page.GotoAsync("https://localhost:5001/dashboard");
         
-        // Assert
+        // Kiểm tra
         await Expect(_page.GetByRole(AriaRole.Heading, new() { Name = "Dashboard" }))
             .ToBeVisibleAsync();
     }
@@ -495,25 +495,25 @@ public class DashboardE2ETests : IAsyncLifetime
     [Fact]
     public async Task CreateWidget_WorkflowCompletes()
     {
-        // Navigate to dashboard
+        // Điều hướng đến dashboard
         await _page.GotoAsync("https://localhost:5001/dashboard");
         
-        // Click "Create Widget" button
+        // Nhấn nút "Create Widget"
         await _page.GetByRole(AriaRole.Button, new() { Name = "Create Widget" }).ClickAsync();
         
-        // Fill form
+        // Điền form
         await _page.GetByLabel("Name").FillAsync("E2E Test Widget");
         await _page.GetByLabel("Type").SelectOptionAsync("chart");
         await _page.GetByLabel("Data Source").SelectOptionAsync("1");
         
-        // Submit
+        // Gửi
         await _page.GetByRole(AriaRole.Button, new() { Name = "Save" }).ClickAsync();
         
-        // Verify success message
+        // Xác minh thông báo thành công
         await Expect(_page.GetByText("Widget created successfully"))
             .ToBeVisibleAsync();
         
-        // Verify widget appears in list
+        // Xác minh widget xuất hiện trong danh sách
         await Expect(_page.GetByText("E2E Test Widget"))
             .ToBeVisibleAsync();
     }
@@ -521,20 +521,20 @@ public class DashboardE2ETests : IAsyncLifetime
     [Fact]
     public async Task WidgetExecution_DisplaysResults()
     {
-        // Navigate to widget page
+        // Điều hướng đến trang widget
         await _page.GotoAsync("https://localhost:5001/widgets/1");
         
-        // Click execute
+        // Nhấn thực thi
         await _page.GetByRole(AriaRole.Button, new() { Name = "Execute" }).ClickAsync();
         
-        // Wait for results
+        // Chờ kết quả
         await _page.WaitForSelectorAsync(".widget-results", new()
         {
             State = WaitForSelectorState.Visible,
             Timeout = 5000
         });
         
-        // Verify results appear
+        // Xác minh kết quả xuất hiện
         var resultsText = await _page.Locator(".widget-results").TextContentAsync();
         resultsText.Should().NotBeEmpty();
     }
@@ -550,7 +550,7 @@ public class DashboardE2ETests : IAsyncLifetime
 
 ---
 
-## 🚀 4. Performance Tests
+## 🚀 4. Kiểm thử Hiệu năng
 
 ```csharp
 using BenchmarkDotNet.Attributes;
@@ -565,7 +565,7 @@ public class WidgetServiceBenchmarks
     [GlobalSetup]
     public void Setup()
     {
-        // Setup dependencies
+        // Thiết lập các dependency
         _service = new WidgetService(/* ... */);
         _dto = new WidgetDto
         {
@@ -587,65 +587,65 @@ public class WidgetServiceBenchmarks
     }
 }
 
-// Run: dotnet run -c Release
+// Chạy: dotnet run -c Release
 ```
 
 ---
 
-## 📊 5. Code Coverage
+## 📊 5. Độ phủ Code
 
 ```bash
-# Install coverage tool
+# Cài đặt công cụ coverage
 dotnet tool install --global dotnet-coverage
 
-# Run tests with coverage
+# Chạy tests với coverage
 dotnet test --collect:"XPlat Code Coverage"
 
-# Generate HTML report
+# Tạo báo cáo HTML
 dotnet tool install --global dotnet-reportgenerator-globaltool
 reportgenerator -reports:"**/coverage.cobertura.xml" -targetdir:"coverage-report" -reporttypes:Html
 
-# Open report
+# Mở báo cáo
 start coverage-report/index.html
 ```
 
-### Coverage Targets
+### Mục tiêu Coverage
 
-| Component | Target | Current |
+| Thành phần | Mục tiêu | Hiện tại |
 |-----------|--------|---------|
 | **Services** | 80% | 75% |
 | **Repositories** | 70% | 68% |
 | **Controllers** | 60% | 55% |
-| **Overall** | 70% | 66% |
+| **Tổng thể** | 70% | 66% |
 
 ---
 
-## 🎯 Testing Best Practices
+## 🎯 Các thực hành Kiểm thử Tốt nhất
 
-### AAA Pattern (Arrange, Act, Assert)
+### Mẫu AAA (Sắp xếp, Thực thi, Kiểm tra)
 
 ```csharp
 [Fact]
 public async Task ExampleTest()
 {
-    // Arrange - Setup test data & mocks
+    // Sắp xếp - Thiết lập dữ liệu test & mock
     var widgetId = 123;
     _repositoryMock.Setup(x => x.GetByIdAsync(widgetId))
         .ReturnsAsync(new Widget { Id = widgetId });
     
-    // Act - Execute the method under test
+    // Thực thi - Gọi phương thức cần kiểm thử
     var result = await _sut.GetByIdAsync(widgetId);
     
-    // Assert - Verify the outcome
+    // Kiểm tra - Xác nhận kết quả
     result.Should().NotBeNull();
     result.Id.Should().Be(widgetId);
 }
 ```
 
-### Test Naming Convention
+### Quy ước Đặt tên Test
 
 ```csharp
-// Pattern: MethodName_Scenario_ExpectedResult
+// Mẫu: TênPhươngThức_KịchBản_KếtQuảMongĐợi
 
 [Fact]
 public async Task GetByIdAsync_WhenWidgetExists_ReturnsWidget() { }
@@ -657,10 +657,10 @@ public async Task GetByIdAsync_WhenWidgetNotFound_ThrowsNotFoundException() { }
 public async Task CreateAsync_WithInvalidData_ThrowsValidationException() { }
 ```
 
-### One Assert Per Test (Flexible)
+### Một Assert Mỗi Test (Linh hoạt)
 
 ```csharp
-// ✅ GOOD: Single logical assertion
+// ✅ ĐÚNG: Một assertion logic duy nhất
 [Fact]
 public async Task CreateWidget_SetsAllProperties()
 {
@@ -674,7 +674,7 @@ public async Task CreateWidget_SetsAllProperties()
     });
 }
 
-// ⚠️ OK: Multiple related assertions
+// ⚠️ Được: Nhiều assertion liên quan
 [Fact]
 public async Task CreateWidget_CallsDependencies()
 {
@@ -687,7 +687,7 @@ public async Task CreateWidget_CallsDependencies()
 
 ---
 
-## 🔄 CI/CD Integration
+## 🔄 Tích hợp CI/CD
 
 ```yaml
 # .github/workflows/test.yml

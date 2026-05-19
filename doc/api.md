@@ -1,4 +1,4 @@
-# API Reference
+# Tham chiếu API
 
 ## 📋 Tổng quan
 
@@ -11,7 +11,7 @@ Widget Data cung cấp REST API đầy đủ để quản lý và thực thi wid
 
 ---
 
-## 🔐 Authentication
+## 🔐 Xác thực
 
 ### Đăng nhập
 
@@ -389,7 +389,7 @@ Content-Type: application/json
 
 ---
 
-### Test kết nối Data Source
+### Kiểm tra kết nối Data Source
 
 ```http
 POST /api/datasources/{id}/test
@@ -561,7 +561,7 @@ Authorization: Bearer {token}
 
 ---
 
-## ❌ Error Responses
+## ❌ Phản hồi Lỗi
 
 Tất cả lỗi trả về theo format chuẩn:
 
@@ -577,7 +577,7 @@ Tất cả lỗi trả về theo format chuẩn:
 }
 ```
 
-### HTTP Status Codes
+### Mã trạng thái HTTP
 
 | Code | Ý nghĩa |
 |------|---------|
@@ -591,7 +591,7 @@ Tất cả lỗi trả về theo format chuẩn:
 | `429` | Too Many Requests - Vượt rate limit |
 | `500` | Internal Server Error - Lỗi server |
 
-### Error Codes
+### Mã lỗi
 
 | Code | Mô tả |
 |------|-------|
@@ -606,7 +606,7 @@ Tất cả lỗi trả về theo format chuẩn:
 
 ---
 
-## 🔒 Rate Limiting
+## 🔒 Giới hạn Tốc độ
 
 | Endpoint | Giới hạn |
 |----------|---------|
@@ -623,7 +623,7 @@ X-RateLimit-Reset: 1712740606
 
 ---
 
-## 📄 Pagination
+## 📄 Phân trang
 
 Tất cả danh sách hỗ trợ pagination:
 
@@ -648,7 +648,7 @@ Response luôn bao gồm:
 
 ---
 
-## 🔍 Filtering & Sorting
+## 🔍 Lọc & Sắp xếp
 
 ```http
 # Lọc theo loại và trạng thái
@@ -666,7 +666,7 @@ GET /api/widgets?type=chart&isActive=true&search=sales&orderBy=name&orderDir=asc
 
 ---
 
-## 📋 Export API
+## 📋 API Xuất dữ liệu
 
 ### Export dữ liệu Widget
 

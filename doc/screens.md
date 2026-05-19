@@ -1,4 +1,4 @@
-# Screens & UI Design
+# Màn hình & Thiết kế UI
 
 ## 📸 Demo Screenshots (Thực tế)
 
@@ -67,9 +67,9 @@ Widget Data có **27 màn hình chính** được tổ chức thành 7 nhóm:
 
 ---
 
-## 🏠 1. Dashboard & Overview
+## 🏠 1. Dashboard & Tổng quan
 
-### 1.1. Main Dashboard (`/dashboard`)
+### 1.1. Dashboard Chính (`/dashboard`)
 
 **Mục đích:** Trang chủ hiển thị tổng quan widgets, metrics, và recent activities
 
@@ -143,7 +143,7 @@ public class DashboardViewModel
 
 ---
 
-### 1.2. Analytics Dashboard (`/analytics`)
+### 1.2. Dashboard Phân tích (`/analytics`)
 
 **Mục đích:** Chi tiết analytics & reports
 
@@ -188,9 +188,9 @@ public class DashboardViewModel
 
 ---
 
-## 🎨 2. Widget Management
+## 🎨 2. Quản lý Widget
 
-### 2.1. Widget List (`/widgets`)
+### 2.1. Danh sách Widget (`/widgets`)
 
 **Mục đích:** Danh sách tất cả widgets với filter, search, sort
 
@@ -340,7 +340,7 @@ public class DashboardViewModel
 
 ---
 
-### 2.3. Widget Detail View (`/widgets/{id}`)
+### 2.3. Xem chi tiết Widget (`/widgets/{id}`)
 
 **Mục đích:** Xem chi tiết widget, execute, view results, history
 
@@ -407,7 +407,7 @@ public class DashboardViewModel
 
 ---
 
-### 2.4. Execution History (`/widgets/{id}/history`)
+### 2.4. Lịch sử Thực thi (`/widgets/{id}/history`)
 
 **Mục đích:** Xem lịch sử thực thi widget
 
@@ -450,9 +450,9 @@ public class DashboardViewModel
 
 ---
 
-## 🗄️ 3. Data Sources
+## 🗄️ 3. Nguồn Dữ liệu
 
-### 3.1. Data Sources List (`/data-sources`)
+### 3.1. Danh sách Nguồn Dữ liệu (`/data-sources`)
 
 **Layout:**
 ```
@@ -500,7 +500,7 @@ public class DashboardViewModel
 
 ---
 
-### 3.2. Add/Edit Data Source (`/data-sources/new`, `/data-sources/{id}/edit`)
+### 3.2. Thêm/Sửa Nguồn Dữ liệu (`/data-sources/new`, `/data-sources/{id}/edit`)
 
 **Layout (SQL Server Example):**
 ```
@@ -552,7 +552,7 @@ public class DashboardViewModel
 
 ---
 
-### 3.3. Data Source Preview (`/data-sources/{id}/preview`)
+### 3.3. Xem trước Nguồn Dữ liệu (`/data-sources/{id}/preview`)
 
 **Layout:**
 ```
@@ -593,9 +593,9 @@ public class DashboardViewModel
 
 ---
 
-## ⏰ 4. Scheduling & Execution
+## ⏰ 4. Lập lịch & Thực thi
 
-### 4.1. Schedules List (`/schedules`)
+### 4.1. Danh sách Lịch (`/schedules`)
 
 **Layout:**
 ```
@@ -638,7 +638,7 @@ public class DashboardViewModel
 
 ---
 
-### 4.2. Schedule Editor (`/schedules/{id}/edit`)
+### 4.2. Trình chỉnh sửa Lịch (`/schedules/{id}/edit`)
 
 **Layout:**
 ```
@@ -702,9 +702,9 @@ public class DashboardViewModel
 
 ---
 
-## ⚙️ 5. Administration
+## ⚙️ 5. Quản trị
 
-### 5.1. User Management (`/admin/users`)
+### 5.1. Quản lý Người dùng (`/admin/users`)
 
 **Layout:**
 ```
@@ -744,7 +744,7 @@ public class DashboardViewModel
 
 ---
 
-### 5.2. Settings (`/admin/settings`)
+### 5.2. Cài đặt (`/admin/settings`)
 
 **Layout:**
 ```
@@ -784,7 +784,7 @@ public class DashboardViewModel
 
 ---
 
-### 5.3. Activity Logs (`/admin/logs`)
+### 5.3. Nhật ký Hoạt động (`/admin/logs`)
 
 **Layout:**
 ```
@@ -825,7 +825,7 @@ public class DashboardViewModel
 
 ---
 
-### 5.4. System Health (`/admin/health`)
+### 5.4. Sức khoẻ Hệ thống (`/admin/health`)
 
 **Layout:**
 ```
@@ -866,18 +866,18 @@ public class DashboardViewModel
 └─────────────────────────────────────────────────────────┘
 ```
 
-**Health Checks:**
-- Database connectivity
-- Redis cache status
-- Hangfire job status
-- External API availability
-- System resources (CPU, Memory, Disk)
+**Kiểm tra Sức khoẻ:**
+- Kết nối Database
+- Trạng thái Redis cache
+- Trạng thái Hangfire job
+- Khả dụng API bên ngoài
+- Tài nguyên hệ thống (CPU, Memory, Disk)
 
 ---
 
 ## 📑 6. Reports & Dashboard Pages *(Mới – PR #8 & #9)*
 
-### 6.1. Reports (`/reports`)
+### 6.1. Báo cáo (`/reports`)
 
 **Mục đích:** Danh sách các trang báo cáo được tạo từ dữ liệu cửa hàng thực tế (SalesDataSeeder).
 
@@ -908,7 +908,7 @@ public class DashboardViewModel
 
 ---
 
-### 6.2. Report Preview (`/reports/preview/{id}`)
+### 6.2. Xem trước Báo cáo (`/reports/preview/{id}`)
 
 **Mục đích:** Hiển thị trang báo cáo đầy đủ – mỗi widget render HTML template với dữ liệu thực.
 
@@ -943,7 +943,7 @@ public class DashboardViewModel
 
 ---
 
-### 6.3. Dashboard Pages (`/pages`)
+### 6.3. Trang Dashboard (`/pages`)
 
 **Mục đích:** Quản lý các trang dashboard tùy chỉnh – tạo, sửa, xóa, và điều hướng vào Page Builder.
 
@@ -976,7 +976,7 @@ public class DashboardViewModel
 
 ---
 
-### 6.4. Dashboard Page Builder (`/pages/builder/{id}`)
+### 6.4. Trình xây dựng Trang Dashboard (`/pages/builder/{id}`)
 
 **Mục đích:** Sắp xếp widget trong trang, chỉnh layout, xem trước trực tiếp.
 
@@ -1012,7 +1012,7 @@ public class DashboardViewModel
 
 ---
 
-### 6.5. Widget HTML Designer (`/widgets/html-designer/{id}`)
+### 6.5. Trình thiết kế HTML Widget (`/widgets/html-designer/{id}`)
 
 **Mục đích:** Thiết kế và xem trước HTML template tùy chỉnh cho widget.
 
@@ -1053,9 +1053,9 @@ public class DashboardViewModel
 
 ---
 
-## 📱 Mobile-Specific Screens
+## 📱 Màn hình dành riêng cho Mobile
 
-### Mobile Dashboard
+### Dashboard Mobile
 
 ```
 ┌─────────────────────┐
@@ -1084,16 +1084,16 @@ public class DashboardViewModel
 └─────────────────────┘
 ```
 
-**Mobile Features:**
+**Tính năng Mobile:**
 - Pull-to-refresh
-- Swipe to delete/edit
-- Bottom navigation
-- Touch-friendly buttons (min 44x44px)
-- Simplified forms with step-by-step wizard
+- Swipe để xoá/chỉnh sửa
+- Điều hướng dưới cùng
+- Nút thân thiện cảm ứng (tối thiểu 44x44px)
+- Form đơn giản hóa theo từng bước (wizard)
 
 ---
 
-## 🎯 Screen Flow Diagram
+## 🎯 Sơ đồ Luồng Màn hình
 
 ```
                     ┌──────────────┐
@@ -1128,30 +1128,30 @@ public class DashboardViewModel
 
 ---
 
-## ✅ UI/UX Checklist
+## ✅ Danh sách kiểm tra UI/UX
 
-### Design Principles
-- [ ] **Consistency**: Same patterns across all screens
-- [ ] **Clarity**: Clear labels, error messages
-- [ ] **Feedback**: Loading states, success/error notifications
-- [ ] **Accessibility**: ARIA labels, keyboard navigation
-- [ ] **Responsive**: Mobile, tablet, desktop layouts
+### Nguyên tắc Thiết kế
+- [ ] **Nhất quán**: Cùng một mẫu trên tất cả màn hình
+- [ ] **Rõ ràng**: Nhãn rõ ràng, thông báo lỗi dễ hiểu
+- [ ] **Phản hồi**: Trạng thái loading, thông báo thành công/lỗi
+- [ ] **Khả năng tiếp cận**: ARIA labels, điều hướng bàn phím
+- [ ] **Responsive**: Layout cho mobile, tablet, desktop
 
-### Components
-- [ ] Navigation (AppBar, Drawer, Breadcrumbs)
-- [ ] Forms (Input, Select, DatePicker, FileUpload)
-- [ ] Data Display (Table, Cards, Charts)
-- [ ] Feedback (Snackbar, Dialog, Progress)
-- [ ] Actions (Buttons, IconButtons, FAB)
+### Thành phần
+- [ ] Điều hướng (AppBar, Drawer, Breadcrumbs)
+- [ ] Biểu mẫu (Input, Select, DatePicker, FileUpload)
+- [ ] Hiển thị dữ liệu (Table, Cards, Charts)
+- [ ] Phản hồi (Snackbar, Dialog, Progress)
+- [ ] Hành động (Buttons, IconButtons, FAB)
 
-### Interactions
-- [ ] Loading spinners during async operations
-- [ ] Confirmation dialogs for destructive actions
-- [ ] Toast notifications for success/error
-- [ ] Form validation with inline errors
-- [ ] Search with debounce
-- [ ] Pagination for large lists
-- [ ] Sorting & filtering
+### Tương tác
+- [ ] Loading spinner trong các thao tác bất đồng bộ
+- [ ] Hộp thoại xác nhận cho các hành động huỷ không thể hoàn tác
+- [ ] Toast notifications cho thành công/lỗi
+- [ ] Xác thực biểu mẫu với lỗi inline
+- [ ] Tìm kiếm với debounce
+- [ ] Phân trang cho danh sách lớn
+- [ ] Sắp xếp & lọc
 
 ---
 

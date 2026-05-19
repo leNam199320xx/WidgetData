@@ -4,22 +4,22 @@
 
 ## 📑 Danh mục tài liệu
 
-### Core Features & Architecture
+### Tính năng Cốt lõi & Kiến trúc
 1. [Multi-Step Data Processing](multi-step-processing.md) - Pipeline với nhiều bước xử lý tuần tự
 2. [Branching & Variables](branching-variables.md) - Conditional logic và biến trong pipeline  
 3. [Kiến trúc & Thiết kế](architecture.md) - System architecture và design patterns
 4. [Multi-Tenancy Architecture](multi-tenancy.md) - ⚠️ QUAN TRỌNG: Thiết kế cho nhiều công ty/khách hàng
 
-### API & Database
+### API & Cơ sở dữ liệu
 5. [API Reference](api.md) - 🆕 REST API endpoints, request/response, error codes
 6. [Database Schema](database-schema.md) - 🆕 ERD, bảng, indexes, migrations
 
-### Security & Modules
+### Bảo mật & Module
 7. [Bảo mật](security.md) - Authentication, authorization, data protection
 8. [Data Encryption](data-encryption.md) - 🔐 Mã hóa dữ liệu nhạy cảm (AES-256-GCM, TDE, Key Vault)
 9. [Module & Thư viện có sẵn](modules.md) - Libraries và packages đã có sẵn
 
-### Deployment & Operations
+### Triển khai & Vận hành
 10. [Cài đặt & Triển khai](deployment.md) - Development, Docker, IIS, Azure
 11. [Performance & Scalability](performance.md) - Optimization và scaling strategies
 12. [Monitoring & Observability](monitoring.md) - Logging, metrics, health checks
@@ -29,14 +29,14 @@
 16. [Production checklist](production-checklist.md) - Checklist trước khi phát hành
 17. [Hướng dẫn tạo demo end-to-end](demo-guide.md) - Luồng chạy AppHost/API/Web/Worker + front-end demo
 
-### Integration & Extensibility
+### Tích hợp & Mở rộng
 18. [Tích hợp & Mở rộng](integration.md) - Webhooks, plugins, third-party integrations
 19. [Mobile & Responsive](mobile.md) - PWA, responsive design, offline mode
 
-### UI/UX Design
+### Thiết kế UI/UX
 20. [Screens & Mockups](screens.md) - Mô tả chi tiết 15 màn hình chính
 
-### Support & Planning
+### Hỗ trợ & Kế hoạch
 21. [Roadmap](roadmap.md) - Version releases và tính năng tương lai
 22. [Troubleshooting & FAQ](troubleshooting.md) - Common issues và giải pháp
 

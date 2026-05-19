@@ -1,4 +1,4 @@
-# Database Schema
+# Lược đồ Cơ sở Dữ liệu
 
 ## 📋 Tổng quan
 
@@ -24,7 +24,7 @@ Widget Data sử dụng SQL Server làm database chính với Entity Framework C
 
 ---
 
-## 📐 Entity Relationship Diagram (ERD)
+## 📐 Sơ đồ Quan hệ Thực thể (ERD)
 
 ```
 AspNetUsers ──── (many-to-many) ──── AspNetRoles
@@ -89,7 +89,7 @@ public class ApplicationUser : IdentityUser
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? LastLoginAt { get; set; }
     
-    // Navigation properties
+    // Thuộc tính điều hướng
     public ICollection<Widget> Widgets { get; set; }
     public ICollection<DataSource> DataSources { get; set; }
 }
@@ -159,7 +159,7 @@ public class DataSource
     public DataSourceType SourceType { get; set; }
     public string Description { get; set; }
     
-    [Encrypted] // Custom attribute - auto encrypt/decrypt
+    [Encrypted] // Thuộc tính tùy chỉnh - tự động mã hóa/giải mã
     public string ConnectionString { get; set; }
     public string Host { get; set; }
     public int? Port { get; set; }
@@ -181,7 +181,7 @@ public class DataSource
     public DateTime? LastTestedAt { get; set; }
     public string LastTestResult { get; set; }
     
-    // Navigation
+    // Điều hướng
     public ApplicationUser CreatedByUser { get; set; }
     public ICollection<Widget> Widgets { get; set; }
 }
@@ -230,7 +230,7 @@ public class Widget
     public WidgetType WidgetType { get; set; }
     public string Description { get; set; }
     public int? DataSourceId { get; set; }
-    public string Configuration { get; set; }  // JSON serialized WidgetConfig
+    public string Configuration { get; set; }  // JSON đã tuần tự hóa của WidgetConfig
     public string ChartConfig { get; set; }
     public bool IsActive { get; set; } = true;
     public bool CacheEnabled { get; set; } = true;
@@ -241,7 +241,7 @@ public class Widget
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     
-    // Navigation
+    // Điều hướng
     public DataSource DataSource { get; set; }
     public ApplicationUser CreatedByUser { get; set; }
     public WidgetSchedule Schedule { get; set; }
@@ -363,7 +363,7 @@ public class DataSeeder
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager)
     {
-        // Seed roles
+        // Nạp roles
         var roles = new[] { "Admin", "Manager", "Developer", "Viewer" };
         foreach (var role in roles)
         {
@@ -371,7 +371,7 @@ public class DataSeeder
                 await roleManager.CreateAsync(new IdentityRole(role));
         }
         
-        // Seed admin user
+        // Nạp tài khoản admin
         if (!context.Users.Any())
         {
             var admin = new ApplicationUser
@@ -386,7 +386,7 @@ public class DataSeeder
             await userManager.AddToRoleAsync(admin, "Admin");
         }
         
-        // Seed sample DataSource
+        // Nạp DataSource mẫu
         if (!context.DataSources.Any())
         {
             context.DataSources.Add(new DataSource
@@ -451,7 +451,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<AuditLog>()
             .HasIndex(a => a.Timestamp);
         
-        // Encrypted fields (via value converter)
+        // Các trường mã hóa (thông qua value converter)
         modelBuilder.Entity<DataSource>()
             .Property(d => d.ConnectionString)
             .HasConversion(new EncryptedStringConverter());
@@ -469,7 +469,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
 ---
 
-## 📊 Database Size Estimation
+## 📊 Ước tính Kích thước Database
 
 | Bảng | Dự kiến rows (1 năm) | Dung lượng ước tính |
 |------|---------------------|---------------------|
@@ -485,7 +485,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
 ---
 
-## 🧹 Data Retention
+## 🧹 Lưu trữ Dữ liệu
 
 ```sql
 -- Xóa executions cũ hơn 90 ngày

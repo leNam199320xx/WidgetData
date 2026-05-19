@@ -1,4 +1,4 @@
-# Security & Bảo mật
+# Bảo mật
 
 ## 📋 Tổng quan
 
@@ -15,7 +15,7 @@ Widget Data áp dụng **8 lớp bảo mật** để đảm bảo an toàn dữ 
 
 ---
 
-## 🔐 1. Authentication (Xác thực)
+## 🔐 1. Xác thực
 
 ### ASP.NET Core Identity
 
@@ -42,7 +42,7 @@ services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddDefaultTokenProviders();
 ```
 
-### JWT Authentication
+### Xác thực JWT
 
 ```csharp
 // JWT Configuration
@@ -99,7 +99,7 @@ public string GenerateJwtToken(ApplicationUser user, IList<string> roles)
 }
 ```
 
-### Multi-Factor Authentication (MFA)
+### Xác thực Đa yếu tố (MFA)
 
 ```csharp
 // Enable MFA for user
@@ -131,7 +131,7 @@ public async Task<bool> VerifyMfaCodeAsync(string userId, string code)
 }
 ```
 
-### Social Login (OAuth 2.0)
+### Đăng nhập mạng xã hội (OAuth 2.0)
 
 ```csharp
 // Google Authentication
@@ -150,9 +150,9 @@ services.AddAuthentication()
 
 ---
 
-## 🔒 2. Authorization (Phân quyền)
+## 🔒 2. Phân quyền
 
-### Role-Based Access Control (RBAC)
+### Kiểm soát Truy cập Theo Vai trò (RBAC)
 
 ```csharp
 // Define Roles
@@ -198,7 +198,7 @@ public async Task<IActionResult> DeleteWidget(int id)
 }
 ```
 
-### Policy-Based Authorization
+### Phân quyền Theo Chính sách
 
 ```csharp
 // Define Policies
@@ -245,7 +245,7 @@ public async Task<IActionResult> UpdateWidget(int id, [FromBody] WidgetDto dto)
 }
 ```
 
-### Resource-Based Authorization
+### Phân quyền Theo Tài nguyên
 
 ```csharp
 // In Controller
@@ -272,9 +272,9 @@ public async Task<IActionResult> UpdateWidget(int id, [FromBody] WidgetDto dto)
 
 ---
 
-## 🔐 3. Data Encryption
+## 🔐 3. Mã hóa Dữ liệu
 
-### Encryption at Rest
+### Mã hóa Dữ liệu lưu trữ
 
 ```csharp
 // Encrypt sensitive fields in database
@@ -338,7 +338,7 @@ public class DataSource
 }
 ```
 
-### Encryption in Transit (HTTPS/TLS)
+### Mã hóa Truyền tải (HTTPS/TLS)
 
 ```csharp
 // Force HTTPS in production
@@ -367,7 +367,7 @@ public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
 }
 ```
 
-### Secrets Management
+### Quản lý Bí mật
 
 ```bash
 # User Secrets (Development)
@@ -384,9 +384,9 @@ services.AddAzureKeyVault(
 
 ---
 
-## 🛡️ 4. API Security
+## 🛡️ 4. Bảo mật API
 
-### CORS Configuration
+### Cấu hình CORS
 
 ```csharp
 services.AddCors(options =>
@@ -403,7 +403,7 @@ services.AddCors(options =>
 app.UseCors("AllowSpecificOrigins");
 ```
 
-### Rate Limiting
+### Giới hạn tốc độ
 
 ```csharp
 // Install: AspNetCoreRateLimit
@@ -433,7 +433,7 @@ services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 }
 ```
 
-### Anti-CSRF Tokens
+### Token Chống CSRF
 
 ```csharp
 // For Blazor Server
@@ -452,7 +452,7 @@ services.AddAntiforgery(options =>
 
 ---
 
-## 📝 5. Audit Logging
+## 📝 5. Ghi log Kiểm toán
 
 ```csharp
 public class AuditLog
@@ -499,7 +499,7 @@ await _auditService.LogAsync("CREATE", "Widget", widget.Id, new { widget.Name, w
 
 ---
 
-## ✅ 6. Input Validation
+## ✅ 6. Kiểm tra Đầu vào
 
 ```csharp
 public class WidgetDto
@@ -534,7 +534,7 @@ public async Task<List<Widget>> GetWidgetsByNameAsync(string name)
 
 ---
 
-## 📊 7. Security Headers
+## 📊 7. Tiêu đề Bảo mật
 
 ```csharp
 app.Use(async (context, next) =>
@@ -561,9 +561,9 @@ app.Use(async (context, next) =>
 
 ---
 
-## 🌍 8. Compliance & Standards
+## 🌍 8. Tuân thủ & Tiêu chuẩn
 
-### GDPR Compliance
+### Tuân thủ GDPR
 
 - **Right to Access**: API để user export data của họ
 - **Right to Deletion**: Soft delete với flag `IsDeleted`
@@ -596,46 +596,46 @@ public async Task<IActionResult> DeleteMyAccount()
 }
 ```
 
-### OWASP Top 10 Mitigation
+### Giảm thiểu OWASP Top 10
 
-| Threat | Mitigation |
+| Mối đe dọa | Giải pháp giảm thiểu |
 |--------|------------|
-| **A01:2021 – Broken Access Control** | RBAC, Policy-based authorization |
-| **A02:2021 – Cryptographic Failures** | AES-256 encryption, HTTPS/TLS |
-| **A03:2021 – Injection** | Parameterized queries, Input validation |
-| **A04:2021 – Insecure Design** | Threat modeling, Security by design |
-| **A05:2021 – Security Misconfiguration** | Secure defaults, Security headers |
-| **A06:2021 – Vulnerable Components** | Dependabot, Regular updates |
-| **A07:2021 – Authentication Failures** | MFA, Strong password policy |
-| **A08:2021 – Integrity Failures** | Code signing, SRI hashes |
-| **A09:2021 – Logging Failures** | Comprehensive audit logging |
-| **A10:2021 – SSRF** | Whitelist URLs, Input validation |
+| **A01:2021 – Kiểm soát Truy cập Bị phá vỡ** | RBAC, ủy quyền dựa trên Policy |
+| **A02:2021 – Lỗi Mật mã** | Mã hóa AES-256, HTTPS/TLS |
+| **A03:2021 – Injection** | Parameterized queries, Kiểm tra đầu vào |
+| **A04:2021 – Thiết kế Không an toàn** | Threat modeling, Security by design |
+| **A05:2021 – Cấu hình Sai Bảo mật** | Mặc định an toàn, Security headers |
+| **A06:2021 – Thành phần Dễ bị tấn công** | Dependabot, Cập nhật thường xuyên |
+| **A07:2021 – Lỗi Xác thực** | MFA, Chính sách mật khẩu mạnh |
+| **A08:2021 – Lỗi Toàn vẹn** | Code signing, SRI hashes |
+| **A09:2021 – Lỗi Ghi log** | Audit logging toàn diện |
+| **A10:2021 – SSRF** | Whitelist URL, Kiểm tra đầu vào |
 
 ---
 
-## 🔍 Security Checklist
+## 🔍 Danh sách kiểm tra Bảo mật
 
-### Development
-- [ ] All passwords hashed with bcrypt/PBKDF2
-- [ ] Secrets stored in User Secrets / Key Vault
-- [ ] Input validation on all endpoints
-- [ ] SQL injection prevention (EF Core)
-- [ ] XSS prevention (encode output)
-- [ ] CSRF tokens on forms
+### Phát triển
+- [ ] Tất cả mật khẩu được hash bằng bcrypt/PBKDF2
+- [ ] Bí mật lưu trong User Secrets / Key Vault
+- [ ] Kiểm tra đầu vào trên tất cả endpoint
+- [ ] Phòng chống SQL injection (EF Core)
+- [ ] Phòng chống XSS (encode đầu ra)
+- [ ] CSRF token trên các form
 
-### Production
-- [ ] HTTPS enforced (HSTS)
-- [ ] Security headers configured
-- [ ] Rate limiting enabled
-- [ ] CORS configured properly
-- [ ] Audit logging active
-- [ ] MFA enabled for admins
-- [ ] Regular security updates
-- [ ] Penetration testing completed
+### Sản xuất
+- [ ] HTTPS bắt buộc (HSTS)
+- [ ] Security headers được cấu hình
+- [ ] Rate limiting được bật
+- [ ] CORS được cấu hình đúng
+- [ ] Audit logging hoạt động
+- [ ] MFA được bật cho admin
+- [ ] Cập nhật bảo mật thường xuyên
+- [ ] Kiểm thử thâm nhập đã hoàn thành
 
 ---
 
-## 📚 Resources
+## 📚 Tài nguyên
 
 - [ASP.NET Core Security](https://docs.microsoft.com/aspnet/core/security/)
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)

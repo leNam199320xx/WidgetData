@@ -1,4 +1,4 @@
-# Multi-Tenancy Architecture
+# Kiến trúc Multi-Tenancy
 
 ## 🎯 KHUYẾN NGHỊ: Shared Database + TenantId (Đơn giản nhất)
 
@@ -28,7 +28,7 @@ Multi-tenancy là quyết định kiến trúc **CỰC KỲ KHÓ thay đổi sau
 
 ## 📋 Tổng quan Multi-Tenancy
 
-### Single-Tenant vs Multi-Tenant
+### Single-Tenant so với Multi-Tenant
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -84,7 +84,7 @@ Multi-tenancy là quyết định kiến trúc **CỰC KỲ KHÓ thay đổi sau
 
 ## 🏗️ Multi-Tenant Database Strategies
 
-### Strategy 1: Database per Tenant (Isolation tốt nhất)
+### Chiến lược 1: Database riêng mỗi Tenant (Cô lập tốt nhất)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -128,7 +128,7 @@ Multi-tenancy là quyết định kiến trúc **CỰC KỲ KHÓ thay đổi sau
 
 ---
 
-### Strategy 2: Schema per Tenant (Cân bằng)
+### Chiến lược 2: Schema riêng mỗi Tenant (Cân bằng)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -189,7 +189,7 @@ public class TenantDbContext : DbContext
 
 ---
 
-### Strategy 3: Shared Database + TenantId Column (Phổ biến nhất)
+### Chiến lược 3: Shared Database + Cột TenantId (Phổ biến nhất)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -235,9 +235,9 @@ public class TenantDbContext : DbContext
 
 ---
 
-## 🔐 Implementation: Shared Database Strategy
+## 🔐 Triển khai: Chiến lược Shared Database
 
-### 1. Database Schema
+### 1. Lược đồ Cơ sở Dữ liệu
 
 ```sql
 -- Tenants table (master data)
@@ -296,7 +296,7 @@ CREATE TABLE AspNetUsers (
 
 ---
 
-### 2. Entity Models
+### 2. Mô hình Entity
 
 ```csharp
 // Base entity với TenantId
@@ -304,11 +304,11 @@ public abstract class TenantEntity
 {
     public int TenantId { get; set; }
     
-    // Navigation property
+    // Thuộc tính điều hướng
     public Tenant Tenant { get; set; }
 }
 
-// Tenant master entity
+// Thực thể gốc Tenant
 public class Tenant
 {
     public int Id { get; set; }
@@ -319,7 +319,7 @@ public class Tenant
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     
-    // Subscription info
+    // Thông tin gói đăng ký
     public string SubscriptionPlan { get; set; }
     public int MaxWidgets { get; set; }
     public int MaxUsers { get; set; }
@@ -336,7 +336,7 @@ public class Widget : TenantEntity
     public DateTime CreatedAt { get; set; }
 }
 
-// DataSource entity
+// Entity DataSource
 public class DataSource : TenantEntity
 {
     public int Id { get; set; }
@@ -356,7 +356,7 @@ public class ApplicationUser : IdentityUser
 
 ---
 
-### 3. Tenant Resolution Service
+### 3. Dịch vụ Phân giải Tenant
 
 ```csharp
 public interface ITenantResolver
@@ -426,7 +426,7 @@ public class TenantResolver : ITenantResolver
 
 ---
 
-### 4. DbContext với Tenant Filtering
+### 4. DbContext với Lọc Tenant
 
 ```csharp
 public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
@@ -501,7 +501,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
 ---
 
-### 5. Repository Pattern với Tenant Filtering
+### 5. Repository Pattern với Lọc Tenant
 
 ```csharp
 public interface IWidgetRepository
@@ -608,7 +608,7 @@ public class AuthService
 
 ---
 
-### 7. Middleware để Validate Tenant
+### 7. Middleware Xác thực Tenant
 
 ```csharp
 public class TenantValidationMiddleware
@@ -662,9 +662,9 @@ app.UseMiddleware<TenantValidationMiddleware>();
 
 ---
 
-## 🚀 Tenant Management
+## 🚀 Quản lý Tenant
 
-### Tenant Registration Flow
+### Quy trình Đăng ký Tenant
 
 ```csharp
 public class TenantService
@@ -743,9 +743,9 @@ public class TenantService
 
 ---
 
-## 🎯 Frontend: Multi-Tenant Login
+## 🎯 Frontend: Đăng nhập Multi-Tenant
 
-### Login Flow với Tenant
+### Luồng Đăng nhập với Tenant
 
 ```razor
 @page "/login"
@@ -934,7 +934,7 @@ public class WidgetServiceTests
 
 ---
 
-## 📈 Migration Path
+## 📈 Lộ trình Di chuyển
 
 ### Nếu đã có Single-Tenant, migrate sang Multi-Tenant:
 
@@ -969,9 +969,9 @@ CREATE INDEX IX_Widgets_TenantId ON Widgets(TenantId);
 
 ---
 
-## 💰 Cost Analysis
+## 💰 Phân tích Chi phí
 
-### Single-Tenant (10 customers)
+### Single-Tenant (10 khách hàng)
 
 | Item | Cost/Month |
 |------|------------|
@@ -1366,7 +1366,7 @@ var widgets = await context.Widgets.ToListAsync(); // Chỉ thấy widgets của
 
 ---
 
-## 🚀 Roadmap Implementation
+## 🚀 Lộ trình Triển khai
 
 ### ⚡ Fast Track (Shared Database - 1-2 ngày)
 
@@ -1394,7 +1394,7 @@ var widgets = await context.Widgets.ToListAsync(); // Chỉ thấy widgets của
 - [ ] Deploy to staging
 - [ ] Final testing
 
-### 📈 Future Enhancements (Optional)
+### 📈 Cải tiến Tương lai (Tuỳ chọn)
 
 **Phase 2 (Tuần 2-3): Admin Features**
 - [ ] Tenant registration UI
@@ -1410,7 +1410,7 @@ var widgets = await context.Widgets.ToListAsync(); // Chỉ thấy widgets của
 
 ---
 
-## 🔧 Troubleshooting
+## 🔧 Khắc phục Sự cố
 
 ### Lỗi: "TenantId not found in token"
 
