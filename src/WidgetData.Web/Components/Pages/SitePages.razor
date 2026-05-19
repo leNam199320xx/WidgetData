@@ -62,6 +62,47 @@
     @(_previewing ? "Đang tạo..." : "Preview SPA")
 </MudButton>
 
+<MudPaper Class="pa-4 mb-4" Elevation="2">
+    <MudText Typo="Typo.h6" Class="mb-2">Trang khách đang Active</MudText>
+    @if (_pages == null)
+    {
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    }
+    else if (!_activeFrontendPages.Any())
+    {
+        <MudAlert Severity="Severity.Info">Chưa có trang Frontend nào đang Active.</MudAlert>
+    }
+    else
+    {
+        <MudTable Items="_activeFrontendPages" Dense="true" Hover="true" Striped="true">
+            <HeaderContent>
+                <MudTh>Tiêu đề</MudTh>
+                <MudTh>Slug</MudTh>
+                <MudTh>Tenant</MudTh>
+                <MudTh>Publish</MudTh>
+                <MudTh>Widget</MudTh>
+                <MudTh>View</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Title</MudTd>
+                <MudTd>
+                    <MudChip T="string" Size="Size.Small" Color="Color.Success">@context.Slug</MudChip>
+                </MudTd>
+                <MudTd>@context.TenantId</MudTd>
+                <MudTd>@(context.PublishedAt?.ToString("dd/MM/yyyy HH:mm") ?? "-")</MudTd>
+                <MudTd>@(context.Widgets?.Count ?? 0)</MudTd>
+                <MudTd>
+                    <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Info"
+                               StartIcon="@Icons.Material.Filled.Visibility"
+                               OnClick="() => PreviewPage(context.Id)">
+                        View
+                    </MudButton>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+</MudPaper>
+
 @if (_pages == null)
 {
     <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
@@ -223,6 +264,7 @@ else
 
 @code {
     List<PageDto>? _pages;
+    List<PageDto> _activeFrontendPages = new();
     bool _showForm;
     int? _editingId;
     CreatePageDto _form = new();
@@ -244,6 +286,12 @@ else
     async Task LoadPages()
     {
         _pages = (await ApiService.GetPagesAsync())?.ToList();
+        _activeFrontendPages = _pages?
+            .Where(p => p.IsActive && p.ScreenType == ScreenType.Frontend)
+            .OrderBy(p => p.TenantId)
+            .ThenBy(p => p.Title)
+            .ToList()
+            ?? new List<PageDto>();
     }
 
     void ShowAddForm()

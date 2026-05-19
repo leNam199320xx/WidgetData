@@ -69,6 +69,8 @@ public static class DependencyInjection
             services.AddScoped<IExecutionRepository, FileBackedExecutionRepository>();
             services.AddScoped<IWidgetConfigArchiveRepository, FileBackedWidgetConfigArchiveRepository>();
             services.AddScoped<IPageRepository, FileBackedPageRepository>();
+            // In json mode JSON group repos (registered above) are used directly;
+            // no override needed here
         }
         else
         {
@@ -79,6 +81,9 @@ public static class DependencyInjection
             services.AddScoped<IExecutionRepository, ExecutionRepository>();
             services.AddScoped<IWidgetConfigArchiveRepository, WidgetConfigArchiveRepository>();
             services.AddScoped<IPageRepository, PageRepository>();
+            // Override JSON group repos with EF-backed adapters so WidgetGroupService works in EF mode
+            services.AddScoped<IJsonWidgetGroupRepository, EfWidgetGroupRepositoryAdapter>();
+            services.AddScoped<IJsonWidgetGroupMemberRepository, EfWidgetGroupMemberRepositoryAdapter>();
         }
 
         services.AddScoped<IIdeaBoardRepository, IdeaBoardRepository>();

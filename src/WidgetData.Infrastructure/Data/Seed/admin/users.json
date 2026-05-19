@@ -247,5 +247,36 @@
     "roles": [
       "TenantAdmin"
     ]
+  },
+  {
+    "email": "viewer@widgetdata.com",
+    "displayName": "Viewer User",
+    "password": "Viewer@123!",
+    "isActive": true,
+    "tenantSlug": null,
+    "roles": [
+      "Viewer"
+    ]
+  },
+  {
+    "email": "editor@widgetdata.com",
+    "displayName": "Content Editor",
+    "password": "Editor@123!",
+    "isActive": true,
+    "tenantSlug": null,
+    "roles": [
+      "ContentEditor"
+    ]
+  },
+  {
+    "email": "staff@demo.tenant",
+    "displayName": "Staff — Demo Tenant",
+    "password": "TenantUser@123!",
+    "isActive": true,
+    "tenantSlug": "demo",
+    "lastLoginDaysAgo": 1,
+    "roles": [
+      "TenantUser"
+    ]
   }
 ]

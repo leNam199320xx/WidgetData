@@ -105,6 +105,16 @@ public class FileBackedExecutionRepository : IExecutionRepository
 
     public Task<WidgetExecution?> GetByIdAsync(int id) => _repo.GetByIdAsync(id);
 
+    public async Task<IEnumerable<WidgetExecution>> GetAllAsync()
+        => await _repo.GetAllAsync();
+
+    public async Task<IEnumerable<WidgetExecution>> GetRecentAsync(int days, int limit)
+    {
+        var since = DateTime.UtcNow.AddDays(-days);
+        return (await _repo.GetByDateRangeAsync(since, DateTime.UtcNow.AddDays(1)))
+            .Take(limit);
+    }
+
     public async Task<IEnumerable<WidgetExecution>> GetByWidgetIdAsync(int widgetId)
         => await _repo.GetByWidgetAsync(widgetId, 100);
 

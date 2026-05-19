@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using WidgetData.Application.DTOs;
 using WidgetData.Domain.Entities;
 using WidgetData.Infrastructure.Data;
+using WidgetData.Infrastructure.Repositories;
 using WidgetData.Infrastructure.Services;
 
 namespace WidgetData.Tests.Services;
@@ -17,7 +18,9 @@ public class WidgetGroupServiceTests : IDisposable
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         _context = new ApplicationDbContext(options);
-        _service = new WidgetGroupService(_context);
+        _service = new WidgetGroupService(
+            new EfWidgetGroupRepositoryAdapter(_context),
+            new EfWidgetGroupMemberRepositoryAdapter(_context));
     }
 
     public void Dispose()
