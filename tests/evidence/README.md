@@ -57,6 +57,16 @@ Kịch bản test: **Khách hàng đăng ký website giới thiệu sách** sử
 
 ---
 
+### 🧩 04b – Backend: Chủ shop thêm sách bằng Widget Form
+![Add Book Widget Form](11-backend-add-book-widget-form.png)
+> Chủ shop dùng mục **📚 Thêm sách (Widget Form)** trên dashboard demo  
+> Submit qua Form API, sau đó tự đồng bộ vào DataSource JSON sách  
+> Kết quả hiển thị trạng thái **✅ Đã thêm sách thành công và cập nhật datasource**
+
+**API calls:** `POST /api/form/{widgetId}` + `POST /api/datasources/5/upload` → 200 OK
+
+---
+
 ### ✏️ 05 – Backend: Chỉnh sửa sách
 ![Edit Book](05-backend-edit-book.png)
 > Cập nhật sách "Machine Learning với Python" → "Machine Learning với Python - Phiên bản 2026"  
@@ -115,6 +125,7 @@ Kịch bản test: **Khách hàng đăng ký website giới thiệu sách** sử
 | API hoạt động | #01, #02 | ✅ Pass |
 | Backend - xem danh sách sách | #03 | ✅ Pass |
 | Backend - thêm sách mới | #04 | ✅ Pass |
+| Backend - thêm sách bằng widget form | #04b | ✅ Pass |
 | Backend - chỉnh sửa sách | #05 | ✅ Pass |
 | Báo cáo theo tháng & quý | #06 | ✅ Pass |
 | Báo cáo top sách xem nhiều | #07 | ✅ Pass |
@@ -122,4 +133,4 @@ Kịch bản test: **Khách hàng đăng ký website giới thiệu sách** sử
 | Frontend - danh sách sách | #09 | ✅ Pass |
 | Frontend - xem chi tiết sách | #10 | ✅ Pass |
 
-**Tổng: 9/9 test cases PASS** ✅
+**Tổng: 10/10 test cases PASS** ✅
