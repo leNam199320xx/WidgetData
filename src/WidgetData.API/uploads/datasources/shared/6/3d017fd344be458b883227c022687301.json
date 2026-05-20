@@ -1,0 +1,22 @@
+[
+  {"id":1,"book_id":1,"book_title":"Lập Trình .NET 10 Nâng Cao","view_date":"2026-01-05","views":18,"month":"2026-01","quarter":"Q1 2026"},
+  {"id":2,"book_id":2,"book_title":"Machine Learning với Python","view_date":"2026-01-05","views":32,"month":"2026-01","quarter":"Q1 2026"},
+  {"id":3,"book_id":3,"book_title":"Thiết Kế UX/UI Hiện Đại","view_date":"2026-01-05","views":14,"month":"2026-01","quarter":"Q1 2026"},
+  {"id":4,"book_id":1,"book_title":"Lập Trình .NET 10 Nâng Cao","view_date":"2026-02-12","views":25,"month":"2026-02","quarter":"Q1 2026"},
+  {"id":5,"book_id":2,"book_title":"Machine Learning với Python","view_date":"2026-02-12","views":41,"month":"2026-02","quarter":"Q1 2026"},
+  {"id":6,"book_id":5,"book_title":"Nghệ Thuật Bán Hàng Online","view_date":"2026-02-12","views":29,"month":"2026-02","quarter":"Q1 2026"},
+  {"id":7,"book_id":1,"book_title":"Lập Trình .NET 10 Nâng Cao","view_date":"2026-03-20","views":37,"month":"2026-03","quarter":"Q1 2026"},
+  {"id":8,"book_id":2,"book_title":"Machine Learning với Python","view_date":"2026-03-20","views":55,"month":"2026-03","quarter":"Q1 2026"},
+  {"id":9,"book_id":6,"book_title":"Docker & Kubernetes Thực Chiến","view_date":"2026-03-20","views":21,"month":"2026-03","quarter":"Q1 2026"},
+  {"id":10,"book_id":2,"book_title":"Machine Learning với Python","view_date":"2026-04-08","views":48,"month":"2026-04","quarter":"Q2 2026"},
+  {"id":11,"book_id":1,"book_title":"Lập Trình .NET 10 Nâng Cao","view_date":"2026-04-08","views":33,"month":"2026-04","quarter":"Q2 2026"},
+  {"id":12,"book_id":5,"book_title":"Nghệ Thuật Bán Hàng Online","view_date":"2026-04-08","views":38,"month":"2026-04","quarter":"Q2 2026"},
+  {"id":13,"book_id":2,"book_title":"Machine Learning với Python","view_date":"2026-05-01","views":62,"month":"2026-05","quarter":"Q2 2026"},
+  {"id":14,"book_id":1,"book_title":"Lập Trình .NET 10 Nâng Cao","view_date":"2026-05-01","views":45,"month":"2026-05","quarter":"Q2 2026"},
+  {"id":15,"book_id":6,"book_title":"Docker & Kubernetes Thực Chiến","view_date":"2026-05-01","views":28,"month":"2026-05","quarter":"Q2 2026"},
+  {"id":16,"book_id":3,"book_title":"Thiết Kế UX/UI Hiện Đại","view_date":"2026-05-10","views":19,"month":"2026-05","quarter":"Q2 2026"},
+  {"id":17,"book_id":4,"book_title":"Kinh Tế Hành Vi","view_date":"2026-05-10","views":12,"month":"2026-05","quarter":"Q2 2026"},
+  {"id":18,"book_id":7,"book_title":"Tâm Lý Học Sáng Tạo","view_date":"2026-05-15","views":15,"month":"2026-05","quarter":"Q2 2026"},
+  {"id":19,"book_id":8,"book_title":"Blockchain & Web3 Cơ Bản","view_date":"2026-05-15","views":9,"month":"2026-05","quarter":"Q2 2026"},
+  {"id":20,"book_id":2,"book_title":"Machine Learning với Python","view_date":"2026-05-19","views":71,"month":"2026-05","quarter":"Q2 2026"}
+]
