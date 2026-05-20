@@ -333,9 +333,11 @@
   }
 
   function buildBookFromFormData(data) {
+    const fallbackTitle = firstNonEmpty(data, ['noi_dung', 'message', 'content']) || `Sách mới ${new Date().toISOString().slice(0, 19)}`;
+    const fallbackAuthor = firstNonEmpty(data, ['ho_ten', 'full_name', 'name']) || 'Chưa rõ tác giả';
     return {
-      title: firstNonEmpty(data, ['title', 'book_title', 'ten_sach', 'name']),
-      author: firstNonEmpty(data, ['author', 'tac_gia']),
+      title: firstNonEmpty(data, ['title', 'book_title', 'ten_sach']) || fallbackTitle,
+      author: firstNonEmpty(data, ['author', 'tac_gia']) || fallbackAuthor,
       category: firstNonEmpty(data, ['category', 'danh_muc']) || 'Khác',
       price: toNumberOrDefault(firstNonEmpty(data, ['price', 'gia']), 0),
       pages: toNumberOrDefault(firstNonEmpty(data, ['pages', 'so_trang']), 0),
@@ -348,9 +350,6 @@
   }
 
   async function appendBookToDatasource(book, listWidgetId, dataSourceId) {
-    if (!book.title) throw new Error('Thiếu trường bắt buộc: title (tên sách).');
-    if (!book.author) throw new Error('Thiếu trường bắt buộc: author (tác giả).');
-
     const bookData = await WidgetEngine.widgets.getData(listWidgetId);
     const rows = Array.isArray(bookData?.rows) ? bookData.rows : [];
 
