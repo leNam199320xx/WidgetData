@@ -1,4 +1,5 @@
 @page "/login"
+@layout WidgetData.Web.Components.Layout.AuthLayout
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using MudBlazor
 @using WidgetData.Application.DTOs
@@ -10,47 +11,165 @@
 
 <PageTitle>@L["Login_Title"] - WidgetData</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Small" Class="mt-16">
-    <MudCard>
-        <MudCardHeader>
-            <CardHeaderContent>
-                <MudText Typo="Typo.h5" Align="Align.Center">@L["Login_Title"]</MudText>
-                <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Secondary">@L["Login_Subtitle"]</MudText>
-            </CardHeaderContent>
-        </MudCardHeader>
-        <MudCardContent>
-            @if (_error != null)
-            {
-                <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
-            }
-            <MudTextField @bind-Value="_email" Label="Email" Variant="Variant.Outlined" InputType="InputType.Email"
-                          Class="mb-3" Disabled="_loading" />
-            <MudTextField @bind-Value="_password" Label="@L["Login_Password"]" Variant="Variant.Outlined"
-                          InputType="@(_showPassword ? InputType.Text : InputType.Password)"
-                          Adornment="Adornment.End"
-                          AdornmentIcon="@(_showPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
-                          OnAdornmentClick="() => _showPassword = !_showPassword"
-                          Class="mb-4" Disabled="_loading" />
-        </MudCardContent>
-        <MudCardActions Class="px-4 pb-4">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true"
-                       OnClick="HandleLogin" Disabled="_loading">
-                @if (_loading)
-                {
-                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                }
-                @L["Login_Title"]
-            </MudButton>
-        </MudCardActions>
-    </MudCard>
-</MudContainer>
+@if (_checkingSession)
+{
+    <div class="auth-boot-screen">
+        <MudPaper Class="pa-8 auth-boot-card" Elevation="6">
+            <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" Class="mb-4" />
+            <MudText Typo="Typo.h6" Align="Align.Center">Đang kiểm tra phiên đăng nhập</MudText>
+        </MudPaper>
+    </div>
+}
+else
+{
+    <div class="login-page">
+        <div class="login-shell">
+            <MudPaper Class="login-hero" Elevation="0">
+                <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Class="mb-4">
+                    ADMIN CONSOLE
+                </MudChip>
+                <MudText Typo="Typo.h3" Class="mb-3">Quản trị WidgetData trên một màn hình đăng nhập rõ ràng, nhanh và an toàn.</MudText>
+                <MudText Typo="Typo.body1" Class="mb-6 auth-hero-copy">
+                    Truy cập dashboard, dữ liệu demo, lịch chạy, widget và tenant management bằng luồng đăng nhập dành riêng cho khu vực admin.
+                </MudText>
+
+                <MudGrid Class="mb-6">
+                    <MudItem xs="12" sm="6">
+                        <MudPaper Class="auth-highlight-card" Elevation="0">
+                            <MudIcon Icon="@Icons.Material.Filled.Speed" Color="Color.Primary" Class="mb-2" />
+                            <MudText Typo="Typo.subtitle1">Vào nhanh dữ liệu demo</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                Chọn sẵn tài khoản demo để kiểm tra quyền Admin, SuperAdmin hoặc TenantAdmin.
+                            </MudText>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudPaper Class="auth-highlight-card" Elevation="0">
+                            <MudIcon Icon="@Icons.Material.Filled.Shield" Color="Color.Success" Class="mb-2" />
+                            <MudText Typo="Typo.subtitle1">Giữ đúng ngữ cảnh</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                Sau khi đăng nhập, hệ thống tự quay lại màn hình bạn đang mở trước đó.
+                            </MudText>
+                        </MudPaper>
+                    </MudItem>
+                </MudGrid>
+
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Tài khoản demo nhanh</MudText>
+                <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => UseDemoAccount("superadmin@widgetdata.com"))">
+                        SuperAdmin
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => UseDemoAccount("admin@widgetdata.com"))">
+                        Admin
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => UseDemoAccount("admin@demo.tenant"))">
+                        Tenant Admin
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+
+            <MudCard Class="login-card">
+                <MudCardHeader Class="pb-0">
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h4">@L["Login_Title"]</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Login_Subtitle"]</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="pt-4">
+                    @if (!string.IsNullOrWhiteSpace(_safeReturnUrl) && _safeReturnUrl != "/")
+                    {
+                        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">
+                            Sau khi đăng nhập, bạn sẽ được chuyển về <strong>@_safeReturnUrl</strong>.
+                        </MudAlert>
+                    }
+                    @if (_error != null)
+                    {
+                        <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+                    }
+
+                    <EditForm Model="_model" OnValidSubmit="HandleLogin">
+                        <DataAnnotationsValidator />
+
+                        <MudTextField @bind-Value="_model.Email" For="@(() => _model.Email)" Label="Email"
+                                      Variant="Variant.Outlined" InputType="InputType.Email" FullWidth="true"
+                                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AlternateEmail"
+                                      Class="mb-3" Disabled="_loading" />
+                        <MudTextField @bind-Value="_model.Password" For="@(() => _model.Password)" Label="@L["Login_Password"]"
+                                      Variant="Variant.Outlined" FullWidth="true"
+                                      InputType="@(_showPassword ? InputType.Text : InputType.Password)"
+                                      Adornment="Adornment.End"
+                                      AdornmentIcon="@(_showPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
+                                      OnAdornmentClick="() => _showPassword = !_showPassword"
+                                      Class="mb-2" Disabled="_loading" />
+                        <ValidationSummary class="login-validation-summary" />
+
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block mb-4">
+                            Demo password mặc định: <strong>Admin@123!</strong>
+                        </MudText>
+
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true"
+                                   Size="Size.Large" Disabled="_loading">
+                            @if (_loading)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            }
+                            @L["Login_Title"]
+                        </MudButton>
+                    </EditForm>
+                </MudCardContent>
+            </MudCard>
+        </div>
+    </div>
+}
 
 @code {
-    string _email = string.Empty;
-    string _password = string.Empty;
+    private const string DemoPassword = "Admin@123!";
+    private LoginDto _model = new();
+    private string _safeReturnUrl = "/";
     string? _error;
     bool _loading;
     bool _showPassword;
+    bool _checkingSession = true;
+
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    public string? ReturnUrl { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _safeReturnUrl = GetSafeReturnUrl(ReturnUrl);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        try
+        {
+            var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "jwt_token");
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                ApiService.SetToken(token);
+                AuthStateProvider.SetUser(token);
+                if (AuthStateProvider.IsAuthenticated)
+                {
+                    Nav.NavigateTo(_safeReturnUrl, replace: true);
+                    return;
+                }
+
+                await JS.InvokeVoidAsync("sessionStorage.removeItem", "jwt_token");
+            }
+        }
+        catch
+        {
+            // Ignore bootstrap failures and keep the login page visible.
+        }
+
+        ApiService.ClearToken();
+        AuthStateProvider.ClearUser();
+        _checkingSession = false;
+        StateHasChanged();
+    }
 
     async Task HandleLogin()
     {
@@ -58,13 +177,13 @@
         _error = null;
         try
         {
-            var result = await ApiService.LoginAsync(new LoginDto { Email = _email, Password = _password });
+            var result = await ApiService.LoginAsync(_model);
             if (result?.Token != null)
             {
                 await JS.InvokeVoidAsync("sessionStorage.setItem", "jwt_token", result.Token);
                 ApiService.SetToken(result.Token);
                 AuthStateProvider.SetUser(result.Token);
-                Nav.NavigateTo("/");
+                Nav.NavigateTo(_safeReturnUrl, replace: true);
             }
             else
             {
@@ -79,5 +198,26 @@
         {
             _loading = false;
         }
+    }
+
+    void UseDemoAccount(string email)
+    {
+        _model.Email = email;
+        _model.Password = DemoPassword;
+        _error = null;
+    }
+
+    static string GetSafeReturnUrl(string? returnUrl)
+    {
+        if (string.IsNullOrWhiteSpace(returnUrl))
+            return "/";
+
+        if (!returnUrl.StartsWith('/') || returnUrl.StartsWith("//", StringComparison.Ordinal))
+            return "/";
+
+        if (returnUrl.Equals("/login", StringComparison.OrdinalIgnoreCase))
+            return "/";
+
+        return returnUrl;
     }
 }

@@ -1,5 +1,6 @@
 @inherits LayoutComponentBase
 @using MudBlazor
+@using System.Security.Claims
 @inject NavigationManager NavManager
 @inject IStringLocalizer<SharedResource> L
 @inject WidgetData.Web.Services.ApiService ApiService
@@ -11,45 +12,134 @@
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<MudLayout>
-    <MudAppBar Elevation="1">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
-        <MudText Typo="Typo.h6" Class="ml-3">WidgetData</MudText>
-        <MudSpacer />
-        <MudButton Href="@($"/culture?name=en&redirectUri={Uri.EscapeDataString(NavManager.Uri)}")"
-                   Variant="Variant.Text" Color="Color.Inherit" Size="Size.Small">EN</MudButton>
-        <MudButton Href="@($"/culture?name=vi&redirectUri={Uri.EscapeDataString(NavManager.Uri)}")"
-                   Variant="Variant.Text" Color="Color.Inherit" Size="Size.Small">VI</MudButton>
-        <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" />
-    </MudAppBar>
-    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
-        <NavMenu />
-    </MudDrawer>
-    <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-            @Body
-        </MudContainer>
-    </MudMainContent>
-</MudLayout>
+@if (!_authReady || _redirectingToLogin)
+{
+    <div class="auth-boot-screen">
+        <MudPaper Class="pa-8 auth-boot-card" Elevation="6">
+            <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" Class="mb-4" />
+            <MudText Typo="Typo.h6" Align="Align.Center">Đang tải phiên quản trị</MudText>
+            <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Secondary">
+                Vui lòng chờ trong giây lát...
+            </MudText>
+        </MudPaper>
+    </div>
+}
+else
+{
+    <MudLayout>
+        <MudAppBar Elevation="1">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+            <MudText Typo="Typo.h6" Class="ml-3">WidgetData</MudText>
+            <MudSpacer />
+            <MudButton Href="@($"/culture?name=en&redirectUri={Uri.EscapeDataString(NavManager.Uri)}")"
+                       Variant="Variant.Text" Color="Color.Inherit" Size="Size.Small">EN</MudButton>
+            <MudButton Href="@($"/culture?name=vi&redirectUri={Uri.EscapeDataString(NavManager.Uri)}")"
+                       Variant="Variant.Text" Color="Color.Inherit" Size="Size.Small">VI</MudButton>
+            <MudMenu Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" AnchorOrigin="Origin.BottomRight"
+                     TransformOrigin="Origin.TopRight">
+                <MudMenuItem Disabled="true">@_currentUserLabel</MudMenuItem>
+                <MudMenuItem Href="/settings">Tài khoản</MudMenuItem>
+                <MudMenuItem OnClick="LogoutAsync">Đăng xuất</MudMenuItem>
+            </MudMenu>
+        </MudAppBar>
+        <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
+            <NavMenu />
+        </MudDrawer>
+        <MudMainContent>
+            <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+                @Body
+            </MudContainer>
+        </MudMainContent>
+    </MudLayout>
+}
 
 @code {
     bool _drawerOpen = true;
+    bool _authReady;
+    bool _redirectingToLogin;
+    string _currentUserLabel = "Tài khoản";
+
     void ToggleDrawer() => _drawerOpen = !_drawerOpen;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (!firstRender || _authReady)
+            return;
+
+        try
         {
-            try
+            var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "jwt_token");
+            if (!string.IsNullOrWhiteSpace(token))
             {
-                var token = await JS.InvokeAsync<string?>("sessionStorage.getItem", "jwt_token");
-                if (!string.IsNullOrEmpty(token))
-                {
-                    ApiService.SetToken(token);
-                    AuthStateProvider.SetUser(token);
-                }
+                ApiService.SetToken(token);
+                AuthStateProvider.SetUser(token);
             }
-            catch { /* JS interop not available during prerender */ }
+            else
+            {
+                ApiService.ClearToken();
+                AuthStateProvider.ClearUser();
+            }
         }
+        catch
+        {
+            ApiService.ClearToken();
+            AuthStateProvider.ClearUser();
+        }
+
+        _authReady = true;
+
+        if (!AuthStateProvider.IsAuthenticated)
+        {
+            ApiService.ClearToken();
+            AuthStateProvider.ClearUser();
+            RedirectToLogin();
+            return;
+        }
+
+        await SetCurrentUserLabelAsync();
+        StateHasChanged();
+    }
+
+    async Task SetCurrentUserLabelAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        _currentUserLabel =
+            user.FindFirst(ClaimTypes.Email)?.Value
+            ?? user.FindFirst(ClaimTypes.Name)?.Value
+            ?? "Tài khoản";
+    }
+
+    void RedirectToLogin()
+    {
+        var relativePath = NavManager.ToBaseRelativePath(NavManager.Uri);
+        if (string.Equals(relativePath, "login", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(relativePath, "Error", StringComparison.OrdinalIgnoreCase))
+        {
+            _redirectingToLogin = false;
+            StateHasChanged();
+            return;
+        }
+
+        _redirectingToLogin = true;
+        var returnUrl = string.IsNullOrWhiteSpace(relativePath) ? "/" : $"/{relativePath}";
+        NavManager.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(returnUrl)}", replace: true);
+    }
+
+    async Task LogoutAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "jwt_token");
+        }
+        catch
+        {
+            // Ignore JS interop failures during teardown.
+        }
+
+        ApiService.ClearToken();
+        AuthStateProvider.ClearUser();
+        _currentUserLabel = "Tài khoản";
+        NavManager.NavigateTo("/login", replace: true);
     }
 }

@@ -24,6 +24,12 @@ public class ApiService
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
+    public void ClearToken()
+    {
+        _tokenStore.Token = null;
+        _http.DefaultRequestHeaders.Authorization = null;
+    }
+
     private void ApplyToken()
     {
         if (_tokenStore.Token != null)
