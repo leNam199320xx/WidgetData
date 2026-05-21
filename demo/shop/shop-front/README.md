@@ -68,6 +68,7 @@ npx serve .
 - Gọi API live từ **WidgetData.API** (`http://localhost:5114/api`)
 - Chức năng demo:
   - 📈 Sales Dashboard — page config từ `pages/dashboard.json`
+  - 📚 Thêm sách (Widget Form) — chủ shop nhập sách qua Form widget và đồng bộ vào JSON datasource
   - 📡 Widget Activity — xem activity log + summary cho bất kỳ widget ID
   - 🔔 Inactivity Alerts — danh sách widget không hoạt động + alert log
   - ⚡ Chạy widget đơn — nhập Widget ID

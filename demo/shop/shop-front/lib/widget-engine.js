@@ -807,12 +807,20 @@
         new FormData(formEl).forEach((v, k) => { data[k] = v; });
 
         try {
-          await Form.submit(cfg.formId, data);
+          const submitResult = await Form.submit(cfg.formId, data);
+          if (typeof cfg.onSubmitSuccess === 'function') {
+            await cfg.onSubmitSuccess({ formId: cfg.formId, data, submitResult, schema });
+          }
           formEl.reset();
           msgEl.className = 'we-form-msg we-form-msg--success';
           msgEl.textContent = successMessage;
           msgEl.style.display = 'block';
         } catch (err) {
+          if (typeof cfg.onSubmitError === 'function') {
+            try {
+              cfg.onSubmitError(err);
+            } catch (_) { /* ignore callback errors */ }
+          }
           msgEl.className = 'we-form-msg we-form-msg--error';
           msgEl.textContent = err.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
           msgEl.style.display = 'block';

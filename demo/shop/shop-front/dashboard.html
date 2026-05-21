@@ -49,6 +49,9 @@
           </a>
 
           <p class="sidebar-section">Demo API</p>
+          <a href="#" id="btn-add-book-form" onclick="showBookFormPanel(event)">
+            📚 Thêm sách (Widget Form)
+          </a>
           <a href="#" id="btn-run-widget" onclick="runSingleWidget(event)">
             ⚡ Chạy widget đơn
           </a>
@@ -119,6 +122,9 @@
   const REFRESH_KEY  = 'wd_refresh';
   const EXPIRES_KEY  = 'wd_expires';
   const USER_KEY     = 'wd_user';
+  const BOOK_FORM_ID_KEY = 'wd_book_form_widget_id';
+  const BOOK_LIST_WIDGET_ID_KEY = 'wd_book_list_widget_id';
+  const BOOK_DATASOURCE_ID_KEY = 'wd_book_datasource_id';
 
   /* ── Restore session from localStorage ── */
   (function restoreSession() {
@@ -291,6 +297,166 @@
         statusEl.className   = 'test-status error';
       }
     }
+  }
+
+  function getApiUrl() {
+    return (localStorage.getItem(API_URL_KEY) || 'http://localhost:5114/api').replace(/\/$/, '');
+  }
+
+  function getAuthHeaders() {
+    const token = localStorage.getItem(TOKEN_KEY);
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  function firstNonEmpty(data, keys) {
+    for (const key of keys) {
+      const value = data?.[key];
+      if (value !== undefined && value !== null && String(value).trim() !== '') {
+        return String(value).trim();
+      }
+    }
+    return '';
+  }
+
+  function toNumberOrDefault(value, fallback) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  function toBoolOrDefault(value, fallback) {
+    if (typeof value === 'boolean') return value;
+    const raw = String(value ?? '').trim().toLowerCase();
+    if (!raw) return fallback;
+    if (['1', 'true', 'yes', 'y', 'có', 'con', 'in_stock', 'available'].includes(raw)) return true;
+    if (['0', 'false', 'no', 'n', 'không', 'het_hang', 'out'].includes(raw)) return false;
+    return fallback;
+  }
+
+  function buildBookFromFormData(data) {
+    const fallbackTitle = firstNonEmpty(data, ['noi_dung', 'message', 'content']) || `Sách mới ${new Date().toISOString().slice(0, 19)}`;
+    const fallbackAuthor = firstNonEmpty(data, ['ho_ten', 'full_name', 'name']) || 'Chưa rõ tác giả';
+    return {
+      title: firstNonEmpty(data, ['title', 'book_title', 'ten_sach']) || fallbackTitle,
+      author: firstNonEmpty(data, ['author', 'tac_gia']) || fallbackAuthor,
+      category: firstNonEmpty(data, ['category', 'danh_muc']) || 'Khác',
+      price: toNumberOrDefault(firstNonEmpty(data, ['price', 'gia']), 0),
+      pages: toNumberOrDefault(firstNonEmpty(data, ['pages', 'so_trang']), 0),
+      published: firstNonEmpty(data, ['published', 'publish_date', 'ngay_xuat_ban']) || new Date().toISOString().slice(0, 10),
+      cover: firstNonEmpty(data, ['cover', 'bia']) || 'blue',
+      views: toNumberOrDefault(firstNonEmpty(data, ['views', 'luot_xem']), 0),
+      description: firstNonEmpty(data, ['description', 'mo_ta']),
+      in_stock: toBoolOrDefault(firstNonEmpty(data, ['in_stock', 'con_hang', 'available']), true),
+    };
+  }
+
+  async function appendBookToDatasource(book, listWidgetId, dataSourceId) {
+    const bookData = await WidgetEngine.widgets.getData(listWidgetId);
+    const rows = Array.isArray(bookData?.rows) ? bookData.rows : [];
+
+    const maxId = rows.reduce((max, item) => {
+      const id = Number(item?.id);
+      return Number.isFinite(id) && id > max ? id : max;
+    }, 0);
+
+    const nextBook = { id: maxId + 1, ...book };
+    const updatedRows = [...rows, nextBook];
+    const blob = new Blob([JSON.stringify(updatedRows, null, 2)], { type: 'application/json' });
+    const formData = new FormData();
+    formData.append('file', blob, 'books.json');
+
+    const response = await fetch(`${getApiUrl()}/datasources/${dataSourceId}/upload`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: formData,
+    });
+
+    if (!response.ok) {
+      let error = `HTTP ${response.status}`;
+      try {
+        const body = await response.json();
+        error = body?.error || error;
+      } catch (_) {}
+      throw new Error(`Không thể cập nhật datasource: ${error}`);
+    }
+  }
+
+  async function showBookFormPanel(e) {
+    e.preventDefault();
+    setActiveSidebar(e.currentTarget);
+    hideAlert();
+
+    const root = document.getElementById('dash-app');
+    const defaultFormId = localStorage.getItem(BOOK_FORM_ID_KEY) || '44';
+    const defaultWidgetId = localStorage.getItem(BOOK_LIST_WIDGET_ID_KEY) || '40';
+    const defaultDataSourceId = localStorage.getItem(BOOK_DATASOURCE_ID_KEY) || '5';
+
+    root.innerHTML = `
+      <div class="api-test-panel">
+        <h2>📚 Chủ shop thêm sách bằng Widget Form</h2>
+        <p style="font-size:13px;color:#718096;margin-top:0">
+          Dùng form widget để nhập thông tin sách, sau khi submit sẽ tự đồng bộ vào datasource JSON.
+        </p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:12px">
+          <label style="font-size:12px;color:#4a5568">Form Widget ID
+            <input id="book-form-id" type="number" value="${defaultFormId}" min="1" style="width:100%;margin-top:4px;padding:8px;border:1px solid #e2e8f0;border-radius:6px">
+          </label>
+          <label style="font-size:12px;color:#4a5568">Widget danh sách sách ID
+            <input id="book-list-widget-id" type="number" value="${defaultWidgetId}" min="1" style="width:100%;margin-top:4px;padding:8px;border:1px solid #e2e8f0;border-radius:6px">
+          </label>
+          <label style="font-size:12px;color:#4a5568">DataSource ID
+            <input id="book-datasource-id" type="number" value="${defaultDataSourceId}" min="1" style="width:100%;margin-top:4px;padding:8px;border:1px solid #e2e8f0;border-radius:6px">
+          </label>
+        </div>
+        <div style="margin-bottom:12px">
+          <button class="btn-login" id="btn-load-book-form" style="width:auto;padding:8px 14px">Tải form thêm sách</button>
+        </div>
+        <div id="book-form-status" style="font-size:13px;color:#4a5568;margin-bottom:12px"></div>
+        <div id="book-form-root"></div>
+      </div>`;
+
+    document.getElementById('btn-load-book-form')?.addEventListener('click', async () => {
+      const statusEl = document.getElementById('book-form-status');
+      const formRoot = document.getElementById('book-form-root');
+      const formId = Number(document.getElementById('book-form-id')?.value);
+      const listWidgetId = Number(document.getElementById('book-list-widget-id')?.value);
+      const dataSourceId = Number(document.getElementById('book-datasource-id')?.value);
+
+      if (!Number.isFinite(formId) || formId <= 0) { statusEl.textContent = 'Form Widget ID không hợp lệ.'; return; }
+      if (!Number.isFinite(listWidgetId) || listWidgetId <= 0) { statusEl.textContent = 'Widget danh sách sách ID không hợp lệ.'; return; }
+      if (!Number.isFinite(dataSourceId) || dataSourceId <= 0) { statusEl.textContent = 'DataSource ID không hợp lệ.'; return; }
+
+      localStorage.setItem(BOOK_FORM_ID_KEY, String(formId));
+      localStorage.setItem(BOOK_LIST_WIDGET_ID_KEY, String(listWidgetId));
+      localStorage.setItem(BOOK_DATASOURCE_ID_KEY, String(dataSourceId));
+
+      statusEl.style.color = '#4a5568';
+      statusEl.textContent = 'Đang tải form widget…';
+
+      try {
+        await WidgetEngine.render(formRoot, {
+          formId,
+          title: '➕ Thêm sách mới',
+          onSubmitSuccess: async ({ data }) => {
+            statusEl.style.color = '#4a5568';
+            statusEl.textContent = 'Đang đồng bộ sách vào datasource…';
+            const book = buildBookFromFormData(data);
+            await appendBookToDatasource(book, listWidgetId, dataSourceId);
+            statusEl.style.color = '#2f855a';
+            statusEl.textContent = '✅ Đã thêm sách thành công và cập nhật datasource.';
+          },
+          onSubmitError: (err) => {
+            statusEl.style.color = '#c53030';
+            statusEl.textContent = `❌ Submit thất bại: ${err.message || 'Unknown error'}`;
+          },
+        });
+        if (!statusEl.textContent.startsWith('✅')) {
+          statusEl.textContent = 'Form sẵn sàng. Nhập thông tin sách và bấm gửi.';
+        }
+      } catch (err) {
+        statusEl.style.color = '#c53030';
+        statusEl.textContent = `Không thể tải form widget: ${err.message || 'Unknown error'}`;
+      }
+    });
   }
 
   /* ── Activity Monitoring: Widget Activity log ── */
