@@ -55,11 +55,11 @@ public class AuthStateProvider : AuthenticationStateProvider
                 if (value.ValueKind == JsonValueKind.Array)
                 {
                     foreach (var item in value.EnumerateArray())
-                        claims.Add(new Claim(claimType, item.ToString()));
+                        claims.Add(new Claim(claimType, GetClaimValue(item)));
                 }
                 else
                 {
-                    claims.Add(new Claim(claimType, value.ToString()));
+                    claims.Add(new Claim(claimType, GetClaimValue(value)));
                 }
             }
 
@@ -90,4 +90,13 @@ public class AuthStateProvider : AuthenticationStateProvider
         return long.TryParse(exp, out var seconds)
             && DateTimeOffset.FromUnixTimeSeconds(seconds) <= DateTimeOffset.UtcNow;
     }
+
+    private static string GetClaimValue(JsonElement element) => element.ValueKind switch
+    {
+        JsonValueKind.String => element.GetString() ?? string.Empty,
+        JsonValueKind.True => bool.TrueString,
+        JsonValueKind.False => bool.FalseString,
+        JsonValueKind.Null => string.Empty,
+        _ => element.ToString()
+    };
 }

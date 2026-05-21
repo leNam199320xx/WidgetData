@@ -144,6 +144,60 @@
   <data name="Login_Failed" xml:space="preserve">
     <value>Login failed: {0}</value>
   </data>
+  <data name="Auth_LoadingSession" xml:space="preserve">
+    <value>Loading admin session</value>
+  </data>
+  <data name="Auth_LoadingHint" xml:space="preserve">
+    <value>Please wait a moment...</value>
+  </data>
+  <data name="Auth_AccountMenuDefault" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="Auth_Logout" xml:space="preserve">
+    <value>Sign out</value>
+  </data>
+  <data name="Login_CheckingSession" xml:space="preserve">
+    <value>Checking current sign-in session</value>
+  </data>
+  <data name="Login_AdminBadge" xml:space="preserve">
+    <value>ADMIN CONSOLE</value>
+  </data>
+  <data name="Login_HeroTitle" xml:space="preserve">
+    <value>Manage WidgetData through a clear, fast, and secure admin sign-in experience.</value>
+  </data>
+  <data name="Login_HeroDescription" xml:space="preserve">
+    <value>Access dashboards, demo data, schedules, widgets, and tenant management through a dedicated sign-in flow for the admin area.</value>
+  </data>
+  <data name="Login_FastAccessTitle" xml:space="preserve">
+    <value>Quick access to demo data</value>
+  </data>
+  <data name="Login_FastAccessText" xml:space="preserve">
+    <value>Use the preset demo emails to test Admin, SuperAdmin, or TenantAdmin permissions faster.</value>
+  </data>
+  <data name="Login_ReturnContextTitle" xml:space="preserve">
+    <value>Return to the right place</value>
+  </data>
+  <data name="Login_ReturnContextText" xml:space="preserve">
+    <value>After sign-in, the admin app takes you back to the exact page you originally tried to open.</value>
+  </data>
+  <data name="Login_DemoAccountsTitle" xml:space="preserve">
+    <value>Quick demo accounts</value>
+  </data>
+  <data name="Login_DemoSuperAdmin" xml:space="preserve">
+    <value>SuperAdmin</value>
+  </data>
+  <data name="Login_DemoAdmin" xml:space="preserve">
+    <value>Admin</value>
+  </data>
+  <data name="Login_DemoTenantAdmin" xml:space="preserve">
+    <value>Tenant Admin</value>
+  </data>
+  <data name="Login_ReturnUrlNotice" xml:space="preserve">
+    <value>After sign-in, you will be redirected back to &lt;strong&gt;{0}&lt;/strong&gt;.</value>
+  </data>
+  <data name="Login_DemoHint" xml:space="preserve">
+    <value>Choose a seeded demo email above, then enter that account's current password.</value>
+  </data>
   <data name="Home_Title" xml:space="preserve">
     <value>Dashboard</value>
   </data>

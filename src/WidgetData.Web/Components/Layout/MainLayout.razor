@@ -17,9 +17,9 @@
     <div class="auth-boot-screen">
         <MudPaper Class="pa-8 auth-boot-card" Elevation="6">
             <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" Class="mb-4" />
-            <MudText Typo="Typo.h6" Align="Align.Center">Đang tải phiên quản trị</MudText>
+            <MudText Typo="Typo.h6" Align="Align.Center">@L["Auth_LoadingSession"]</MudText>
             <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Secondary">
-                Vui lòng chờ trong giây lát...
+                @L["Auth_LoadingHint"]
             </MudText>
         </MudPaper>
     </div>
@@ -38,8 +38,8 @@ else
             <MudMenu Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" AnchorOrigin="Origin.BottomRight"
                      TransformOrigin="Origin.TopRight">
                 <MudMenuItem Disabled="true">@_currentUserLabel</MudMenuItem>
-                <MudMenuItem Href="/settings">Tài khoản</MudMenuItem>
-                <MudMenuItem OnClick="LogoutAsync">Đăng xuất</MudMenuItem>
+                <MudMenuItem Href="/settings">@L["Nav_Settings"]</MudMenuItem>
+                <MudMenuItem OnClick="LogoutAsync">@L["Auth_Logout"]</MudMenuItem>
             </MudMenu>
         </MudAppBar>
         <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
@@ -57,7 +57,7 @@ else
     bool _drawerOpen = true;
     bool _authReady;
     bool _redirectingToLogin;
-    string _currentUserLabel = "Tài khoản";
+    string _currentUserLabel = string.Empty;
 
     void ToggleDrawer() => _drawerOpen = !_drawerOpen;
 
@@ -107,14 +107,15 @@ else
         _currentUserLabel =
             user.FindFirst(ClaimTypes.Email)?.Value
             ?? user.FindFirst(ClaimTypes.Name)?.Value
-            ?? "Tài khoản";
+            ?? L["Auth_AccountMenuDefault"];
     }
 
     void RedirectToLogin()
     {
         var relativePath = NavManager.ToBaseRelativePath(NavManager.Uri);
-        if (string.Equals(relativePath, "login", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(relativePath, "Error", StringComparison.OrdinalIgnoreCase))
+        var normalizedPath = relativePath.Split('?', '#')[0].Trim('/');
+        if (string.Equals(normalizedPath, "login", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalizedPath, "Error", StringComparison.OrdinalIgnoreCase))
         {
             _redirectingToLogin = false;
             StateHasChanged();
@@ -139,7 +140,7 @@ else
 
         ApiService.ClearToken();
         AuthStateProvider.ClearUser();
-        _currentUserLabel = "Tài khoản";
+        _currentUserLabel = L["Auth_AccountMenuDefault"];
         NavManager.NavigateTo("/login", replace: true);
     }
 }

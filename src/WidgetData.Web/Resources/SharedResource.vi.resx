@@ -144,6 +144,60 @@
   <data name="Login_Failed" xml:space="preserve">
     <value>Đăng nhập thất bại: {0}</value>
   </data>
+  <data name="Auth_LoadingSession" xml:space="preserve">
+    <value>Đang tải phiên quản trị</value>
+  </data>
+  <data name="Auth_LoadingHint" xml:space="preserve">
+    <value>Vui lòng chờ trong giây lát...</value>
+  </data>
+  <data name="Auth_AccountMenuDefault" xml:space="preserve">
+    <value>Tài khoản</value>
+  </data>
+  <data name="Auth_Logout" xml:space="preserve">
+    <value>Đăng xuất</value>
+  </data>
+  <data name="Login_CheckingSession" xml:space="preserve">
+    <value>Đang kiểm tra phiên đăng nhập</value>
+  </data>
+  <data name="Login_AdminBadge" xml:space="preserve">
+    <value>ADMIN CONSOLE</value>
+  </data>
+  <data name="Login_HeroTitle" xml:space="preserve">
+    <value>Quản trị WidgetData trên một màn hình đăng nhập rõ ràng, nhanh và an toàn.</value>
+  </data>
+  <data name="Login_HeroDescription" xml:space="preserve">
+    <value>Truy cập dashboard, dữ liệu demo, lịch chạy, widget và quản lý tenant bằng luồng đăng nhập dành riêng cho khu vực admin.</value>
+  </data>
+  <data name="Login_FastAccessTitle" xml:space="preserve">
+    <value>Vào nhanh dữ liệu demo</value>
+  </data>
+  <data name="Login_FastAccessText" xml:space="preserve">
+    <value>Dùng nhanh email demo để kiểm tra quyền Admin, SuperAdmin hoặc TenantAdmin.</value>
+  </data>
+  <data name="Login_ReturnContextTitle" xml:space="preserve">
+    <value>Giữ đúng ngữ cảnh</value>
+  </data>
+  <data name="Login_ReturnContextText" xml:space="preserve">
+    <value>Sau khi đăng nhập, hệ thống tự quay lại màn hình bạn đang mở trước đó.</value>
+  </data>
+  <data name="Login_DemoAccountsTitle" xml:space="preserve">
+    <value>Tài khoản demo nhanh</value>
+  </data>
+  <data name="Login_DemoSuperAdmin" xml:space="preserve">
+    <value>SuperAdmin</value>
+  </data>
+  <data name="Login_DemoAdmin" xml:space="preserve">
+    <value>Admin</value>
+  </data>
+  <data name="Login_DemoTenantAdmin" xml:space="preserve">
+    <value>Tenant Admin</value>
+  </data>
+  <data name="Login_ReturnUrlNotice" xml:space="preserve">
+    <value>Sau khi đăng nhập, bạn sẽ được chuyển về &lt;strong&gt;{0}&lt;/strong&gt;.</value>
+  </data>
+  <data name="Login_DemoHint" xml:space="preserve">
+    <value>Chọn nhanh email demo ở trên, sau đó nhập mật khẩu hiện tại của tài khoản đó.</value>
+  </data>
   <data name="Home_Title" xml:space="preserve">
     <value>Bảng điều khiển</value>
   </data>
