@@ -115,22 +115,34 @@ public class ApiService
     public async Task<IEnumerable<WidgetDto>?> GetWidgetsAsync()
     {
         ApplyToken();
-        var response = await _http.GetAsync("api/widgets?page=1&pageSize=200");
-        if (!response.IsSuccessStatusCode) return default;
+        const int pageSize = 200;
+        var page = 1;
+        var items = new List<WidgetDto>();
 
-        var json = await response.Content.ReadAsStringAsync();
-
-        try
+        while (true)
         {
+            var response = await _http.GetAsync($"api/widgets?page={page}&pageSize={pageSize}");
+            if (!response.IsSuccessStatusCode) return items.Count > 0 ? items : default;
+
+            var json = await response.Content.ReadAsStringAsync();
+            using var document = JsonDocument.Parse(json);
+
+            if (document.RootElement.ValueKind == JsonValueKind.Array)
+                return JsonSerializer.Deserialize<IEnumerable<WidgetDto>>(json, _jsonOptions);
+
+            if (document.RootElement.ValueKind != JsonValueKind.Object ||
+                !document.RootElement.TryGetProperty("items", out _))
+                return items.Count > 0 ? items : default;
+
             var paged = JsonSerializer.Deserialize<PagedResult<WidgetDto>>(json, _jsonOptions);
-            if (paged != null) return paged.Items;
-        }
-        catch (JsonException)
-        {
-            // Backward compatibility: old API shape returned a plain array.
-        }
+            if (paged == null) return items.Count > 0 ? items : default;
 
-        return JsonSerializer.Deserialize<IEnumerable<WidgetDto>>(json, _jsonOptions);
+            items.AddRange(paged.Items);
+
+            if (paged.Items.Count == 0 || items.Count >= paged.Total || page >= paged.TotalPages) return items;
+
+            page++;
+        }
     }
     public Task<WidgetDto?> GetWidgetByIdAsync(int id) => GetAsync<WidgetDto>($"api/widgets/{id}");
     public Task<WidgetDto?> CreateWidgetAsync(CreateWidgetDto dto) => PostAsync<WidgetDto>("api/widgets", dto);
