@@ -112,7 +112,38 @@ public class ApiService
     }
 
     // Widgets
-    public Task<IEnumerable<WidgetDto>?> GetWidgetsAsync() => GetAsync<IEnumerable<WidgetDto>>("api/widgets");
+    public async Task<IEnumerable<WidgetDto>?> GetWidgetsAsync()
+    {
+        ApplyToken();
+        const int pageSize = 200;
+        var page = 1;
+        var items = new List<WidgetDto>();
+
+        while (true)
+        {
+            var response = await _http.GetAsync($"api/widgets?page={page}&pageSize={pageSize}");
+            if (!response.IsSuccessStatusCode) return items.Count > 0 ? items : default;
+
+            var json = await response.Content.ReadAsStringAsync();
+            using var document = JsonDocument.Parse(json);
+
+            if (document.RootElement.ValueKind == JsonValueKind.Array)
+                return JsonSerializer.Deserialize<IEnumerable<WidgetDto>>(json, _jsonOptions);
+
+            if (document.RootElement.ValueKind != JsonValueKind.Object ||
+                !document.RootElement.TryGetProperty("items", out _))
+                return items.Count > 0 ? items : default;
+
+            var paged = JsonSerializer.Deserialize<PagedResult<WidgetDto>>(json, _jsonOptions);
+            if (paged == null) return items.Count > 0 ? items : default;
+
+            items.AddRange(paged.Items);
+
+            if (paged.Items.Count == 0 || items.Count >= paged.Total || page >= paged.TotalPages) return items;
+
+            page++;
+        }
+    }
     public Task<WidgetDto?> GetWidgetByIdAsync(int id) => GetAsync<WidgetDto>($"api/widgets/{id}");
     public Task<WidgetDto?> CreateWidgetAsync(CreateWidgetDto dto) => PostAsync<WidgetDto>("api/widgets", dto);
     public Task<WidgetDto?> UpdateWidgetAsync(int id, UpdateWidgetDto dto) => PutAsync<WidgetDto>($"api/widgets/{id}", dto);
