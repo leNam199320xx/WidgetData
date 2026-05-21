@@ -112,7 +112,26 @@ public class ApiService
     }
 
     // Widgets
-    public Task<IEnumerable<WidgetDto>?> GetWidgetsAsync() => GetAsync<IEnumerable<WidgetDto>>("api/widgets");
+    public async Task<IEnumerable<WidgetDto>?> GetWidgetsAsync()
+    {
+        ApplyToken();
+        var response = await _http.GetAsync("api/widgets?page=1&pageSize=200");
+        if (!response.IsSuccessStatusCode) return default;
+
+        var json = await response.Content.ReadAsStringAsync();
+
+        try
+        {
+            var paged = JsonSerializer.Deserialize<PagedResult<WidgetDto>>(json, _jsonOptions);
+            if (paged != null) return paged.Items;
+        }
+        catch (JsonException)
+        {
+            // Backward compatibility: old API shape returned a plain array.
+        }
+
+        return JsonSerializer.Deserialize<IEnumerable<WidgetDto>>(json, _jsonOptions);
+    }
     public Task<WidgetDto?> GetWidgetByIdAsync(int id) => GetAsync<WidgetDto>($"api/widgets/{id}");
     public Task<WidgetDto?> CreateWidgetAsync(CreateWidgetDto dto) => PostAsync<WidgetDto>("api/widgets", dto);
     public Task<WidgetDto?> UpdateWidgetAsync(int id, UpdateWidgetDto dto) => PutAsync<WidgetDto>($"api/widgets/{id}", dto);
