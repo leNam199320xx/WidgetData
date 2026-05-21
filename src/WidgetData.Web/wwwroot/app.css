@@ -27,3 +27,82 @@ h1:focus {
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
 }
+
+.auth-boot-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background:
+        radial-gradient(circle at top left, rgba(103, 80, 164, 0.18), transparent 32%),
+        linear-gradient(135deg, #f5f7fb 0%, #eef2ff 100%);
+}
+
+.auth-boot-card {
+    width: min(100%, 420px);
+    text-align: center;
+    border-radius: 24px;
+}
+
+.login-page {
+    min-height: 100vh;
+    padding: 2rem 1rem;
+    background:
+        radial-gradient(circle at top left, rgba(103, 80, 164, 0.22), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(33, 150, 243, 0.18), transparent 28%),
+        linear-gradient(135deg, #f4f6fb 0%, #eef3ff 48%, #f9fbff 100%);
+}
+
+.login-shell {
+    width: min(1180px, 100%);
+    margin: 0 auto;
+    min-height: calc(100vh - 4rem);
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(360px, 460px);
+    gap: 2rem;
+    align-items: center;
+}
+
+.login-hero {
+    padding: 2.5rem;
+    border-radius: 32px;
+    background: linear-gradient(145deg, #12213d 0%, #213a6a 45%, #395cae 100%);
+    color: #fff;
+    box-shadow: 0 24px 60px rgba(19, 35, 67, 0.18);
+}
+
+.auth-hero-copy {
+    color: rgba(255, 255, 255, 0.82) !important;
+}
+
+.auth-highlight-card {
+    height: 100%;
+    padding: 1rem;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.09);
+    backdrop-filter: blur(10px);
+}
+
+.login-card {
+    border-radius: 28px;
+    box-shadow: 0 24px 60px rgba(56, 69, 110, 0.14);
+}
+
+.login-validation-summary {
+    margin: 0 0 1rem;
+    padding-left: 1rem;
+    color: #b42318;
+}
+
+@media (max-width: 960px) {
+    .login-shell {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+
+    .login-hero,
+    .login-card {
+        width: 100%;
+    }
+}
