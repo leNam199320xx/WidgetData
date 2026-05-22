@@ -39,9 +39,17 @@ public class ExecutionRepository : IExecutionRepository
     public async Task<ExecutionDashboardStats> GetDashboardStatsAsync(int days, int limit)
     {
         var since = DateTime.UtcNow.AddDays(-days);
-        var total = await _context.WidgetExecutions.CountAsync();
-        var successful = await _context.WidgetExecutions.CountAsync(e => e.Status == ExecutionStatus.Success);
-        var failed = await _context.WidgetExecutions.CountAsync(e => e.Status == ExecutionStatus.Failed);
+
+        var statusCounts = await _context.WidgetExecutions
+            .AsNoTracking()
+            .GroupBy(e => e.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        var total = statusCounts.Sum(x => x.Count);
+        var successful = statusCounts.FirstOrDefault(x => x.Status == ExecutionStatus.Success)?.Count ?? 0;
+        var failed = statusCounts.FirstOrDefault(x => x.Status == ExecutionStatus.Failed)?.Count ?? 0;
+
         var recent = await _context.WidgetExecutions
             .AsNoTracking()
             .Include(e => e.Widget)
@@ -49,6 +57,7 @@ public class ExecutionRepository : IExecutionRepository
             .OrderByDescending(e => e.StartedAt)
             .Take(limit)
             .ToListAsync();
+
         return new ExecutionDashboardStats(total, successful, failed, recent);
     }
 

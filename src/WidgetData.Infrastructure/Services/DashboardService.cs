@@ -32,10 +32,10 @@ public class DashboardService : IDashboardService
 
         await Task.WhenAll(widgetCountsTask, dataSourceCountsTask, scheduleCountsTask, execStatsTask);
 
-        var (totalWidgets, activeWidgets) = await widgetCountsTask;
-        var (totalDataSources, activeDataSources) = await dataSourceCountsTask;
-        var (totalSchedules, activeSchedules) = await scheduleCountsTask;
-        var execStats = await execStatsTask;
+        var (totalWidgets, activeWidgets) = widgetCountsTask.Result;
+        var (totalDataSources, activeDataSources) = dataSourceCountsTask.Result;
+        var (totalSchedules, activeSchedules) = scheduleCountsTask.Result;
+        var execStats = execStatsTask.Result;
 
         return new DashboardStatsDto
         {
