@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WidgetData.Domain.Entities;
+using WidgetData.Domain.Enums;
 using WidgetData.Domain.Interfaces;
 using WidgetData.Infrastructure.Data;
 
