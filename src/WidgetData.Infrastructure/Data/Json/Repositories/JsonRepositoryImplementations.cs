@@ -1,4 +1,5 @@
 using WidgetData.Domain.Entities;
+using WidgetData.Domain.Enums;
 
 namespace WidgetData.Infrastructure.Data.Json.Repositories;
 
@@ -85,6 +86,12 @@ public class JsonScheduleRepository : BaseJsonRepository<WidgetSchedule>, IJsonS
     protected override int GetEntityId(WidgetSchedule entity) => entity.Id;
     protected override string GetFileName(int id) => $"schedule-{id}.json";
 
+    public async Task<int> CountAsync()
+        => (await GetAllAsync()).Count;
+
+    public async Task<int> CountEnabledAsync()
+        => (await GetActiveSchedulesAsync()).Count;
+
     public async Task<List<WidgetSchedule>> GetActiveSchedulesAsync()
     {
         var all = await GetAllAsync();
@@ -109,6 +116,12 @@ public class JsonExecutionRepository : BaseJsonRepository<WidgetExecution>, IJso
     }
 
     protected override int GetEntityId(WidgetExecution entity) => entity.Id;
+
+    public async Task<int> CountAsync()
+        => (await GetAllAsync()).Count;
+
+    public async Task<int> CountByStatusAsync(ExecutionStatus status)
+        => (await GetAllAsync()).Count(e => e.Status == status);
 
     public async Task<List<WidgetExecution>> GetByWidgetAsync(int widgetId, int limit = 100)
     {

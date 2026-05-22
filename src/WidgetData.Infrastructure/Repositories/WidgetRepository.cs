@@ -17,6 +17,12 @@ public class WidgetRepository : IWidgetRepository
     public async Task<IEnumerable<Widget>> GetAllAsync()
         => await _context.Widgets.Include(w => w.DataSource).ToListAsync();
 
+    public Task<int> CountAsync()
+        => _context.Widgets.CountAsync();
+
+    public Task<int> CountActiveAsync()
+        => _context.Widgets.CountAsync(w => w.IsActive);
+
     public async Task<Widget?> GetByIdAsync(int id)
         => await _context.Widgets.Include(w => w.DataSource).FirstOrDefaultAsync(w => w.Id == id);
 

@@ -5,6 +5,8 @@ namespace WidgetData.Domain.Interfaces;
 public interface IScheduleRepository
 {
     Task<IEnumerable<WidgetSchedule>> GetAllAsync();
+    Task<int> CountAsync();
+    Task<int> CountEnabledAsync();
     Task<IEnumerable<WidgetSchedule>> GetByWidgetIdAsync(int widgetId);
     Task<WidgetSchedule?> GetByIdAsync(int id);
     Task<IEnumerable<WidgetSchedule>> GetDueAsync(DateTime asOf);

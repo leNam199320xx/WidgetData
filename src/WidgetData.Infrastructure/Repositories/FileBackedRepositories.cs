@@ -22,13 +22,22 @@ public class FileBackedDataSourceRepository : IDataSourceRepository
         _tenantContext = tenantContext;
     }
 
-    public async Task<IEnumerable<DataSource>> GetAllAsync()
+    private async Task<IEnumerable<DataSource>> GetCurrentDataSourcesAsync()
     {
         if (_tenantContext?.IsSuperAdmin == true || _tenantContext?.CurrentTenantId == null)
             return await _repo.GetAllAsync();
 
         return await _repo.GetByTenantAsync(_tenantContext.CurrentTenantId);
     }
+
+    public async Task<IEnumerable<DataSource>> GetAllAsync()
+        => await GetCurrentDataSourcesAsync();
+
+    public async Task<int> CountAsync()
+        => (await GetCurrentDataSourcesAsync()).Count();
+
+    public async Task<int> CountActiveAsync()
+        => (await GetCurrentDataSourcesAsync()).Count(d => d.IsActive);
 
     public Task<DataSource?> GetByIdAsync(int id) => _repo.GetByIdAsync(id);
 
@@ -60,11 +69,14 @@ public class FileBackedWidgetRepository : IWidgetRepository
         _tenantContext = tenantContext;
     }
 
-    public async Task<IEnumerable<Widget>> GetAllAsync()
-    {
-        var widgets = (_tenantContext?.IsSuperAdmin == true || _tenantContext?.CurrentTenantId == null)
+    private async Task<IEnumerable<Widget>> GetCurrentWidgetsAsync()
+        => (_tenantContext?.IsSuperAdmin == true || _tenantContext?.CurrentTenantId == null)
             ? await _repo.GetAllAsync()
             : await _repo.GetByTenantAsync(_tenantContext.CurrentTenantId);
+
+    public async Task<IEnumerable<Widget>> GetAllAsync()
+    {
+        var widgets = await GetCurrentWidgetsAsync();
 
         var dataSources = await _dataSourceRepo.GetAllAsync();
         var dataSourceMap = dataSources.ToDictionary(d => d.Id);
@@ -73,6 +85,12 @@ public class FileBackedWidgetRepository : IWidgetRepository
 
         return widgets;
     }
+
+    public async Task<int> CountAsync()
+        => (await GetCurrentWidgetsAsync()).Count();
+
+    public async Task<int> CountActiveAsync()
+        => (await GetCurrentWidgetsAsync()).Count(w => w.IsActive);
 
     public async Task<Widget?> GetByIdAsync(int id)
     {
@@ -108,10 +126,17 @@ public class FileBackedExecutionRepository : IExecutionRepository
     public async Task<IEnumerable<WidgetExecution>> GetAllAsync()
         => await _repo.GetAllAsync();
 
+    public async Task<int> CountAsync()
+        => await _repo.CountAsync();
+
+    public async Task<int> CountByStatusAsync(ExecutionStatus status)
+        => await _repo.CountByStatusAsync(status);
+
     public async Task<IEnumerable<WidgetExecution>> GetRecentAsync(int days, int limit)
     {
         var since = DateTime.UtcNow.AddDays(-days);
         return (await _repo.GetByDateRangeAsync(since, DateTime.UtcNow.AddDays(1)))
+            .OrderByDescending(e => e.StartedAt)
             .Take(limit);
     }
 
@@ -159,6 +184,12 @@ public class FileBackedScheduleRepository : IScheduleRepository
         }
         return items;
     }
+
+    public async Task<int> CountAsync()
+        => await _repo.CountAsync();
+
+    public async Task<int> CountEnabledAsync()
+        => await _repo.CountEnabledAsync();
 
     public async Task<IEnumerable<WidgetSchedule>> GetByWidgetIdAsync(int widgetId)
         => await _repo.GetByWidgetAsync(widgetId);
