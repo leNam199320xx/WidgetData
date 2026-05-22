@@ -127,10 +127,10 @@ public class FileBackedExecutionRepository : IExecutionRepository
         => await _repo.GetAllAsync();
 
     public async Task<int> CountAsync()
-        => (await _repo.GetAllAsync()).Count();
+        => await _repo.CountAsync();
 
     public async Task<int> CountByStatusAsync(ExecutionStatus status)
-        => (await _repo.GetAllAsync()).Count(e => e.Status == status);
+        => await _repo.CountByStatusAsync(status);
 
     public async Task<IEnumerable<WidgetExecution>> GetRecentAsync(int days, int limit)
     {
@@ -186,10 +186,10 @@ public class FileBackedScheduleRepository : IScheduleRepository
     }
 
     public async Task<int> CountAsync()
-        => (await _repo.GetAllAsync()).Count();
+        => await _repo.CountAsync();
 
     public async Task<int> CountEnabledAsync()
-        => (await _repo.GetAllAsync()).Count(s => s.IsEnabled);
+        => await _repo.CountEnabledAsync();
 
     public async Task<IEnumerable<WidgetSchedule>> GetByWidgetIdAsync(int widgetId)
         => await _repo.GetByWidgetAsync(widgetId);

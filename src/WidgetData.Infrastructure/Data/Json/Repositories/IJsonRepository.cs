@@ -1,4 +1,5 @@
 using WidgetData.Domain.Entities;
+using WidgetData.Domain.Enums;
 
 namespace WidgetData.Infrastructure.Data.Json.Repositories;
 
@@ -40,6 +41,8 @@ public interface IJsonDataSourceRepository : IJsonRepository<DataSource>
 /// </summary>
 public interface IJsonScheduleRepository : IJsonRepository<WidgetSchedule>
 {
+    Task<int> CountAsync();
+    Task<int> CountEnabledAsync();
     Task<List<WidgetSchedule>> GetActiveSchedulesAsync();
     Task<List<WidgetSchedule>> GetByWidgetAsync(int widgetId);
 }
@@ -49,6 +52,8 @@ public interface IJsonScheduleRepository : IJsonRepository<WidgetSchedule>
 /// </summary>
 public interface IJsonExecutionRepository : IJsonRepository<WidgetExecution>
 {
+    Task<int> CountAsync();
+    Task<int> CountByStatusAsync(ExecutionStatus status);
     Task<List<WidgetExecution>> GetByWidgetAsync(int widgetId, int limit = 100);
     Task<List<WidgetExecution>> GetByDateRangeAsync(DateTime from, DateTime to);
 }
