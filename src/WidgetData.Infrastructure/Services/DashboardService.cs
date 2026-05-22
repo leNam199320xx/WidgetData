@@ -26,23 +26,19 @@ public class DashboardService : IDashboardService
 
     public async Task<DashboardStatsDto> GetStatsAsync()
     {
-        var widgets = (await _widgetRepo.GetAllAsync()).ToList();
-        var dataSources = (await _dataSourceRepo.GetAllAsync()).ToList();
-        var schedules = (await _scheduleRepo.GetAllAsync()).ToList();
-        var allExecutions = (await _executionRepo.GetAllAsync()).ToList();
         var recentExecutions = (await _executionRepo.GetRecentAsync(7, 10)).ToList();
 
         return new DashboardStatsDto
         {
-            TotalWidgets = widgets.Count,
-            ActiveWidgets = widgets.Count(w => w.IsActive),
-            TotalDataSources = dataSources.Count,
-            ActiveDataSources = dataSources.Count(d => d.IsActive),
-            TotalSchedules = schedules.Count(),
-            ActiveSchedules = schedules.Count(s => s.IsEnabled),
-            TotalExecutions = allExecutions.Count,
-            SuccessfulExecutions = allExecutions.Count(e => e.Status == ExecutionStatus.Success),
-            FailedExecutions = allExecutions.Count(e => e.Status == ExecutionStatus.Failed),
+            TotalWidgets = await _widgetRepo.CountAsync(),
+            ActiveWidgets = await _widgetRepo.CountActiveAsync(),
+            TotalDataSources = await _dataSourceRepo.CountAsync(),
+            ActiveDataSources = await _dataSourceRepo.CountActiveAsync(),
+            TotalSchedules = await _scheduleRepo.CountAsync(),
+            ActiveSchedules = await _scheduleRepo.CountEnabledAsync(),
+            TotalExecutions = await _executionRepo.CountAsync(),
+            SuccessfulExecutions = await _executionRepo.CountByStatusAsync(ExecutionStatus.Success),
+            FailedExecutions = await _executionRepo.CountByStatusAsync(ExecutionStatus.Failed),
             RecentExecutions = recentExecutions.Select(e => new WidgetExecutionDto
             {
                 Id = e.Id,

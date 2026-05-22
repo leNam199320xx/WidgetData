@@ -17,6 +17,12 @@ public class DataSourceRepository : IDataSourceRepository
     public async Task<IEnumerable<DataSource>> GetAllAsync()
         => await _context.DataSources.ToListAsync();
 
+    public Task<int> CountAsync()
+        => _context.DataSources.CountAsync();
+
+    public Task<int> CountActiveAsync()
+        => _context.DataSources.CountAsync(d => d.IsActive);
+
     public async Task<DataSource?> GetByIdAsync(int id)
         => await _context.DataSources.FindAsync(id);
 

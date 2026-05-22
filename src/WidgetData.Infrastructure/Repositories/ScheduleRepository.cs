@@ -17,6 +17,12 @@ public class ScheduleRepository : IScheduleRepository
     public async Task<IEnumerable<WidgetSchedule>> GetAllAsync()
         => await _context.WidgetSchedules.Include(s => s.Widget).ToListAsync();
 
+    public Task<int> CountAsync()
+        => _context.WidgetSchedules.CountAsync();
+
+    public Task<int> CountEnabledAsync()
+        => _context.WidgetSchedules.CountAsync(s => s.IsEnabled);
+
     public async Task<IEnumerable<WidgetSchedule>> GetByWidgetIdAsync(int widgetId)
         => await _context.WidgetSchedules.Where(s => s.WidgetId == widgetId).ToListAsync();
 
