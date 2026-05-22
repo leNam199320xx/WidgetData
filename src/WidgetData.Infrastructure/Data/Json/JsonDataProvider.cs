@@ -73,25 +73,23 @@ public class JsonDataProvider
         if (!Directory.Exists(dir))
             return new List<T>();
 
-        var result = new List<T>();
         var jsonFiles = Directory.GetFiles(dir, "*.json");
 
-        foreach (var filePath in jsonFiles)
+        var tasks = jsonFiles.Select(async filePath =>
         {
             try
             {
                 await using var stream = File.OpenRead(filePath);
-                var item = await JsonSerializer.DeserializeAsync<T>(stream, JsonOptions);
-                if (item != null)
-                    result.Add(item);
+                return await JsonSerializer.DeserializeAsync<T>(stream, JsonOptions);
             }
             catch (Exception ex)
             {
                 throw new InvalidOperationException($"Failed to load JSON from {filePath}", ex);
             }
-        }
+        });
 
-        return result;
+        var results = await Task.WhenAll(tasks);
+        return results.Where(item => item != null).Cast<T>().ToList();
     }
 
     /// <summary>

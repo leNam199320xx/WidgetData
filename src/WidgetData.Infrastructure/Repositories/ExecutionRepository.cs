@@ -36,6 +36,22 @@ public class ExecutionRepository : IExecutionRepository
             .ToListAsync();
     }
 
+    public async Task<ExecutionDashboardStats> GetDashboardStatsAsync(int days, int limit)
+    {
+        var since = DateTime.UtcNow.AddDays(-days);
+        var total = await _context.WidgetExecutions.CountAsync();
+        var successful = await _context.WidgetExecutions.CountAsync(e => e.Status == ExecutionStatus.Success);
+        var failed = await _context.WidgetExecutions.CountAsync(e => e.Status == ExecutionStatus.Failed);
+        var recent = await _context.WidgetExecutions
+            .AsNoTracking()
+            .Include(e => e.Widget)
+            .Where(e => e.StartedAt >= since)
+            .OrderByDescending(e => e.StartedAt)
+            .Take(limit)
+            .ToListAsync();
+        return new ExecutionDashboardStats(total, successful, failed, recent);
+    }
+
     public async Task<IEnumerable<WidgetExecution>> GetByWidgetIdAsync(int widgetId)
         => await _context.WidgetExecutions.Where(e => e.WidgetId == widgetId)
             .OrderByDescending(e => e.StartedAt).Take(100).ToListAsync();

@@ -7,6 +7,7 @@ public interface IScheduleRepository
     Task<IEnumerable<WidgetSchedule>> GetAllAsync();
     Task<int> CountAsync();
     Task<int> CountEnabledAsync();
+    Task<(int Total, int Enabled)> GetCountsAsync();
     Task<IEnumerable<WidgetSchedule>> GetByWidgetIdAsync(int widgetId);
     Task<WidgetSchedule?> GetByIdAsync(int id);
     Task<IEnumerable<WidgetSchedule>> GetDueAsync(DateTime asOf);

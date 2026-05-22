@@ -7,6 +7,7 @@ public interface IWidgetRepository
     Task<IEnumerable<Widget>> GetAllAsync();
     Task<int> CountAsync();
     Task<int> CountActiveAsync();
+    Task<(int Total, int Active)> GetCountsAsync();
     Task<Widget?> GetByIdAsync(int id);
     Task<Widget> CreateAsync(Widget widget);
     Task<Widget> UpdateAsync(Widget widget);

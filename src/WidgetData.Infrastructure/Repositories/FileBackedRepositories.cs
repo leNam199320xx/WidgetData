@@ -39,6 +39,12 @@ public class FileBackedDataSourceRepository : IDataSourceRepository
     public async Task<int> CountActiveAsync()
         => (await GetCurrentDataSourcesAsync()).Count(d => d.IsActive);
 
+    public async Task<(int Total, int Active)> GetCountsAsync()
+    {
+        var all = (await GetCurrentDataSourcesAsync()).ToList();
+        return (all.Count, all.Count(d => d.IsActive));
+    }
+
     public Task<DataSource?> GetByIdAsync(int id) => _repo.GetByIdAsync(id);
 
     public async Task<DataSource> CreateAsync(DataSource dataSource)
@@ -92,6 +98,12 @@ public class FileBackedWidgetRepository : IWidgetRepository
     public async Task<int> CountActiveAsync()
         => (await GetCurrentWidgetsAsync()).Count(w => w.IsActive);
 
+    public async Task<(int Total, int Active)> GetCountsAsync()
+    {
+        var all = (await GetCurrentWidgetsAsync()).ToList();
+        return (all.Count, all.Count(w => w.IsActive));
+    }
+
     public async Task<Widget?> GetByIdAsync(int id)
     {
         var widget = await _repo.GetByIdAsync(id);
@@ -138,6 +150,21 @@ public class FileBackedExecutionRepository : IExecutionRepository
         return (await _repo.GetByDateRangeAsync(since, DateTime.UtcNow.AddDays(1)))
             .OrderByDescending(e => e.StartedAt)
             .Take(limit);
+    }
+
+    public async Task<ExecutionDashboardStats> GetDashboardStatsAsync(int days, int limit)
+    {
+        var all = await _repo.GetAllAsync();
+        var since = DateTime.UtcNow.AddDays(-days);
+        var total = all.Count;
+        var successful = all.Count(e => e.Status == ExecutionStatus.Success);
+        var failed = all.Count(e => e.Status == ExecutionStatus.Failed);
+        var recent = all
+            .Where(e => e.StartedAt >= since)
+            .OrderByDescending(e => e.StartedAt)
+            .Take(limit)
+            .ToList();
+        return new ExecutionDashboardStats(total, successful, failed, recent);
     }
 
     public async Task<IEnumerable<WidgetExecution>> GetByWidgetIdAsync(int widgetId)
@@ -190,6 +217,12 @@ public class FileBackedScheduleRepository : IScheduleRepository
 
     public async Task<int> CountEnabledAsync()
         => await _repo.CountEnabledAsync();
+
+    public async Task<(int Total, int Enabled)> GetCountsAsync()
+    {
+        var all = (await _repo.GetAllAsync()).ToList();
+        return (all.Count, all.Count(s => s.IsEnabled));
+    }
 
     public async Task<IEnumerable<WidgetSchedule>> GetByWidgetIdAsync(int widgetId)
         => await _repo.GetByWidgetAsync(widgetId);
