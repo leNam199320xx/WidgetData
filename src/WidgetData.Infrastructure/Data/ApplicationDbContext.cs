@@ -98,6 +98,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasForeignKey(d => d.TenantId)
             .OnDelete(DeleteBehavior.SetNull)
             .IsRequired(false);
+        builder.Entity<DataSource>()
+            .HasIndex(d => d.IsActive);
 
         // ── Widget → Tenant ───────────────────────────────────────────────────
         builder.Entity<Widget>()
@@ -106,6 +108,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasForeignKey(w => w.TenantId)
             .OnDelete(DeleteBehavior.SetNull)
             .IsRequired(false);
+        builder.Entity<Widget>()
+            .HasIndex(w => w.IsActive);
 
         builder.Entity<Widget>()
             .HasOne(w => w.DataSource)
@@ -126,6 +130,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .WithMany(w => w.Schedules)
             .HasForeignKey(s => s.WidgetId)
             .OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<WidgetSchedule>()
+            .HasIndex(s => s.IsEnabled);
 
         builder.Entity<WidgetExecution>()
             .HasOne(e => e.Widget)
@@ -134,6 +140,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .OnDelete(DeleteBehavior.Cascade);
         builder.Entity<WidgetExecution>()
             .HasIndex(e => new { e.WidgetId, e.StartedAt });
+        builder.Entity<WidgetExecution>()
+            .HasIndex(e => e.Status);
+        builder.Entity<WidgetExecution>()
+            .HasIndex(e => e.StartedAt);
 
         builder.Entity<WidgetGroupMember>()
             .HasKey(m => new { m.WidgetGroupId, m.WidgetId });

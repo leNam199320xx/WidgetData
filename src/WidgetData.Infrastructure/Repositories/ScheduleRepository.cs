@@ -23,6 +23,13 @@ public class ScheduleRepository : IScheduleRepository
     public Task<int> CountEnabledAsync()
         => _context.WidgetSchedules.CountAsync(s => s.IsEnabled);
 
+    public async Task<(int Total, int Enabled)> GetCountsAsync()
+    {
+        var total = await _context.WidgetSchedules.CountAsync();
+        var enabled = await _context.WidgetSchedules.CountAsync(s => s.IsEnabled);
+        return (total, enabled);
+    }
+
     public async Task<IEnumerable<WidgetSchedule>> GetByWidgetIdAsync(int widgetId)
         => await _context.WidgetSchedules.Where(s => s.WidgetId == widgetId).ToListAsync();
 

@@ -3,6 +3,12 @@ using WidgetData.Domain.Enums;
 
 namespace WidgetData.Domain.Interfaces;
 
+public record ExecutionDashboardStats(
+    int Total,
+    int Successful,
+    int Failed,
+    IEnumerable<WidgetExecution> Recent);
+
 public interface IExecutionRepository
 {
     Task<IEnumerable<WidgetExecution>> GetAllAsync();
@@ -13,4 +19,5 @@ public interface IExecutionRepository
     Task<WidgetExecution?> GetByIdAsync(int id);
     Task<WidgetExecution> CreateAsync(WidgetExecution execution);
     Task<WidgetExecution> UpdateAsync(WidgetExecution execution);
+    Task<ExecutionDashboardStats> GetDashboardStatsAsync(int days, int limit);
 }
