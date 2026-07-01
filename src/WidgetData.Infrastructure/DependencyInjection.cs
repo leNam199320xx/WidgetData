@@ -15,6 +15,16 @@ namespace WidgetData.Infrastructure;
 
 public static class DependencyInjection
 {
+    /// <summary>
+    /// Returns true when the connection string points at a PostgreSQL server
+    /// (i.e. contains "Host=" or starts with "postgresql://" / "postgres://").
+    /// </summary>
+    private static bool IsPostgresConnectionString(string? cs) =>
+        cs != null && (
+            cs.Contains("Host=", StringComparison.OrdinalIgnoreCase) ||
+            cs.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase) ||
+            cs.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase));
+
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         QuestPDF.Settings.License = LicenseType.Community;
@@ -23,16 +33,29 @@ public static class DependencyInjection
         services.AddScoped<TenantContext>();
         services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
 
+        var defaultConn = configuration.GetConnectionString("DefaultConnection");
+        // Aspire injects the database connection string under the resource name ("widgetdata").
+        // Check that first so it takes precedence over the fallback DefaultConnection.
+        var aspireConn = configuration.GetConnectionString("widgetdata");
+        var resolvedConn = aspireConn ?? defaultConn;
+        var usePostgres = IsPostgresConnectionString(resolvedConn);
+
         // Register IdentityDbContext (User Management)
         services.AddDbContext<IdentityDbContext>((sp, options) =>
         {
-            options.UseSqlite(configuration.GetConnectionString("DefaultConnection") ?? "Data Source=widgetdata.db");
+            if (usePostgres)
+                options.UseNpgsql(resolvedConn);
+            else
+                options.UseSqlite(resolvedConn ?? "Data Source=widgetdata.db");
         });
 
-        // Keep ApplicationDbContext for backward compatibility (will be removed later)
+        // Register ApplicationDbContext
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {
-            options.UseSqlite(configuration.GetConnectionString("DefaultConnection") ?? "Data Source=widgetdata.db");
+            if (usePostgres)
+                options.UseNpgsql(resolvedConn);
+            else
+                options.UseSqlite(resolvedConn ?? "Data Source=widgetdata.db");
         });
 
         // Register JSON Data Provider

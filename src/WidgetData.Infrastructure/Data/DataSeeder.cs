@@ -71,10 +71,15 @@ public class DataSeeder
 
     private async Task EnsureDatabaseSchemaReadyAsync()
     {
-        if (!_context.Database.IsSqlite())
+        if (_context.Database.IsNpgsql() || _context.Database.IsSqlite())
         {
-            await _context.Database.EnsureCreatedAsync();
-            return;
+            // For PostgreSQL: apply pending migrations.
+            // For SQLite: use EnsureCreated (no migration files, schema managed directly).
+            if (_context.Database.IsNpgsql())
+            {
+                await _context.Database.MigrateAsync();
+                return;
+            }
         }
 
         var hasCoreSchema = await HasCoreSchemaAsync();
@@ -120,7 +125,7 @@ public class DataSeeder
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Core SQLite data compatibility check failed.");
+            _logger.LogWarning(ex, "Core data compatibility check failed.");
             return false;
         }
     }

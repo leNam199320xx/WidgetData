@@ -20,6 +20,7 @@
     </PackageReference>
     <PackageReference Include="MimeKit" Version="4.16.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2" />
     <PackageReference Include="QuestPDF" Version="2026.2.4" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="SSH.NET" Version="2025.1.0" />
