@@ -1,9 +1,19 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
+var postgres = builder.AddPostgres("postgres")
+    .WithDataVolume()
+    .WithPgAdmin();
+
+var widgetDb = postgres.AddDatabase("widgetdata");
+
 var api = builder.AddProject<Projects.WidgetData_API>("widgetdata-api")
+    .WithReference(widgetDb)
+    .WaitFor(widgetDb)
     .WithExternalHttpEndpoints();
 
 builder.AddProject<Projects.WidgetData_Worker>("widgetdata-worker")
+    .WithReference(widgetDb)
+    .WaitFor(widgetDb)
     .WithReference(api)
     .WaitFor(api);
 
