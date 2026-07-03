@@ -33,6 +33,8 @@
 - Tao module registration methods theo tung domain.
 - Tach wiring DI theo module thay vi mot file dang ky lon.
 
+**Trang thai**: Hoan thanh
+
 Deliverables:
 - Module map tai lieu hoa.
 - DI extension methods rieng cho tung module.
@@ -45,6 +47,8 @@ Deliverables:
 - Tach logic archive config thanh service rieng.
 - Giu interface va response hien tai de khong anh huong client.
 
+**Trang thai**: Hoan thanh
+
 Deliverables:
 - Widget module co service nho theo use-case.
 - Unit test cho execute flow va archive flow.
@@ -56,6 +60,8 @@ Deliverables:
 - Tao validator rieng theo source type.
 - Tach file handling sang component rieng.
 
+**Trang thai**: Hoan thanh
+
 Deliverables:
 - DataSources module khong con service da trach nhiem.
 - Test cho upload va test-connection pass.
@@ -65,6 +71,8 @@ Deliverables:
 - Tach versioning logic thanh PageVersioningService.
 - Tach publish and rollback use-cases.
 - Giu nguyen lifecycle state machine va snapshot format.
+
+**Trang thai**: Hoan thanh
 
 Deliverables:
 - Pages module ro bien gioi CRUD va versioning.
@@ -76,6 +84,8 @@ Deliverables:
 - Tao delivery dispatcher theo strategy cho Email, SFTP, SSH, HTTP, Telegram, Zalo, File.
 - Bo direct dependency vao DbContext trong service nghiep vu, di qua repository interface.
 
+**Trang thai**: Hoan thanh
+
 Deliverables:
 - Delivery module plugin-like cho kenh giao nhan.
 - Test cho it nhat Email, HTTP, File.
@@ -85,6 +95,8 @@ Deliverables:
 - Day seed, migration, bootstrap side effects sang startup pipeline co dieu kien.
 - Chuan hoa telemetry, audit, error policy theo module.
 - Don dep code cu va khoa boundary module bang architecture tests.
+
+**Trang thai**: Hoan thanh
 
 Deliverables:
 - Startup sach hon, side effect ro rang.
@@ -131,6 +143,14 @@ Deliverables:
 
 - Tong thoi gian: 6 sprint ngan, moi sprint 3 den 5 ngay lam viec.
 - Tong effort: trung binh den cao, nhung rui ro van hanh thap neu di theo PR nho.
+
+## 10. Trang thai hien tai
+
+- Sprint 1–6: Hoan thanh
+- Build: Infrastructure + API + Tests sach; 244 unit tests pass
+- Chi con 2 loi pre-existing o Worker project (khong lien quan)
+- Tat ca endpoint contracts duoc giu nguyen
+- Facade services duoc giu lai de backward-compatible
 
 ## 10. Buoc tiep theo ngay
 

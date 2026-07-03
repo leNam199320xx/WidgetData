@@ -463,3 +463,52 @@ public class FileBackedPageRepository : IPageRepository
             .ToList();
     }
 }
+
+public class FileBackedDeliveryTargetRepository : IDeliveryTargetRepository
+{
+    private readonly IJsonDeliveryTargetRepository _repo;
+
+    public FileBackedDeliveryTargetRepository(IJsonDeliveryTargetRepository repo)
+    {
+        _repo = repo;
+    }
+
+    public Task<IEnumerable<DeliveryTarget>> GetAllAsync() => _repo.GetAllAsync().ContinueWith(t => (IEnumerable<DeliveryTarget>)t.Result);
+    public Task<int> CountAsync() => _repo.GetAllAsync().ContinueWith(t => t.Result.Count);
+    public Task<int> CountActiveAsync() => _repo.GetAllAsync().ContinueWith(t => t.Result.Count(d => d.IsEnabled));
+    public Task<(int Total, int Active)> GetCountsAsync() => _repo.GetAllAsync().ContinueWith(t => (t.Result.Count, t.Result.Count(d => d.IsEnabled)));
+    public Task<DeliveryTarget?> GetByIdAsync(int id) => _repo.GetByIdAsync(id);
+    public async Task<DeliveryTarget> CreateAsync(DeliveryTarget target)
+    {
+        var all = await _repo.GetAllAsync();
+        target.Id = FileBackedRepositoryId.NextId(all.Select(x => x.Id));
+        return await _repo.CreateAsync(target);
+    }
+    public Task<DeliveryTarget> UpdateAsync(DeliveryTarget target) => _repo.UpdateAsync(target);
+    public async Task DeleteAsync(int id) => await _repo.DeleteAsync(id);
+    public async Task<IEnumerable<DeliveryTarget>> GetByWidgetAsync(int widgetId) => await _repo.GetByWidgetAsync(widgetId);
+}
+
+public class FileBackedDeliveryExecutionRepository : IDeliveryExecutionRepository
+{
+    private readonly IJsonDeliveryExecutionRepository _repo;
+
+    public FileBackedDeliveryExecutionRepository(IJsonDeliveryExecutionRepository repo)
+    {
+        _repo = repo;
+    }
+
+    public async Task<IEnumerable<DeliveryExecution>> GetByTargetAsync(int deliveryTargetId) => await _repo.GetByTargetAsync(deliveryTargetId);
+    public async Task<IEnumerable<DeliveryExecution>> GetByWidgetAsync(int widgetId)
+    {
+        var all = await _repo.GetAllAsync();
+        return all.Where(e => e.DeliveryTarget != null && e.DeliveryTarget.WidgetId == widgetId).OrderByDescending(e => e.ExecutedAt).ToList();
+    }
+    public async Task<DeliveryExecution> CreateAsync(DeliveryExecution execution)
+    {
+        var all = await _repo.GetAllAsync();
+        execution.Id = FileBackedRepositoryId.NextId(all.Select(x => x.Id));
+        return await _repo.CreateAsync(execution);
+    }
+    public Task<DeliveryExecution> UpdateAsync(DeliveryExecution execution) => _repo.UpdateAsync(execution);
+}

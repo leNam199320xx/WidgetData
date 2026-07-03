@@ -152,40 +152,88 @@ sqlite3 retail.db < scripts/sql/retail-test.sql
 ## 📐 Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  TẦNG 1 — PLATFORM  (src/)                              │
-│                                                         │
-│  .NET Aspire AppHost + Gateway (YARP)                   │
-│                                                         │
-│  WidgetData.Web (Blazor)                                │
-│    Admin platform: widget builder, HTML designer        │
-│    Dashboard page builder, reports, data pipeline       │
-│    Site Pages: active Frontend pages + preview/export   │
-│                                                         │
-│  WidgetData.API (ASP.NET Core)                          │
-│    Execute widget | schedule | cache | auth | reports   │
-│                         ↓                               │
-│  WidgetData.Worker (BackgroundService)                  │
-│    Cron job executor | NextRunAt | retry | timezone     │
-│    Startup: IdentityDbContext.EnsureCreatedAsync()      │
-│                         ↓                               │
-│  PERSISTENCE LAYER (Hybrid)                             │
-│    IdentityDbContext (SQLite) — User/Auth/Tenant        │
-│    ApplicationDbContext (SQLite) — legacy EF repos      │
-│    JSON Repositories — file-backed business data        │
-│      (switch via Storage:BusinessDataProvider=json)     │
-│                         ↓                               │
-│  EF Core + SQLite | Cronos | Redis | SignalR             │
-└─────────────────────────┬───────────────────────────────┘
-                          │ Platform deploy cho đơn vị nghiệp vụ
-┌─────────────────────────▼───────────────────────────────┐
-│  TẦNG 2 — BUSINESS APP  (demo/)                         │
-│                                                         │
-│  shop-front/    ← Trang bán hàng public                 │
-│    HTML/CSS/JS thuần (zero .NET dependency)             │
-│    WidgetEngine đọc JSON config → render UI             │
-│    Deploy độc lập: CDN / nginx / GitHub Pages           │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│  TẦNG 1 — PLATFORM  (src/)                                      │
+│                                                                 │
+│  .NET Aspire AppHost + Gateway (YARP)                           │
+│                                                                 │
+│  WidgetData.Web (Blazor)                                        │
+│    Admin platform: widget builder, HTML designer                │
+│    Dashboard page builder, reports, data pipeline               │
+│    Site Pages: active Frontend pages + preview/export           │
+│                                                                 │
+│  WidgetData.API (ASP.NET Core)                                  │
+│    Execute widget | schedule | cache | auth | reports           │
+│                         ↓                                       │
+│  WidgetData.Worker (BackgroundService)                          │
+│    Cron job executor | NextRunAt | retry | timezone             │
+│    Startup: IStartupInitializer pipeline                        │
+│                         ↓                                       │
+│  PERSISTENCE LAYER (Hybrid)                                     │
+│    IdentityDbContext (SQLite) — User/Auth/Tenant                │
+│    ApplicationDbContext (SQLite) — legacy EF repos              │
+│    JSON Repositories — file-backed business data                │
+│      (switch via Storage:BusinessDataProvider=json)             │
+│                         ↓                                       │
+│  EF Core + SQLite | Cronos | Redis | SignalR                    │
+└─────────────────────────┬───────────────────────────────────────┘
+                           │ Platform deploy cho đơn vị nghiệp vụ
+┌─────────────────────────▼───────────────────────────────────────┐
+│  TẦNG 2 — BUSINESS APP  (demo/)                                 │
+│                                                                 │
+│  shop-front/    ← Trang bán hàng public                         │
+│    HTML/CSS/JS thuần (zero .NET dependency)                     │
+│    WidgetEngine đọc JSON config → render UI                     │
+│    Deploy độc lập: CDN / nginx / GitHub Pages                   │
+└───────────────────────────────────────────────────────────────────┘
+```
+
+### Modular Monolith Structure
+
+```
+src/WidgetData.Infrastructure/
+├── Modules/
+│   ├── Widgets/
+│   │   ├── WidgetCrudService.cs
+│   │   ├── WidgetExecutionService.cs
+│   │   ├── PageVersioningService.cs
+│   │   └── Strategies/
+│   │       ├── CsvDataSourceStrategy.cs
+│   │       ├── JsonDataSourceStrategy.cs
+│   │       ├── ExcelDataSourceStrategy.cs
+│   │       └── RestApiDataSourceStrategy.cs
+│   ├── DataSources/
+│   │   ├── DataSourceCrudService.cs
+│   │   ├── DataSourceUploadService.cs
+│   │   ├── DataSourceConnectivityTestService.cs
+│   │   └── Validators/
+│   │       ├── CsvDataSourceValidator.cs
+│   │       ├── JsonDataSourceValidator.cs
+│   │       ├── ExcelDataSourceValidator.cs
+│   │       └── RestApiDataSourceValidator.cs
+│   ├── Pages/
+│   │   ├── PageCrudService.cs
+│   │   ├── PageVersioningService.cs
+│   │   └── PageLayoutService.cs
+│   ├── Delivery/
+│   │   ├── DeliveryTargetService.cs
+│   │   ├── DeliveryExecutionService.cs
+│   │   ├── DeliveryDispatcher.cs
+│   │   └── Channels/
+│   │       ├── EmailDeliveryChannelStrategy.cs
+│   │       ├── SftpDeliveryChannelStrategy.cs
+│   │       ├── SshDeliveryChannelStrategy.cs
+│   │       ├── HttpApiDeliveryChannelStrategy.cs
+│   │       ├── TelegramDeliveryChannelStrategy.cs
+│   │       ├── ZaloDeliveryChannelStrategy.cs
+│   │       └── FileDeliveryChannelStrategy.cs
+│   ├── Identity/
+│   └── CrossCutting/
+├── Startup/
+│   ├── IStartupInitializer.cs
+│   ├── DatabaseSchemaInitializer.cs
+│   └── DataSeedInitializer.cs
+└── DependencyInjection.cs
 ```
 
 👉 [Chi tiết Architecture](doc/architecture.md)
