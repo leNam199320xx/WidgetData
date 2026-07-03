@@ -93,27 +93,61 @@ WidgetData.Worker — SchedulerWorkerService (BackgroundService)
 │ Presentation Layer (Blazor)                               │
 │ - Pages, Components, ViewModels                           │
 └───────────────────────────┬───────────────────────────────┘
-                            │
+                             │
 ┌───────────────────────────┴───────────────────────────────┐
 │ API Layer (ASP.NET Core Controllers)                      │
 │ - Request/Response handling, Validation, Auth             │
 └───────────────────────────┬───────────────────────────────┘
-                            │
+                             │
 ┌───────────────────────────┴───────────────────────────────┐
-│ Business Logic Layer (Services)                           │
-│ - WidgetService, ScheduleService, CacheService            │
-│ - Business rules, Orchestration                           │
+│ Application Layer (Use-case Interfaces)                   │
+│ - IWidgetService, IPageService, IDeliveryService, etc.    │
 └───────────────────────────┬───────────────────────────────┘
-                            │
+                             │
+┌───────────────────────────┴───────────────────────────────┐
+│ Modular Monolith — Infrastructure Layer                   │
+│                                                           │
+│  Widgets Module                                           │
+│    WidgetCrudService      → CRUD widget                   │
+│    WidgetExecutionService → execute, history, data        │
+│    Strategies: Csv / Json / Excel / RestApi               │
+│                                                           │
+│  DataSources Module                                       │
+│    DataSourceCrudService           → CRUD data source     │
+│    DataSourceUploadService         → file upload          │
+│    DataSourceConnectivityTestService → test connection    │
+│    Validators: Csv / Json / Excel / RestApi               │
+│                                                           │
+│  Pages Module                                             │
+│    PageCrudService          → CRUD page                   │
+│    PageVersioningService    → publish/rollback/snapshot   │
+│    PageLayoutService        → widget layout               │
+│                                                           │
+│  Delivery Module                                          │
+│    DeliveryTargetService    → target CRUD                 │
+│    DeliveryExecutionService → execution history           │
+│    DeliveryDispatcher       → orchestrates delivery       │
+│    Channels: Email / SFTP / SSH / HTTP / Telegram / Zalo / File │
+│                                                           │
+│  Identity Module                                          │
+│    User, Role, Tenant, Permission management              │
+│                                                           │
+│  Cross-cutting Module                                     │
+│    Audit, Logging, Seeding, Migration, Shared Abstractions│
+└───────────────────────────┬───────────────────────────────┘
+                             │
 ┌───────────────────────────┴───────────────────────────────┐
 │ Data Access Layer (Repositories)                          │
-│ - Entity Framework Core, Dapper                           │
-│ - Data Source Adapters                                    │
+│ - EF Core (SQLite/PostgreSQL)                             │
+│ - JSON File-backed Repositories                           │
+│ - Repository interfaces per aggregate root                │
 └───────────────────────────┬───────────────────────────────┘
-                            │
+                             │
 ┌───────────────────────────┴───────────────────────────────┐
 │ Database & External Sources                               │
-│ - SQL Server, Files, APIs                                 │
+│ - SQLite / PostgreSQL                                     │
+│ - CSV / JSON / Excel files                                │
+│ - REST APIs                                               │
 └───────────────────────────────────────────────────────────┘
 ```
 
@@ -132,24 +166,71 @@ public interface IWidgetRepository {
 
 ### 2. Strategy Pattern (Data Source Adapters)
 ```csharp
-public interface IDataSourceAdapter {
-    Task<DataResult> ExecuteAsync(WidgetConfiguration config);
-    bool CanHandle(DataSourceType type);
+public interface IDataSourceStrategy {
+    DataSourceType SourceType { get; }
+    Task LoadDataAsync(int widgetId, DataSource dataSource);
 }
 
 // Implementations:
-- SqlServerAdapter
-- PostgreSqlAdapter
-- CsvFileAdapter
-- JsonFileAdapter
-- RestApiAdapter
+- CsvDataSourceStrategy
+- JsonDataSourceStrategy
+- ExcelDataSourceStrategy
+- RestApiDataSourceStrategy
 ```
 
-### 3. Factory Pattern (Widget Execution)
+### 3. Strategy Pattern (Delivery Channels)
 ```csharp
-public interface IWidgetExecutorFactory {
-    IWidgetExecutor CreateExecutor(DataSourceType type);
+public interface IDeliveryChannelStrategy {
+    DeliveryType SupportedType { get; }
+    Task DeliverAsync(int widgetId, DeliveryTarget target, IExportService exportService, IHttpClientFactory httpClientFactory);
 }
+
+// Implementations:
+- EmailDeliveryChannelStrategy
+- SftpDeliveryChannelStrategy
+- SshDeliveryChannelStrategy
+- HttpApiDeliveryChannelStrategy
+- TelegramDeliveryChannelStrategy
+- ZaloDeliveryChannelStrategy
+- FileDeliveryChannelStrategy
+```
+
+### 4. Facade Pattern (Backward Compatibility)
+```csharp
+// Old interface preserved
+public interface IWidgetService {
+    Task<IEnumerable<WidgetDto>> GetAllAsync();
+    Task<WidgetDto?> GetByIdAsync(int id);
+    Task<WidgetDto> CreateAsync(CreateWidgetDto dto);
+    Task<WidgetDto?> UpdateAsync(int id, UpdateWidgetDto dto);
+    Task<bool> DeleteAsync(int id);
+    Task<WidgetExecutionResult> ExecuteAsync(int id, string trigger);
+    Task<IEnumerable<WidgetExecutionDto>> GetHistoryAsync(int id);
+}
+
+// Facade delegates to focused services
+public class WidgetService : IWidgetService {
+    private readonly IWidgetCrudService _crud;
+    private readonly IWidgetExecutionService _execution;
+    
+    public Task<WidgetDto> CreateAsync(CreateWidgetDto dto) 
+        => _crud.CreateAsync(dto);
+    public Task<WidgetExecutionResult> ExecuteAsync(int id, string trigger) 
+        => _execution.ExecuteAsync(id, trigger);
+}
+```
+
+### 5. Startup Initializer Pipeline
+```csharp
+public interface IStartupInitializer {
+    string Name { get; }
+    int Order { get; }
+    Task InitializeAsync(IServiceProvider serviceProvider);
+}
+
+// Implementations run in order:
+- DatabaseSchemaInitializer (Order=1) — ensures DB schema is ready
+- DataSeedInitializer (Order=2) — seeds roles, tenants, users, demo data
 ```
 
 ## Công nghệ sử dụng

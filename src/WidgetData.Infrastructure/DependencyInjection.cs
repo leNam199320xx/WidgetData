@@ -7,8 +7,15 @@ using WidgetData.Domain.Interfaces;
 using WidgetData.Infrastructure.Data;
 using WidgetData.Infrastructure.Data.Json;
 using WidgetData.Infrastructure.Data.Json.Repositories;
+using WidgetData.Infrastructure.Modules.CrossCutting;
+using WidgetData.Infrastructure.Modules.DataSources;
+using WidgetData.Infrastructure.Modules.Delivery;
+using WidgetData.Infrastructure.Modules.Identity;
+using WidgetData.Infrastructure.Modules.Pages;
+using WidgetData.Infrastructure.Modules.Widgets;
 using WidgetData.Infrastructure.Repositories;
 using WidgetData.Infrastructure.Services;
+using WidgetData.Infrastructure.Startup;
 using WidgetData.Infrastructure.Tools;
 
 namespace WidgetData.Infrastructure;
@@ -29,18 +36,30 @@ public static class DependencyInjection
     {
         QuestPDF.Settings.License = LicenseType.Community;
 
-        // ITenantContext is scoped (per-request) – must be registered before DbContext
+        services.AddCommonInfrastructure(configuration);
+        services.AddIdentityModule(configuration);
+        services.AddWidgetsModule(configuration);
+        services.AddDataSourcesModule(configuration);
+        services.AddPagesModule(configuration);
+        services.AddDeliveryModule(configuration);
+        services.AddCrossCuttingModule(configuration);
+
+        services.AddSingleton<IStartupInitializer, DatabaseSchemaInitializer>();
+        services.AddSingleton<IStartupInitializer, DataSeedInitializer>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddCommonInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    {
         services.AddScoped<TenantContext>();
         services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
 
         var defaultConn = configuration.GetConnectionString("DefaultConnection");
-        // Aspire injects the database connection string under the resource name ("widgetdata").
-        // Check that first so it takes precedence over the fallback DefaultConnection.
         var aspireConn = configuration.GetConnectionString("widgetdata");
         var resolvedConn = aspireConn ?? defaultConn;
         var usePostgres = IsPostgresConnectionString(resolvedConn);
 
-        // Register IdentityDbContext (User Management)
         services.AddDbContext<IdentityDbContext>((sp, options) =>
         {
             if (usePostgres)
@@ -49,7 +68,6 @@ public static class DependencyInjection
                 options.UseSqlite(resolvedConn ?? "Data Source=widgetdata.db");
         });
 
-        // Register ApplicationDbContext
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {
             if (usePostgres)
@@ -58,86 +76,45 @@ public static class DependencyInjection
                 options.UseSqlite(resolvedConn ?? "Data Source=widgetdata.db");
         });
 
-        // Register JSON Data Provider
         var dataDirectory = Path.Combine(AppContext.BaseDirectory, "data");
         services.AddSingleton(new JsonDataProvider(dataDirectory));
 
-        // Register JSON Repositories (Business Data)
-        services.AddScoped<IJsonWidgetRepository, JsonWidgetRepository>();
-        services.AddScoped<IJsonDataSourceRepository, JsonDataSourceRepository>();
-        services.AddScoped<IJsonScheduleRepository, JsonScheduleRepository>();
-        services.AddScoped<IJsonExecutionRepository, JsonExecutionRepository>();
-        services.AddScoped<IJsonPageRepository, JsonPageRepository>();
-        services.AddScoped<IJsonPageVersionRepository, JsonPageVersionRepository>();
-        services.AddScoped<IJsonPageWidgetRepository, JsonPageWidgetRepository>();
-        services.AddScoped<IJsonWidgetGroupRepository, JsonWidgetGroupRepository>();
-        services.AddScoped<IJsonWidgetGroupMemberRepository, JsonWidgetGroupMemberRepository>();
-        services.AddScoped<IJsonWidgetConfigArchiveRepository, JsonWidgetConfigArchiveRepository>();
-        services.AddScoped<IJsonDeliveryTargetRepository, JsonDeliveryTargetRepository>();
-        services.AddScoped<IJsonDeliveryExecutionRepository, JsonDeliveryExecutionRepository>();
-        services.AddScoped<IJsonIdeaPostRepository, JsonIdeaPostRepository>();
-        services.AddScoped<IJsonIdeaSubscriptionRepository, JsonIdeaSubscriptionRepository>();
-        services.AddScoped<IJsonIdeaResultRepository, JsonIdeaResultRepository>();
-        services.AddScoped<IJsonFormSubmissionRepository, JsonFormSubmissionRepository>();
-        services.AddScoped<IJsonWidgetActivityRepository, JsonWidgetActivityRepository>();
+        return services;
+    }
 
-        var businessDataProvider = configuration["Storage:BusinessDataProvider"];
-        var useFileBackedBusinessData = string.Equals(businessDataProvider, "json", StringComparison.OrdinalIgnoreCase);
+    public static IServiceCollection AddIdentityModule(this IServiceCollection services, IConfiguration configuration)
+    {
+        IIdentityModule.Register(services, configuration);
+        return services;
+    }
 
-        if (useFileBackedBusinessData)
-        {
-            services.AddScoped<IWidgetRepository, FileBackedWidgetRepository>();
-            services.AddScoped<IDataSourceRepository, FileBackedDataSourceRepository>();
-            services.AddScoped<IScheduleRepository, FileBackedScheduleRepository>();
-            services.AddScoped<IExecutionRepository, FileBackedExecutionRepository>();
-            services.AddScoped<IWidgetConfigArchiveRepository, FileBackedWidgetConfigArchiveRepository>();
-            services.AddScoped<IPageRepository, FileBackedPageRepository>();
-            // In json mode JSON group repos (registered above) are used directly;
-            // no override needed here
-        }
-        else
-        {
-            // Keep DB Repositories for now (backward compatibility)
-            services.AddScoped<IWidgetRepository, WidgetRepository>();
-            services.AddScoped<IDataSourceRepository, DataSourceRepository>();
-            services.AddScoped<IScheduleRepository, ScheduleRepository>();
-            services.AddScoped<IExecutionRepository, ExecutionRepository>();
-            services.AddScoped<IWidgetConfigArchiveRepository, WidgetConfigArchiveRepository>();
-            services.AddScoped<IPageRepository, PageRepository>();
-            // Override JSON group repos with EF-backed adapters so WidgetGroupService works in EF mode
-            services.AddScoped<IJsonWidgetGroupRepository, EfWidgetGroupRepositoryAdapter>();
-            services.AddScoped<IJsonWidgetGroupMemberRepository, EfWidgetGroupMemberRepositoryAdapter>();
-        }
+    public static IServiceCollection AddWidgetsModule(this IServiceCollection services, IConfiguration configuration)
+    {
+        IWidgetsModule.Register(services, configuration);
+        return services;
+    }
 
-        services.AddScoped<IIdeaBoardRepository, IdeaBoardRepository>();
-        services.AddScoped<IWidgetActivityRepository, WidgetActivityRepository>();
-        services.AddScoped<ITenantRepository, TenantRepository>();
+    public static IServiceCollection AddDataSourcesModule(this IServiceCollection services, IConfiguration configuration)
+    {
+        IDataSourcesModule.Register(services, configuration);
+        return services;
+    }
 
-        services.AddScoped<IWidgetService, WidgetService>();
-        services.AddScoped<IDataSourceService, DataSourceService>();
-        services.AddScoped<IScheduleService, ScheduleService>();
-        services.AddScoped<IDashboardService, DashboardService>();
-        services.AddScoped<IAuditService, AuditService>();
-        services.AddScoped<IWidgetGroupService, WidgetGroupService>();
-        services.AddScoped<IPermissionService, PermissionService>();
-        services.AddScoped<IExportService, ExportService>();
-        services.AddScoped<IDeliveryService, DeliveryService>();
-        services.AddScoped<IWidgetConfigArchiveService, WidgetConfigArchiveService>();
-        services.AddScoped<IIdeaBoardService, IdeaBoardService>();
-        services.AddScoped<IPageHtmlService, PageHtmlService>();
-        services.AddScoped<IWidgetActivityService, WidgetActivityService>();
-        services.AddScoped<IFormService, FormService>();
-        services.AddScoped<ITenantService, TenantService>();
-        services.AddScoped<IPageService, PageService>();
+    public static IServiceCollection AddPagesModule(this IServiceCollection services, IConfiguration configuration)
+    {
+        IPagesModule.Register(services, configuration);
+        return services;
+    }
 
-        services.AddHostedService<InactivityMonitorService>();
+    public static IServiceCollection AddDeliveryModule(this IServiceCollection services, IConfiguration configuration)
+    {
+        IDeliveryModule.Register(services, configuration);
+        return services;
+    }
 
-        // Register migration tool
-        services.AddScoped<DbToJsonMigrationTool>();
-
-        services.AddHttpClient();
-        services.AddScoped<DataSeeder>();
-
+    public static IServiceCollection AddCrossCuttingModule(this IServiceCollection services, IConfiguration configuration)
+    {
+        ICrossCuttingModule.Register(services, configuration);
         return services;
     }
 }

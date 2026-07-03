@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Serilog;
 using WidgetData.API.Middleware;
+using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Entities;
 using WidgetData.Infrastructure;
 using WidgetData.Infrastructure.Data;
@@ -131,32 +132,8 @@ try
 
     using (var scope = app.Services.CreateScope())
     {
-        var seeder = scope.ServiceProvider.GetRequiredService<DataSeeder>();
-        await seeder.SeedAsync();
-
-        var businessDataProvider = builder.Configuration["Storage:BusinessDataProvider"];
-        if (string.Equals(businessDataProvider, "json", StringComparison.OrdinalIgnoreCase))
-        {
-            var jsonWidgetRepo = scope.ServiceProvider.GetRequiredService<IJsonWidgetRepository>();
-            var shouldMigrate = false;
-            try
-            {
-                var jsonWidgets = await jsonWidgetRepo.GetAllAsync();
-                shouldMigrate = jsonWidgets.Count == 0;
-            }
-            catch (Exception ex)
-            {
-                var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
-                logger.LogWarning(ex, "Failed to read JSON widget repository. Will run DB-to-JSON migration.");
-                shouldMigrate = true;
-            }
-
-            if (shouldMigrate)
-            {
-                var migrationTool = scope.ServiceProvider.GetRequiredService<DbToJsonMigrationTool>();
-                await migrationTool.MigrateAllAsync();
-            }
-        }
+        var initializer = scope.ServiceProvider.GetRequiredService<IStartupInitializer>();
+        await initializer.InitializeAsync(scope.ServiceProvider);
     }
 
     if (app.Environment.IsDevelopment())

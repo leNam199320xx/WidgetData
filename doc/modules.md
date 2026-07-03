@@ -350,6 +350,106 @@ public class WidgetEngine
 }
 ```
 
+### 2. Data Source Connectors (8%)
+
+**Chức năng cần custom:**
+- Unified interface cho tất cả data sources
+- Connection pooling & retry logic
+- Query builder cho dynamic queries
+- Schema inference
+
+```csharp
+// Custom: IDataSourceConnector.cs
+public interface IDataSourceConnector {
+    Task<DataTable> ExecuteQueryAsync(string query, Dictionary<string, object> parameters);
+    Task<List<string>> GetTablesAsync();
+    Task<DataSchema> GetSchemaAsync(string tableName);
+    Task TestConnectionAsync();
+}
+
+// Strategy implementations:
+public class CsvDataSourceStrategy : IDataSourceStrategy { ... }
+public class JsonDataSourceStrategy : IDataSourceStrategy { ... }
+public class ExcelDataSourceStrategy : IDataSourceStrategy { ... }
+public class RestApiDataSourceStrategy : IDataSourceStrategy { ... }
+```
+
+### 3. Widget Builder UI (7%)
+
+**Chức năng cần custom:**
+- Drag-and-drop step builder
+- Visual query builder
+- Real-time preview
+- Configuration wizard
+
+```razor
+<!-- Custom: WidgetBuilder.razor -->
+@page "/builder"
+
+<MudGrid>
+    <MudItem xs="3">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6">Steps</MudText>
+            <MudList>
+                <MudListItem @ondrop="@(() => AddStep("extract"))">
+                    <MudIcon Icon="@Icons.Material.Filled.DataArray" /> Extract
+                </MudListItem>
+                <MudListItem @ondrop="@(() => AddStep("transform"))">
+                    <MudIcon Icon="@Icons.Material.Filled.Transform" /> Transform
+                </MudListItem>
+            </MudList>
+        </MudPaper>
+    </MudItem>
+    
+    <MudItem xs="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6">Pipeline</MudText>
+            @foreach (var step in steps)
+            {
+                <StepCard Step="@step" OnDelete="@(() => RemoveStep(step))" />
+            }
+        </MudPaper>
+    </MudItem>
+    
+    <MudItem xs="3">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6">Preview</MudText>
+            <DataPreview Data="@previewData" />
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+```
+
+### 4. Dashboard & Visualization (5%)
+
+**Chức năng cần custom:**
+- Custom chart renderers
+- Real-time data refresh
+- Dashboard layout engine
+- Widget resize/reposition
+
+```razor
+<!-- Custom: Dashboard.razor -->
+@page "/dashboard/{id:int}"
+
+<GridLayout @bind-Layout="layout">
+    @foreach (var widget in widgets)
+    {
+        <GridLayoutItem x="@widget.X" y="@widget.Y" w="@widget.Width" h="@widget.Height">
+            <WidgetRenderer Widget="@widget" OnRefresh="@RefreshWidget" />
+        </GridLayoutItem>
+    }
+</GridLayout>
+
+@code {
+    private async Task RefreshWidget(Widget widget)
+    {
+        var data = await _widgetService.GetDataAsync(widget.Id);
+        await _hubConnection.InvokeAsync("BroadcastWidgetUpdate", widget.Id, data);
+    }
+}
+```
+
 ---
 
 ### 2. Data Source Connectors (8%)

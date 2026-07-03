@@ -1,6 +1,7 @@
 using Moq;
 using Microsoft.Extensions.Hosting;
 using System.IO;
+using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
 using WidgetData.Domain.Interfaces;

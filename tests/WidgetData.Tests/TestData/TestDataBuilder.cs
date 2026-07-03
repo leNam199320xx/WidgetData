@@ -221,4 +221,41 @@ public static class TestDataBuilder
             RetryOnFailure = true,
             MaxRetries = 5
         };
+
+    // ─── Page ───────────────────────────────────────────────────────────────
+
+    public static Page CreatePage(int id = 1, int tenantId = 1, string title = "Test Page") =>
+        new()
+        {
+            Id = id,
+            TenantId = tenantId,
+            Title = title,
+            Slug = "test-page",
+            Description = "Page test",
+            ScreenType = ScreenType.Frontend,
+            LifecycleState = ScreenLifecycleState.Draft,
+            CurrentVersion = 1,
+            IsActive = true,
+            CreatedBy = "user1",
+            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        };
+
+    public static CreatePageDto CreatePageDto(string title = "New Page") =>
+        new()
+        {
+            Title = title,
+            Slug = "new-page",
+            Description = "Mô tả trang",
+            ScreenType = ScreenType.Frontend
+        };
+
+    public static UpdatePageDto UpdatePageDto(string title = "Updated Page") =>
+        new()
+        {
+            Title = title,
+            Slug = "updated-page",
+            Description = "Mô tả đã cập nhật",
+            ScreenType = ScreenType.Frontend,
+            IsActive = true
+        };
 }
