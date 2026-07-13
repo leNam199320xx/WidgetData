@@ -2,7 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Interfaces;
-using WidgetData.Widgets;
 using WidgetData.Delivery;
 
 namespace WidgetData.Delivery;
@@ -16,15 +15,11 @@ public static class DeliveryModule
 
         if (useFileBackedBusinessData)
         {
-            services.AddScoped<IWidgetRepository, WidgetData.Widgets.FileBackedWidgetRepository>();
-            services.AddScoped<IExecutionRepository, WidgetData.Widgets.FileBackedExecutionRepository>();
             services.AddScoped<IDeliveryTargetRepository, FileBackedDeliveryTargetRepository>();
             services.AddScoped<IDeliveryExecutionRepository, FileBackedDeliveryExecutionRepository>();
         }
         else
         {
-            services.AddScoped<IWidgetRepository, WidgetData.Widgets.WidgetRepository>();
-            services.AddScoped<IExecutionRepository, WidgetData.Widgets.ExecutionRepository>();
             services.AddScoped<IDeliveryTargetRepository, DeliveryTargetRepository>();
             services.AddScoped<IDeliveryExecutionRepository, DeliveryExecutionRepository>();
         }

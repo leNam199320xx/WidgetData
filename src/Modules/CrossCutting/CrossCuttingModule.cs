@@ -3,7 +3,6 @@ using Microsoft.Extensions.Configuration;
 using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Interfaces;
 using WidgetData.CrossCutting;
-using WidgetData.Pages;
 
 namespace WidgetData.CrossCutting;
 
@@ -29,7 +28,6 @@ public static class CrossCuttingModule
 
         services.AddScoped<IScheduleService, Services.ScheduleService>();
         services.AddScoped<IAuditService, Services.AuditService>();
-        services.AddScoped<IPageHtmlService, PageHtmlService>();
         services.AddScoped<IFormService, Services.FormService>();
         services.AddScoped<IIdeaBoardService, Services.IdeaBoardService>();
         services.AddScoped<IWidgetActivityService, Services.WidgetActivityService>();

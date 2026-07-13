@@ -4,7 +4,6 @@
     <ProjectReference Include="..\..\WidgetData.Domain\WidgetData.Domain.csproj" />
     <ProjectReference Include="..\..\WidgetData.Application\WidgetData.Application.csproj" />
     <ProjectReference Include="..\Data\WidgetData.Data.csproj" />
-    <ProjectReference Include="..\Pages\WidgetData.Pages.csproj" />
   </ItemGroup>
 
   <ItemGroup>

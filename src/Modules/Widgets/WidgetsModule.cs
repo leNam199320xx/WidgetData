@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Interfaces;
 using WidgetData.Widgets;
-using WidgetData.DataSources;
 
 namespace WidgetData.Widgets;
 
@@ -55,11 +54,6 @@ public static class WidgetsModule
         services.AddScoped<IWidgetGroupService, WidgetGroupService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IExportService, ExportService>();
-
-        services.AddScoped<WidgetData.Application.Interfaces.IDataSourceStrategy, CsvDataSourceStrategy>();
-        services.AddScoped<WidgetData.Application.Interfaces.IDataSourceStrategy, JsonDataSourceStrategy>();
-        services.AddScoped<WidgetData.Application.Interfaces.IDataSourceStrategy, ExcelDataSourceStrategy>();
-        services.AddScoped<WidgetData.Application.Interfaces.IDataSourceStrategy, RestApiDataSourceStrategy>();
 
         return services;
     }

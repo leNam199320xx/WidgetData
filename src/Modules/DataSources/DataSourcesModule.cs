@@ -41,6 +41,11 @@ public static class DataSourcesModule
         services.AddScoped<IDataSourceValidator, ExcelDataSourceValidator>();
         services.AddScoped<IDataSourceValidator, RestApiDataSourceValidator>();
 
+        services.AddScoped<WidgetData.Application.Interfaces.IDataSourceStrategy, CsvDataSourceStrategy>();
+        services.AddScoped<WidgetData.Application.Interfaces.IDataSourceStrategy, JsonDataSourceStrategy>();
+        services.AddScoped<WidgetData.Application.Interfaces.IDataSourceStrategy, ExcelDataSourceStrategy>();
+        services.AddScoped<WidgetData.Application.Interfaces.IDataSourceStrategy, RestApiDataSourceStrategy>();
+
         services.AddScoped<IFileHandler, FileHandler>();
 
         return services;
