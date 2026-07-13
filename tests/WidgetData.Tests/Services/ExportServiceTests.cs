@@ -2,10 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Moq;
 using WidgetData.Application.DTOs;
 using WidgetData.Application.Interfaces;
+using WidgetData.Domain;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
-using WidgetData.Infrastructure.Data;
-using WidgetData.Infrastructure.Services;
+
+using WidgetData.Widgets;
 
 namespace WidgetData.Tests.Services;
 

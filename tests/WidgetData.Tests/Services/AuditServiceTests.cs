@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using WidgetData.Infrastructure.Data;
-using WidgetData.Infrastructure.Services;
+using WidgetData.Domain;
+using WidgetData.CrossCutting.Services;
 
 namespace WidgetData.Tests.Services;
 

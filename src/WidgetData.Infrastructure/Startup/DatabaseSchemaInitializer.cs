@@ -5,11 +5,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using WidgetData.Application.Interfaces;
+using WidgetData.Domain;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
 using WidgetData.Infrastructure.Data;
-using WidgetData.Infrastructure.Data.Json;
-using WidgetData.Infrastructure.Data.Json.Repositories;
 
 namespace WidgetData.Infrastructure.Startup;
 

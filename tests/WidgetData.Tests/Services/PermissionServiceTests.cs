@@ -2,9 +2,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using WidgetData.Application.DTOs;
+using WidgetData.Domain;
 using WidgetData.Domain.Entities;
-using WidgetData.Infrastructure.Data;
-using WidgetData.Infrastructure.Services;
+using WidgetData.Identity;
 
 namespace WidgetData.Tests.Services;
 

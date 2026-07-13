@@ -2,7 +2,7 @@ using Moq;
 using WidgetData.Application.DTOs;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Interfaces;
-using WidgetData.Infrastructure.Services;
+using WidgetData.Widgets;
 using WidgetData.Tests.TestData;
 
 namespace WidgetData.Tests.Services;

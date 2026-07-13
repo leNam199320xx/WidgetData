@@ -6,7 +6,7 @@ using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
 using WidgetData.Domain.Interfaces;
-using WidgetData.Infrastructure.Services;
+using WidgetData.Pages;
 using WidgetData.Tests.TestData;
 
 namespace WidgetData.Tests.Services;

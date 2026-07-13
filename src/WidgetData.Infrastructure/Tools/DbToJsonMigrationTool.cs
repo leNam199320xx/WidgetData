@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using WidgetData.Domain;
 using WidgetData.Domain.Entities;
-using WidgetData.Infrastructure.Data;
-using WidgetData.Infrastructure.Data.Json;
-using WidgetData.Infrastructure.Data.Json.Repositories;
+using WidgetData.Data;
+using WidgetData.Data.Repositories;
 
 namespace WidgetData.Infrastructure.Tools;
 

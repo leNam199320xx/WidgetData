@@ -2,12 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 using WidgetData.Application.Interfaces;
+using WidgetData.Domain;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
 using WidgetData.Domain.Interfaces;
-using WidgetData.Infrastructure.Data;
-using WidgetData.Infrastructure.Repositories;
-using WidgetData.Infrastructure.Services;
+using WidgetData.Widgets;
 using WidgetData.Tests.TestData;
 
 namespace WidgetData.Tests.Services;
@@ -34,8 +33,11 @@ public class WidgetServiceTests
         var auditServiceMock = new Mock<IAuditService>();
         var loggerMock = new Mock<ILogger<WidgetService>>();
         var httpClientFactoryMock = new Mock<System.Net.Http.IHttpClientFactory>();
-        _service = new WidgetService(_widgetRepoMock.Object, _executionRepoMock.Object, new EfWidgetGroupMemberRepositoryAdapter(_context),
-            _archiveRepoMock.Object, _scheduleRepoMock.Object, auditServiceMock.Object, loggerMock.Object, httpClientFactoryMock.Object);
+        var groupMemberRepoMock = new Mock<IJsonWidgetGroupMemberRepository>();
+        groupMemberRepoMock.Setup(r => r.GetByWidgetAsync(It.IsAny<int>())).ReturnsAsync(new List<WidgetGroupMember>());
+        _service = new WidgetService(_widgetRepoMock.Object, _executionRepoMock.Object, groupMemberRepoMock.Object,
+            _archiveRepoMock.Object, _scheduleRepoMock.Object, auditServiceMock.Object, loggerMock.Object, httpClientFactoryMock.Object,
+            Array.Empty<WidgetData.Application.Interfaces.IDataSourceStrategy>());
     }
 
     // ─── GetAllAsync ─────────────────────────────────────────────────────────

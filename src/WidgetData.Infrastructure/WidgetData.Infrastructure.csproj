@@ -3,6 +3,13 @@
   <ItemGroup>
     <ProjectReference Include="..\WidgetData.Domain\WidgetData.Domain.csproj" />
     <ProjectReference Include="..\WidgetData.Application\WidgetData.Application.csproj" />
+    <ProjectReference Include="..\Modules\Identity\WidgetData.Identity.csproj" />
+    <ProjectReference Include="..\Modules\Data\WidgetData.Data.csproj" />
+    <ProjectReference Include="..\Modules\DataSources\WidgetData.DataSources.csproj" />
+    <ProjectReference Include="..\Modules\Widgets\WidgetData.Widgets.csproj" />
+    <ProjectReference Include="..\Modules\Delivery\WidgetData.Delivery.csproj" />
+    <ProjectReference Include="..\Modules\Pages\WidgetData.Pages.csproj" />
+    <ProjectReference Include="..\Modules\CrossCutting\WidgetData.CrossCutting.csproj" />
   </ItemGroup>
 
   <ItemGroup>

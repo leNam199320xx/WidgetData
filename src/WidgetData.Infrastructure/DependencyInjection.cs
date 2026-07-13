@@ -1,20 +1,18 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using QuestPDF.Infrastructure;
 using WidgetData.Application.Interfaces;
+using WidgetData.Domain;
 using WidgetData.Domain.Interfaces;
 using WidgetData.Infrastructure.Data;
-using WidgetData.Infrastructure.Data.Json;
-using WidgetData.Infrastructure.Data.Json.Repositories;
-using WidgetData.Infrastructure.Modules.CrossCutting;
-using WidgetData.Infrastructure.Modules.DataSources;
-using WidgetData.Infrastructure.Modules.Delivery;
-using WidgetData.Infrastructure.Modules.Identity;
-using WidgetData.Infrastructure.Modules.Pages;
-using WidgetData.Infrastructure.Modules.Widgets;
-using WidgetData.Infrastructure.Repositories;
-using WidgetData.Infrastructure.Services;
+using WidgetData.CrossCutting;
+using WidgetData.DataSources;
+using WidgetData.Delivery;
+using WidgetData.Identity;
+using WidgetData.Pages;
+using WidgetData.Widgets;
 using WidgetData.Infrastructure.Startup;
 using WidgetData.Infrastructure.Tools;
 
@@ -47,6 +45,9 @@ public static class DependencyInjection
         services.AddSingleton<IStartupInitializer, DatabaseSchemaInitializer>();
         services.AddSingleton<IStartupInitializer, DataSeedInitializer>();
 
+        services.AddScoped<WidgetData.Infrastructure.Tools.DbToJsonMigrationTool>();
+        services.AddScoped<WidgetData.Infrastructure.Data.DataSeeder>();
+
         return services;
     }
 
@@ -54,6 +55,12 @@ public static class DependencyInjection
     {
         services.AddScoped<TenantContext>();
         services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
+
+        services.AddSingleton<ILogger>(sp =>
+        {
+            var factory = sp.GetRequiredService<ILoggerFactory>();
+            return factory.CreateLogger("Default");
+        });
 
         var defaultConn = configuration.GetConnectionString("DefaultConnection");
         var aspireConn = configuration.GetConnectionString("widgetdata");
@@ -77,44 +84,44 @@ public static class DependencyInjection
         });
 
         var dataDirectory = Path.Combine(AppContext.BaseDirectory, "data");
-        services.AddSingleton(new JsonDataProvider(dataDirectory));
+        services.AddSingleton(new WidgetData.Data.JsonDataProvider(dataDirectory));
 
         return services;
     }
 
     public static IServiceCollection AddIdentityModule(this IServiceCollection services, IConfiguration configuration)
     {
-        IIdentityModule.Register(services, configuration);
+        WidgetData.Identity.IdentityModule.AddIdentityModule(services, configuration);
         return services;
     }
 
     public static IServiceCollection AddWidgetsModule(this IServiceCollection services, IConfiguration configuration)
     {
-        IWidgetsModule.Register(services, configuration);
+        WidgetData.Widgets.WidgetsModule.AddWidgetsModule(services, configuration);
         return services;
     }
 
     public static IServiceCollection AddDataSourcesModule(this IServiceCollection services, IConfiguration configuration)
     {
-        IDataSourcesModule.Register(services, configuration);
+        WidgetData.DataSources.DataSourcesModule.AddDataSourcesModule(services, configuration);
         return services;
     }
 
     public static IServiceCollection AddPagesModule(this IServiceCollection services, IConfiguration configuration)
     {
-        IPagesModule.Register(services, configuration);
+        WidgetData.Pages.PagesModule.AddPagesModule(services, configuration);
         return services;
     }
 
     public static IServiceCollection AddDeliveryModule(this IServiceCollection services, IConfiguration configuration)
     {
-        IDeliveryModule.Register(services, configuration);
+        WidgetData.Delivery.DeliveryModule.AddDeliveryModule(services, configuration);
         return services;
     }
 
     public static IServiceCollection AddCrossCuttingModule(this IServiceCollection services, IConfiguration configuration)
     {
-        ICrossCuttingModule.Register(services, configuration);
+        WidgetData.CrossCutting.CrossCuttingModule.AddCrossCuttingModule(services, configuration);
         return services;
     }
 }

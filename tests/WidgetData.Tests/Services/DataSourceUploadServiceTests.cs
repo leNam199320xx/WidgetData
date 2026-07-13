@@ -6,7 +6,7 @@ using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
 using WidgetData.Domain.Interfaces;
-using WidgetData.Infrastructure.Services;
+using WidgetData.DataSources;
 using WidgetData.Tests.TestData;
 
 namespace WidgetData.Tests.Services;
@@ -14,7 +14,7 @@ namespace WidgetData.Tests.Services;
 public class DataSourceUploadServiceTests
 {
     private readonly Mock<IDataSourceRepository> _repoMock;
-    private readonly Mock<IFileHandler> _fileHandlerMock;
+    private readonly Mock<WidgetData.Application.Interfaces.IFileHandler> _fileHandlerMock;
     private readonly Mock<IHostEnvironment> _hostEnvMock;
     private readonly Mock<ILogger<DataSourceUploadService>> _loggerMock;
     private readonly DataSourceUploadService _service;
@@ -22,7 +22,7 @@ public class DataSourceUploadServiceTests
     public DataSourceUploadServiceTests()
     {
         _repoMock = new Mock<IDataSourceRepository>();
-        _fileHandlerMock = new Mock<IFileHandler>();
+        _fileHandlerMock = new Mock<WidgetData.Application.Interfaces.IFileHandler>();
         _hostEnvMock = new Mock<IHostEnvironment>();
         _loggerMock = new Mock<ILogger<DataSourceUploadService>>();
         _service = new DataSourceUploadService(_repoMock.Object, _fileHandlerMock.Object,

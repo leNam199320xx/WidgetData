@@ -9,10 +9,10 @@ using Scalar.AspNetCore;
 using Serilog;
 using WidgetData.API.Middleware;
 using WidgetData.Application.Interfaces;
+using WidgetData.Domain;
 using WidgetData.Domain.Entities;
 using WidgetData.Infrastructure;
 using WidgetData.Infrastructure.Data;
-using WidgetData.Infrastructure.Data.Json.Repositories;
 using WidgetData.Infrastructure.Tools;
 
 Log.Logger = new LoggerConfiguration()

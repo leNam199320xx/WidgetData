@@ -1,7 +1,7 @@
 using Moq;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Interfaces;
-using WidgetData.Infrastructure.Services;
+using WidgetData.CrossCutting.Services;
 using WidgetData.Tests.TestData;
 
 namespace WidgetData.Tests.Services;

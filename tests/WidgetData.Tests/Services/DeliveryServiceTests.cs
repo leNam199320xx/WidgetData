@@ -2,10 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using Moq;
 using WidgetData.Application.DTOs;
 using WidgetData.Application.Interfaces;
+using WidgetData.Delivery;
+using WidgetData.Domain;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
-using WidgetData.Infrastructure.Data;
-using WidgetData.Infrastructure.Services;
 
 namespace WidgetData.Tests.Services;
 
@@ -24,7 +24,10 @@ public class DeliveryServiceTests : IDisposable
         _context = new ApplicationDbContext(options);
         _exportServiceMock = new Mock<IExportService>();
         _httpClientFactoryMock = new Mock<IHttpClientFactory>();
-        _service = new DeliveryService(_context, _exportServiceMock.Object, _httpClientFactoryMock.Object);
+        var targetRepo = new DeliveryTargetRepository(_context);
+        var executionRepo = new DeliveryExecutionRepository(_context);
+        _service = new DeliveryService(_context, _exportServiceMock.Object, _httpClientFactoryMock.Object,
+            targetRepo, executionRepo, new IDeliveryChannelStrategy[] { new TestCsvDeliveryStrategy() });
     }
 
     public void Dispose()
@@ -246,5 +249,15 @@ public class DeliveryServiceTests : IDisposable
         var result = await _service.GetExecutionsAsync(99);
 
         Assert.Empty(result);
+    }
+}
+
+public class TestCsvDeliveryStrategy : IDeliveryChannelStrategy
+{
+    public DeliveryType SupportedType => DeliveryType.Csv;
+
+    public async Task DeliverAsync(int widgetId, DeliveryTarget target, IExportService exportService, IHttpClientFactory httpClientFactory)
+    {
+        await exportService.ExportAsync(widgetId, "csv");
     }
 }

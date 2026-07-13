@@ -3,9 +3,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using WidgetData.Domain;
 using WidgetData.Domain.Entities;
-using WidgetData.Infrastructure.Data;
-using WidgetData.Infrastructure.Services;
+using WidgetData.CrossCutting.Services;
 using WidgetData.Tests.TestData;
 
 namespace WidgetData.Tests.Services;
@@ -63,7 +63,7 @@ public class InactivityMonitorServiceTests
         var service = CreateService(context, defaultThresholdDays: 30);
 
         // Use reflection to invoke the private RunCheckAsync method
-        var method = typeof(InactivityMonitorService)
+        var method = typeof(global::WidgetData.CrossCutting.Services.InactivityMonitorService)
             .GetMethod("RunCheckAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         Assert.NotNull(method);
         await (Task)method.Invoke(service, [CancellationToken.None])!;
@@ -86,7 +86,7 @@ public class InactivityMonitorServiceTests
 
         var service = CreateService(context, defaultThresholdDays: 30);
 
-        var method = typeof(InactivityMonitorService)
+        var method = typeof(global::WidgetData.CrossCutting.Services.InactivityMonitorService)
             .GetMethod("RunCheckAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         await (Task)method!.Invoke(service, [CancellationToken.None])!;
 
@@ -108,7 +108,7 @@ public class InactivityMonitorServiceTests
 
         var service = CreateService(context, defaultThresholdDays: 30);
 
-        var method = typeof(InactivityMonitorService)
+        var method = typeof(global::WidgetData.CrossCutting.Services.InactivityMonitorService)
             .GetMethod("RunCheckAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         await (Task)method!.Invoke(service, [CancellationToken.None])!;
 
@@ -132,7 +132,7 @@ public class InactivityMonitorServiceTests
 
         var service = CreateService(context, defaultThresholdDays: 30);
 
-        var method = typeof(InactivityMonitorService)
+        var method = typeof(global::WidgetData.CrossCutting.Services.InactivityMonitorService)
             .GetMethod("RunCheckAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         await (Task)method!.Invoke(service, [CancellationToken.None])!;
 
@@ -158,7 +158,7 @@ public class InactivityMonitorServiceTests
 
         var service = CreateService(context, defaultThresholdDays: 30);
 
-        var method = typeof(InactivityMonitorService)
+        var method = typeof(global::WidgetData.CrossCutting.Services.InactivityMonitorService)
             .GetMethod("RunCheckAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         await (Task)method!.Invoke(service, [CancellationToken.None])!;
 

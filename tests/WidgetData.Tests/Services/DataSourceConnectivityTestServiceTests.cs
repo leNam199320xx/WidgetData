@@ -5,7 +5,7 @@ using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
 using WidgetData.Domain.Interfaces;
-using WidgetData.Infrastructure.Services;
+using WidgetData.DataSources;
 using WidgetData.Tests.TestData;
 
 namespace WidgetData.Tests.Services;
@@ -23,7 +23,7 @@ public class DataSourceConnectivityTestServiceTests
         _httpClientFactoryMock = new Mock<IHttpClientFactory>();
         _loggerMock = new Mock<ILogger<DataSourceConnectivityTestService>>();
         _service = new DataSourceConnectivityTestService(_repoMock.Object, _httpClientFactoryMock.Object,
-            Enumerable.Empty<IDataSourceValidator>(), _loggerMock.Object);
+            Enumerable.Empty<WidgetData.Application.Interfaces.IDataSourceValidator>(), _loggerMock.Object);
     }
 
     [Fact]

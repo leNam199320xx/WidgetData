@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
+using WidgetData.Domain;
 using WidgetData.Domain.Interfaces;
 using WidgetData.Infrastructure.Data;
-using WidgetData.Infrastructure.Services;
 
 namespace WidgetData.API.Middleware;
 

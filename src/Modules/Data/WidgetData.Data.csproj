@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\WidgetData.Domain\WidgetData.Domain.csproj" />
+    <ProjectReference Include="..\..\WidgetData.Application\WidgetData.Application.csproj" />
+  </ItemGroup>
+</Project>

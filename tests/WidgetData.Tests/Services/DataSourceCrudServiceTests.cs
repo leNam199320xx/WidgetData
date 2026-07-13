@@ -4,7 +4,7 @@ using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
 using WidgetData.Domain.Interfaces;
-using WidgetData.Infrastructure.Services;
+using WidgetData.DataSources;
 using WidgetData.Tests.TestData;
 
 namespace WidgetData.Tests.Services;
@@ -19,7 +19,7 @@ public class DataSourceCrudServiceTests
     {
         _repoMock = new Mock<IDataSourceRepository>();
         _loggerMock = new Mock<ILogger<DataSourceCrudService>>();
-        _service = new DataSourceCrudService(_repoMock.Object, Enumerable.Empty<IDataSourceValidator>(), _loggerMock.Object);
+        _service = new DataSourceCrudService(_repoMock.Object, Enumerable.Empty<WidgetData.Application.Interfaces.IDataSourceValidator>(), _loggerMock.Object);
     }
 
     [Fact]

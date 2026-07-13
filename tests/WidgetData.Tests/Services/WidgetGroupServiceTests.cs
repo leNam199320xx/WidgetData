@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using WidgetData.Application.DTOs;
+using WidgetData.Domain;
 using WidgetData.Domain.Entities;
-using WidgetData.Infrastructure.Data;
-using WidgetData.Infrastructure.Repositories;
-using WidgetData.Infrastructure.Services;
+using WidgetData.Widgets;
+using WidgetData.Application.Interfaces;
 
 namespace WidgetData.Tests.Services;
 
@@ -19,14 +19,8 @@ public class WidgetGroupServiceTests : IDisposable
             .Options;
         _context = new ApplicationDbContext(options);
         _service = new WidgetGroupService(
-            new EfWidgetGroupRepositoryAdapter(_context),
-            new EfWidgetGroupMemberRepositoryAdapter(_context));
-    }
-
-    public void Dispose()
-    {
-        _context.Database.EnsureDeleted();
-        _context.Dispose();
+            new FakeJsonWidgetGroupRepository(_context),
+            new FakeJsonWidgetGroupMemberRepository(_context));
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -50,8 +44,8 @@ public class WidgetGroupServiceTests : IDisposable
     [Fact]
     public async Task GetAllAsync_ReturnsAllGroups()
     {
-        await SeedGroupAsync("Group A");
-        await SeedGroupAsync("Group B");
+        await SeedGroupAsync("Group A", widgetIds: []);
+        await SeedGroupAsync("Group B", widgetIds: []);
 
         var result = (await _service.GetAllAsync()).ToList();
 
@@ -227,5 +221,11 @@ public class WidgetGroupServiceTests : IDisposable
         var result = await _service.DeleteAsync(999);
 
         Assert.False(result);
+    }
+
+    public void Dispose()
+    {
+        _context.Database.EnsureDeleted();
+        _context.Dispose();
     }
 }

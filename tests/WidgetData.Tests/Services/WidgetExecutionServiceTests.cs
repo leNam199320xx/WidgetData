@@ -4,8 +4,7 @@ using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
 using WidgetData.Domain.Interfaces;
-using WidgetData.Infrastructure.Repositories;
-using WidgetData.Infrastructure.Services;
+using WidgetData.Widgets;
 using WidgetData.Tests.TestData;
 
 namespace WidgetData.Tests.Services;
@@ -19,7 +18,7 @@ public class WidgetExecutionServiceTests
     private readonly Mock<IAuditService> _auditServiceMock;
     private readonly Mock<ILogger<WidgetExecutionService>> _loggerMock;
     private readonly Mock<IHttpClientFactory> _httpClientFactoryMock;
-    private readonly Mock<IDataSourceStrategy> _strategyMock;
+    private readonly Mock<WidgetData.Application.Interfaces.IDataSourceStrategy> _strategyMock;
     private readonly WidgetExecutionService _service;
 
     public WidgetExecutionServiceTests()
@@ -31,12 +30,12 @@ public class WidgetExecutionServiceTests
         _auditServiceMock = new Mock<IAuditService>();
         _loggerMock = new Mock<ILogger<WidgetExecutionService>>();
         _httpClientFactoryMock = new Mock<IHttpClientFactory>();
-        _strategyMock = new Mock<IDataSourceStrategy>();
+        _strategyMock = new Mock<WidgetData.Application.Interfaces.IDataSourceStrategy>();
 
         _service = new WidgetExecutionService(_widgetRepoMock.Object, _executionRepoMock.Object,
             _archiveRepoMock.Object, _scheduleRepoMock.Object, _auditServiceMock.Object,
             _loggerMock.Object, _httpClientFactoryMock.Object,
-            new IDataSourceStrategy[] { _strategyMock.Object });
+            new WidgetData.Application.Interfaces.IDataSourceStrategy[] { _strategyMock.Object });
     }
 
     [Fact]

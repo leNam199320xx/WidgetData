@@ -3,13 +3,12 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using WidgetData.Application.DTOs;
 using WidgetData.Application.Interfaces;
+using WidgetData.Domain;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
 using WidgetData.Domain.Interfaces;
-using WidgetData.Infrastructure.Data;
-using WidgetData.Infrastructure.Data.Json.Repositories;
-using WidgetData.Infrastructure.Repositories;
-using WidgetData.Infrastructure.Services;
+using WidgetData.Widgets;
+using WidgetData.CrossCutting.Services;
 using WidgetData.Tests.TestData;
 
 namespace WidgetData.Tests.Services;

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using WidgetData.Application.DTOs;
+using WidgetData.Domain;
 using WidgetData.Domain.Entities;
 using WidgetData.Infrastructure.Data;
 

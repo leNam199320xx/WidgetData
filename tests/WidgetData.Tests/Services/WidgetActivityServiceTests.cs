@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using WidgetData.Application.Interfaces;
+using WidgetData.Domain;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Interfaces;
-using WidgetData.Infrastructure.Data;
-using WidgetData.Infrastructure.Repositories;
-using WidgetData.Infrastructure.Services;
+using WidgetData.CrossCutting.Repositories;
+using WidgetData.CrossCutting.Services;
 using WidgetData.Tests.TestData;
 
 namespace WidgetData.Tests.Services;
@@ -23,7 +23,7 @@ public class WidgetActivityServiceTests
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
         _context = new ApplicationDbContext(options);
-        _activityRepo = new WidgetActivityRepository(_context);
+        _activityRepo = new WidgetData.CrossCutting.Repositories.WidgetActivityRepository(_context);
         _widgetRepoMock = new Mock<IWidgetRepository>();
         _service = new WidgetActivityService(_activityRepo, _widgetRepoMock.Object, _context);
     }

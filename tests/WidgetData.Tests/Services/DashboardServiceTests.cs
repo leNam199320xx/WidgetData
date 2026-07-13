@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using WidgetData.Domain;
 using WidgetData.Domain.Entities;
 using WidgetData.Domain.Enums;
-using WidgetData.Infrastructure.Data;
-using WidgetData.Infrastructure.Repositories;
-using WidgetData.Infrastructure.Services;
+using WidgetData.Widgets;
+using WidgetData.DataSources;
+using WidgetData.CrossCutting.Repositories;
 using WidgetData.Tests.TestData;
 
 namespace WidgetData.Tests.Services;
@@ -21,10 +22,10 @@ public class DashboardServiceTests : IDisposable
             .Options;
         _context = new ApplicationDbContext(options);
         _service = new DashboardService(
-            new WidgetRepository(_context),
-            new DataSourceRepository(_context),
-            new ScheduleRepository(_context),
-            new ExecutionRepository(_context));
+            new WidgetData.Widgets.WidgetRepository(_context),
+            new WidgetData.DataSources.DataSourceRepository(_context),
+            new WidgetData.CrossCutting.Repositories.ScheduleRepository(_context),
+            new WidgetData.Widgets.ExecutionRepository(_context));
     }
 
     public void Dispose()

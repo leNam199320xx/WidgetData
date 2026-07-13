@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using WidgetData.Application.Interfaces;
 using WidgetData.Domain.Interfaces;
-using WidgetData.Infrastructure.Helpers;
+using WidgetData.CrossCutting.Helpers;
 using WidgetData.Domain.Enums;
 
 namespace WidgetData.Worker.Workers;

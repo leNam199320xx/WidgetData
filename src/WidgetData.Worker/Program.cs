@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using WidgetData.Domain;
 using WidgetData.Infrastructure;
-using WidgetData.Infrastructure.Data;
 using WidgetData.Worker.Workers;
 
 Log.Logger = new LoggerConfiguration()
